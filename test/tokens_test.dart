@@ -26,24 +26,24 @@ void main() {
 
   group('TomeIcons', () {
     test('defaults to the Lucide set', () {
-      expect(const TomeIcons().close, TomeIcons.lucide.close);
+      expect(const Icons().close, Icons.lucide.close);
     });
 
     test('swaps one glyph without touching the rest', () {
       const standIn = IconData(0x2715);
-      const custom = TomeIcons(close: standIn);
-      expect(custom.close, isNot(TomeIcons.lucide.close));
-      expect(custom.copy, TomeIcons.lucide.copy);
+      const custom = Icons(close: standIn);
+      expect(custom.close, isNot(Icons.lucide.close));
+      expect(custom.copy, Icons.lucide.copy);
 
-      final copied = TomeIcons.lucide.copyWith(close: standIn);
+      final copied = Icons.lucide.copyWith(close: standIn);
       expect(copied.close, standIn);
-      expect(copied.search, TomeIcons.lucide.search);
+      expect(copied.search, Icons.lucide.search);
     });
   });
 
   group('TomeTypography', () {
     test('styles carry no colour and no family, except code', () {
-      const type = TomeTypography.standard;
+      const type = Typography.standard;
       for (final style in [
         type.display,
         type.headline,
@@ -61,11 +61,11 @@ void main() {
     });
 
     test('copyWith swaps one style without touching the rest', () {
-      final custom = TomeTypography.standard.copyWith(
+      final custom = Typography.standard.copyWith(
         body: const TextStyle(fontSize: 16),
       );
       expect(custom.body.fontSize, 16);
-      expect(custom.caption, TomeTypography.standard.caption);
+      expect(custom.caption, Typography.standard.caption);
     });
   });
 }

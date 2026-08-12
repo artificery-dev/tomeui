@@ -6,15 +6,15 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 /// A widget asks for *meaning* — `icons.close`, `icons.warning` — never for a
 /// glyph, so the whole icon language swaps by constructing one of these with
 /// different [IconData]. Every parameter defaults to the Lucide glyph, which
-/// makes `TomeIcons()` the default set and a custom theme a list of only the
+/// makes `Icons()` the default set and a custom theme a list of only the
 /// icons it changes; [copyWith] does the same to an existing set.
 ///
 /// The vocabulary is deliberately UI chrome, not domain objects: the names
 /// here are the ones controls and patterns need to exist. An app's own
 /// iconography stays the app's.
 @immutable
-class TomeIcons {
-  const TomeIcons({
+class Icons {
+  const Icons({
     // Navigation.
     this.back = LucideIcons.arrowLeft,
     this.forward = LucideIcons.arrowRight,
@@ -152,7 +152,7 @@ class TomeIcons {
   final IconData image;
   final IconData favorite;
 
-  TomeIcons copyWith({
+  Icons copyWith({
     IconData? back,
     IconData? forward,
     IconData? up,
@@ -206,7 +206,7 @@ class TomeIcons {
     IconData? file,
     IconData? image,
     IconData? favorite,
-  }) => TomeIcons(
+  }) => Icons(
     back: back ?? this.back,
     forward: forward ?? this.forward,
     up: up ?? this.up,
@@ -263,5 +263,5 @@ class TomeIcons {
   );
 
   /// The default set — every token wearing its Lucide glyph.
-  static const TomeIcons lucide = TomeIcons();
+  static const Icons lucide = Icons();
 }

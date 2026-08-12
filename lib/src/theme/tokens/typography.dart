@@ -7,8 +7,8 @@ import 'package:flutter/widgets.dart';
 /// ships. The defaults are tuned for a UI face at interface sizes; swap the
 /// whole scale by constructing your own, or adjust one style with [copyWith].
 @immutable
-class TomeTypography {
-  const TomeTypography({
+class Typography {
+  const Typography({
     this.display = const TextStyle(
       fontSize: 28,
       fontWeight: FontWeight.w600,
@@ -90,7 +90,7 @@ class TomeTypography {
   /// because monospace *is* the token; override it to ship your own face.
   final TextStyle code;
 
-  TomeTypography copyWith({
+  Typography copyWith({
     TextStyle? display,
     TextStyle? headline,
     TextStyle? title,
@@ -100,7 +100,7 @@ class TomeTypography {
     TextStyle? label,
     TextStyle? caption,
     TextStyle? code,
-  }) => TomeTypography(
+  }) => Typography(
     display: display ?? this.display,
     headline: headline ?? this.headline,
     title: title ?? this.title,
@@ -113,5 +113,5 @@ class TomeTypography {
   );
 
   /// The default scale.
-  static const TomeTypography standard = TomeTypography();
+  static const Typography standard = Typography();
 }
