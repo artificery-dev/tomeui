@@ -7,3 +7,5 @@
 library;
 
 export 'package:flutter/widgets.dart';
+
+export 'src/theme/tokens.dart';
