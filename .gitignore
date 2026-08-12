@@ -1,0 +1,11 @@
+# Dart
+#
+# pubspec.lock is uncommitted — library packages resolve against the
+# consumer's constraints.
+.dart_tool/
+.flutter-plugins-dependencies
+.fvm/
+pubspec.lock
+build/
+coverage/
+**/doc/api/
