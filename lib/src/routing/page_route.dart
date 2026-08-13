@@ -2,30 +2,32 @@ import 'package:tomeui/tomeui.dart';
 
 /// The system's page transition: a short fade with a slight rise, on the
 /// motion tokens. What `Navigator.push` gets when a route is built by
-/// [TomeApp], and what to reach for when pushing one by hand.
+/// [TomeApp] — which passes the theme's [Motion] — and what to reach for
+/// when pushing one by hand.
 class TomePageRoute<T> extends PageRouteBuilder<T> {
   TomePageRoute({
     required WidgetBuilder builder,
+    Motion motion = const Motion(),
     super.settings,
     super.fullscreenDialog,
   }) : super(
-         transitionDuration: Motion.standard,
-         reverseTransitionDuration: Motion.standard,
+         transitionDuration: motion.standard,
+         reverseTransitionDuration: motion.standard,
          pageBuilder: (context, animation, secondaryAnimation) =>
              builder(context),
-         transitionsBuilder: _transition,
+         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+             _transition(motion, animation, child),
        );
 
   static Widget _transition(
-    BuildContext context,
+    Motion motion,
     Animation<double> animation,
-    Animation<double> secondaryAnimation,
     Widget child,
   ) {
     final eased = CurvedAnimation(
       parent: animation,
-      curve: Motion.enter,
-      reverseCurve: Motion.exit,
+      curve: motion.enter,
+      reverseCurve: motion.exit,
     );
     return FadeTransition(
       opacity: eased,

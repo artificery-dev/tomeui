@@ -87,7 +87,7 @@ class TomeApp extends StatelessWidget {
   /// already themed; inside [WidgetsApp], whose `textStyle` handles text.
   Widget _dress(BuildContext context, Widget? child) {
     final dressed = IconTheme(
-      data: IconThemeData(color: theme.palette.text, size: Sizes.icon),
+      data: IconThemeData(color: theme.palette.text, size: theme.sizes.icon),
       child: ColoredBox(
         color: theme.palette.background,
         child: child ?? const SizedBox.shrink(),
@@ -126,7 +126,11 @@ class TomeApp extends StatelessWidget {
             navigatorKey: navigatorKey,
             navigatorObservers: navigatorObservers,
             pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder b) =>
-                TomePageRoute<T>(settings: settings, builder: b),
+                TomePageRoute<T>(
+                  settings: settings,
+                  builder: b,
+                  motion: theme.motion,
+                ),
             title: title,
             onGenerateTitle: onGenerateTitle,
             color: theme.palette.primary,

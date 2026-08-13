@@ -2,3 +2,4 @@
 library;
 
 export 'foundation/app.dart';
+export 'foundation/surface.dart';

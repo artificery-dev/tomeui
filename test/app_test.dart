@@ -81,6 +81,6 @@ void main() {
 
     final icon = IconTheme.of(tester.element(find.byType(Icon)));
     expect(icon.color, theme.palette.text);
-    expect(icon.size, Sizes.icon);
+    expect(icon.size, const Sizes().icon);
   });
 }
