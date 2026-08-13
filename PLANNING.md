@@ -26,15 +26,15 @@ Gray-zone rulings, decided once:
 
 - [x] `TomeApp` — the application root
 - [ ] `Scaffold` — page skeleton: bars, body, insets
-- [ ] `Surface` — a themed rectangle everything else sits on
+- [x] `Surface` — a themed rectangle everything else sits on
   - Surfaces can take on the appearance of any of our palette colors, defaulting to primary.
   - Variants:
-    - [ ] Solid
-    - [ ] Soft
-    - [ ] Subtle
-    - [ ] Outline
-    - [ ] Ghost
-    - [ ] Placeholder
+    - [x] Solid
+    - [x] Soft
+    - [x] Subtle
+    - [x] Outline
+    - [x] Ghost
+    - [x] Placeholder
 - [ ] `Placeholder` - An instance of the Placeholder surface type that allows for a single centered child widget. Placeholders expand to fill their parent, but don't force it. (ie, they collapse correctly if they're in a Center widget). Should have a padding constructor option. Shadows Flutter's `Placeholder` (see rulings).
 
 ## controls — the user changes something here
