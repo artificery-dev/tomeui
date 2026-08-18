@@ -6,6 +6,7 @@ import 'controls/select.dart';
 import 'controls/switch.dart';
 import 'controls/text_field.dart';
 import 'foundation/placeholder.dart';
+import 'foundation/scaffold.dart';
 import 'foundation/surface.dart';
 import 'overlays/menu.dart';
 import 'overlays/popover.dart';
@@ -20,6 +21,7 @@ import 'tokens.dart';
 List<StoryGroup> buildStories() => [
   tokenStories(),
   surfaceStories(),
+  scaffoldStories(),
   buttonStories(),
   checkboxStories(),
   radioStories(),

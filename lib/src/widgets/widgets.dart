@@ -10,6 +10,7 @@ export 'controls/text_field.dart';
 export 'controls/text_selection.dart';
 export 'foundation/app.dart';
 export 'foundation/placeholder.dart';
+export 'foundation/scaffold.dart';
 export 'foundation/surface.dart';
 export 'overlays/menu.dart';
 export 'overlays/popover.dart';
