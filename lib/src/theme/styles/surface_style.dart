@@ -18,8 +18,8 @@ enum SurfaceVariant {
   /// dresses it.
   ghost,
 
-  /// A dashed hairline — something that belongs here but isn't here yet:
-  /// drop targets, empty slots.
+  /// A dashed hairline over a diagonally striped wash — something that
+  /// belongs here but isn't here yet: drop targets, empty slots.
   placeholder,
 }
 
@@ -35,6 +35,7 @@ class SurfaceStyle {
     this.fill,
     this.border,
     this.dashed = false,
+    this.striped = false,
     // Mirrors the default Radii().medium — a resolved style gets the
     // theme's actual radii; this default serves hand-built styles.
     this.radius = const BorderRadius.all(Radius.circular(10)),
@@ -53,6 +54,9 @@ class SurfaceStyle {
   /// Dash the [border] instead of drawing it solid.
   final bool dashed;
 
+  /// Paint the [fill] as diagonal stripes instead of a solid wash.
+  final bool striped;
+
   final BorderRadius radius;
 
   SurfaceStyle copyWith({
@@ -60,12 +64,14 @@ class SurfaceStyle {
     Color? fill,
     Color? border,
     bool? dashed,
+    bool? striped,
     BorderRadius? radius,
   }) => SurfaceStyle(
     foreground: foreground ?? this.foreground,
     fill: fill ?? this.fill,
     border: border ?? this.border,
     dashed: dashed ?? this.dashed,
+    striped: striped ?? this.striped,
     radius: radius ?? this.radius,
   );
 
@@ -76,10 +82,12 @@ class SurfaceStyle {
       other.fill == fill &&
       other.border == border &&
       other.dashed == dashed &&
+      other.striped == striped &&
       other.radius == radius;
 
   @override
-  int get hashCode => Object.hash(foreground, fill, border, dashed, radius);
+  int get hashCode =>
+      Object.hash(foreground, fill, border, dashed, striped, radius);
 }
 
 /// The tone mapping for one variant: which shade each role wears.
@@ -88,23 +96,32 @@ class SurfaceStyle {
 /// [fill] when there is one, the palette's text colour when there isn't.
 @immutable
 class SurfaceShades {
-  const SurfaceShades({this.fill, this.foreground, this.border, this.dashed = false});
+  const SurfaceShades({
+    this.fill,
+    this.foreground,
+    this.border,
+    this.dashed = false,
+    this.striped = false,
+  });
 
   final Shade? fill;
   final Shade? foreground;
   final Shade? border;
   final bool dashed;
+  final bool striped;
 
   SurfaceShades copyWith({
     Shade? fill,
     Shade? foreground,
     Shade? border,
     bool? dashed,
+    bool? striped,
   }) => SurfaceShades(
     fill: fill ?? this.fill,
     foreground: foreground ?? this.foreground,
     border: border ?? this.border,
     dashed: dashed ?? this.dashed,
+    striped: striped ?? this.striped,
   );
 
   @override
@@ -113,10 +130,11 @@ class SurfaceShades {
       other.fill == fill &&
       other.foreground == foreground &&
       other.border == border &&
-      other.dashed == dashed;
+      other.dashed == dashed &&
+      other.striped == striped;
 
   @override
-  int get hashCode => Object.hash(fill, foreground, border, dashed);
+  int get hashCode => Object.hash(fill, foreground, border, dashed, striped);
 }
 
 /// The theme's tone mapping, variant by variant.
@@ -142,13 +160,13 @@ class SurfaceStyles {
       border: Shade(light: 400, dark: 600),
       foreground: Shade(light: 700, dark: 300),
     ),
-    this.ghost = const SurfaceShades(
-      foreground: Shade(light: 700, dark: 300),
-    ),
+    this.ghost = const SurfaceShades(foreground: Shade(light: 700, dark: 300)),
     this.placeholder = const SurfaceShades(
+      fill: Shade(light: 200, dark: 800),
       border: Shade(light: 300, dark: 700),
       foreground: Shade(light: 600, dark: 400),
       dashed: true,
+      striped: true,
     ),
   });
 

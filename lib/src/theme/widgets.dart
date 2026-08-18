@@ -3,7 +3,7 @@ import 'package:tomeui/tomeui.dart';
 /// The resolvers, one per widget the theme knows how to dress:
 ///
 /// ```dart
-/// theme.widgets.surface.resolve(Swatch.red, SurfaceVariant.soft)
+/// theme.widgets.surface.resolve(SemanticSwatch.error, SurfaceVariant.soft)
 /// ```
 ///
 /// A resolver is where a widget's [WidgetStyles] configuration meets the
@@ -26,18 +26,19 @@ class SurfaceResolver {
 
   final Theme _theme;
 
-  /// The concrete paint for a surface wearing [swatch] — the theme's accent
-  /// when null — in [variant]'s treatment.
+  /// The concrete paint for a surface wearing [swatch] in [variant]'s
+  /// treatment. The semantic name becomes a real [Swatch] through the
+  /// palette ([Palette.of]) — widgets never hold colours, only meanings.
   ///
   /// Roles resolve through the variant's [SurfaceShades]; a mapping with no
   /// foreground gets what reads: the contrast pick over the fill when there
   /// is one, the palette's text colour when there isn't.
   SurfaceStyle resolve([
-    Swatch? swatch,
+    SemanticSwatch swatch = SemanticSwatch.primary,
     SurfaceVariant variant = SurfaceVariant.solid,
   ]) {
     final palette = _theme.palette;
-    final worn = swatch ?? palette.accent;
+    final worn = palette.of(swatch);
     final brightness = palette.brightness;
     final shades = _theme.styles.surface.of(variant);
 
@@ -52,6 +53,7 @@ class SurfaceResolver {
       fill: fill?.on(worn, brightness),
       border: shades.border?.on(worn, brightness),
       dashed: shades.dashed,
+      striped: shades.striped,
       radius: _theme.radii.medium,
     );
   }

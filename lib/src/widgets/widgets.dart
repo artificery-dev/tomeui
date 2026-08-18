@@ -2,4 +2,5 @@
 library;
 
 export 'foundation/app.dart';
+export 'foundation/placeholder.dart';
 export 'foundation/surface.dart';

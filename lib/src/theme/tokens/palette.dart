@@ -3,8 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'opacities.dart';
 import 'swatch.dart';
 
-/// The colour tokens: two [Swatch]es and a [Brightness], with the semantic
-/// roles *derived*.
+/// The colour tokens: a [Swatch] per [SemanticSwatch] and a [Brightness],
+/// with the semantic roles *derived*.
 ///
 /// A rebrand is one line and light/dark is a flip, never a second palette to
 /// keep in sync. The role set is deliberately small — the handful an app
@@ -14,17 +14,52 @@ import 'swatch.dart';
 class Palette {
   const Palette({
     this.brightness = Brightness.dark,
-    this.neutral = Swatch.zinc,
+    this.primary = Swatch.sky,
     this.accent = Swatch.blue,
+    this.neutral = Swatch.zinc,
+    this.info = Swatch.blue,
+    this.warning = Swatch.yellow,
+    this.success = Swatch.green,
+    this.error = Swatch.red,
   });
 
   final Brightness brightness;
 
+  /// The brand at full voice — primary actions, focus, selection. The
+  /// default when a surface doesn't say otherwise.
+  final Swatch primary;
+
+  /// The brand's second voice — highlights and flourishes where [primary]
+  /// would shout.
+  final Swatch accent;
+
   /// The greys: backgrounds, surfaces, text, dividers.
   final Swatch neutral;
 
-  /// The brand colour: primary actions, focus, selection.
-  final Swatch accent;
+  /// Something worth knowing — notices, hints, the calm end of feedback.
+  final Swatch info;
+
+  /// Something worth pausing over — caution, before it becomes [error].
+  final Swatch warning;
+
+  /// Something that went right — confirmations, completions, the all-clear.
+  final Swatch success;
+
+  /// Something that went wrong — validation faults, failures, destructive
+  /// actions.
+  final Swatch error;
+
+  /// The real [Swatch] behind a [SemanticSwatch] — how a semantic choice on
+  /// a widget becomes colour on this palette.
+  Swatch of(SemanticSwatch swatch) => switch (swatch) {
+    SemanticSwatch.primary => primary,
+    SemanticSwatch.accent => accent,
+    SemanticSwatch.neutral => neutral,
+    SemanticSwatch.info => info,
+    SemanticSwatch.warning => warning,
+    SemanticSwatch.success => success,
+    SemanticSwatch.error => error,
+  };
 
   bool get _dark => brightness == Brightness.dark;
 
@@ -40,29 +75,50 @@ class Palette {
 
   Color get divider => _dark ? neutral.s800 : neutral.s200;
 
-  /// The accent, at a stop that reads on [background].
-  Color get primary => _dark ? accent.s400 : accent.s600;
-
   /// Foreground for content sitting *on* [primary].
-  Color get onPrimary => accent.contrastFor(_dark ? 400 : 600);
+  Color get onPrimary => primary.contrastFor(_dark ? 400 : 600);
 
   Palette copyWith({
     Brightness? brightness,
-    Swatch? neutral,
+    Swatch? primary,
     Swatch? accent,
+    Swatch? neutral,
+    Swatch? info,
+    Swatch? warning,
+    Swatch? success,
+    Swatch? error,
   }) => Palette(
     brightness: brightness ?? this.brightness,
-    neutral: neutral ?? this.neutral,
+    primary: primary ?? this.primary,
     accent: accent ?? this.accent,
+    neutral: neutral ?? this.neutral,
+    info: info ?? this.info,
+    warning: warning ?? this.warning,
+    success: success ?? this.success,
+    error: error ?? this.error,
   );
 
   @override
   bool operator ==(Object other) =>
       other is Palette &&
       other.brightness == brightness &&
+      other.primary == primary &&
+      other.accent == accent &&
       other.neutral == neutral &&
-      other.accent == accent;
+      other.info == info &&
+      other.warning == warning &&
+      other.success == success &&
+      other.error == error;
 
   @override
-  int get hashCode => Object.hash(brightness, neutral, accent);
+  int get hashCode => Object.hash(
+    brightness,
+    primary,
+    accent,
+    neutral,
+    info,
+    warning,
+    success,
+    error,
+  );
 }

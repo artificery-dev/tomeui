@@ -106,7 +106,7 @@ class TomeApp extends StatelessWidget {
             title: title,
             onGenerateTitle: onGenerateTitle,
             // What the OS shows around the app — the task switcher card.
-            color: theme.palette.primary,
+            color: theme.palette.primary.s400,
             textStyle: textStyle,
             builder: _dress,
             locale: locale,
@@ -133,7 +133,7 @@ class TomeApp extends StatelessWidget {
                 ),
             title: title,
             onGenerateTitle: onGenerateTitle,
-            color: theme.palette.primary,
+            color: theme.palette.primary.s400,
             textStyle: textStyle,
             builder: _dress,
             locale: locale,

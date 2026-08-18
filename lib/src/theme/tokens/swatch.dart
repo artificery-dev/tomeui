@@ -1,12 +1,31 @@
 import 'package:flutter/widgets.dart';
 
-/// WCAG relative-luminance contrast ratio between two colors, in `[1, 21]`.
-double _contrastRatio(Color a, Color b) {
-  final luminanceA = a.computeLuminance();
-  final luminanceB = b.computeLuminance();
-  final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
-  final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
-  return (lighter + 0.05) / (darker + 0.05);
+/// The semantic swatch a [Surface] or other widget wears.
+enum SemanticSwatch {
+  /// The brand at full voice — primary actions, focus, selection. The
+  /// default when a surface doesn't say otherwise.
+  primary,
+
+  /// The brand's second voice — highlights and flourishes where [primary]
+  /// would shout.
+  accent,
+
+  /// The greys — chrome, containers, anything that shouldn't compete with
+  /// the content it holds.
+  neutral,
+
+  /// Something worth knowing — notices, hints, the calm end of feedback.
+  info,
+
+  /// Something worth pausing over — caution, before it becomes [error].
+  warning,
+
+  /// Something that went right — confirmations, completions, the all-clear.
+  success,
+
+  /// Something that went wrong — validation faults, failures, destructive
+  /// actions.
+  error,
 }
 
 /// A Tailwind-style ramp of colors from lightest to darkest.
@@ -490,4 +509,13 @@ class Swatch {
     s900: Color(0xFF1D1816),
     s950: Color(0xFF0C0A09),
   );
+}
+
+/// WCAG relative-luminance contrast ratio between two colors, in `[1, 21]`.
+double _contrastRatio(Color a, Color b) {
+  final luminanceA = a.computeLuminance();
+  final luminanceB = b.computeLuminance();
+  final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;
+  final darker = luminanceA > luminanceB ? luminanceB : luminanceA;
+  return (lighter + 0.05) / (darker + 0.05);
 }
