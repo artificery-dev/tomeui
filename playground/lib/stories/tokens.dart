@@ -1,6 +1,6 @@
 import 'package:tomeui/tomeui.dart';
 
-import '../story.dart';
+import '../src/story.dart';
 
 /// The Tokens pseudo-group: previews of the theme's raw material, one story
 /// per token family. Everything reads the ambient theme, so the App tab's
