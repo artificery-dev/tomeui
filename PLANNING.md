@@ -123,7 +123,28 @@ Gray-zone rulings, decided once:
     themselves as headings.
 - [ ] `TomeText` — our custom rich text renderer from ~/Projects/AI's ui
   library, deferred till later.
-- [x] `CodeText` — monospace with the copy affordance
+- [x] `CodeText` — monospace with the copy affordance, in two shapes
+  - **Inline** is the chip: a path, an identifier, a command, with the copy
+    button beside it.
+  - **Block** (`CodeText.block`) is a listing: a card, a numbered gutter
+    (`firstLine` for an excerpt, `highlightLines` to call lines out), and
+    syntax colour. Long lines scroll sideways under a gutter that stays
+    put, or fold with `wrap: true`.
+  - Highlighting is `re_highlight` — a pure-Dart port of highlight.js that
+    touches only `flutter/painting` and `flutter/rendering`, so the
+    widgets-layer-only rule holds. It brings grammars, not colours: the
+    scope→swatch mapping lives in `CodeTextResolver`, so keywords are the
+    brand, strings read as something that went right, comments step down to
+    tertiary, and a palette swap recolours code with everything else.
+  - The source is highlighted whole and *then* split into lines — a block
+    comment or a triple-quoted string is one construct, and a tokenizer
+    shown one line out of it would call the rest of the file code.
+  - `CodeSyntax` starts **empty**, and that's the ruling: grammars are big
+    (Swift alone is a few hundred KB of generated Dart) and a toolkit has
+    no business deciding which of them every app pays for. An app calls
+    `CodeSyntax.register('dart', langDart)`. A block naming an
+    unregistered language keeps its card, numbers, and copy button and
+    loses only the colour.
 - [x] `KickerText` — small spaced uppercase section label. Uppercases at
   paint time, so what a screen reader announces stays as written.
 - [x] `Link`

@@ -13,6 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.9
   tomeui:
     path: ../
+  re_highlight: ^0.0.3
 
 dev_dependencies:
   flutter_test:
