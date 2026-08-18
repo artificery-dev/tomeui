@@ -15,6 +15,7 @@ export 'foundation/surface.dart';
 export 'overlays/menu.dart';
 export 'overlays/popover.dart';
 export 'overlays/tooltip.dart';
+export 'text/code_syntax.dart';
 export 'text/code_text.dart';
 export 'text/kicker_text.dart';
 export 'text/link.dart';

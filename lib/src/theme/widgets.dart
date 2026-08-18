@@ -278,14 +278,22 @@ class CodeTextResolver {
   /// default, since a path or an identifier is not a status. The copy
   /// button's washes are the chip's own foreground, the way every other
   /// control's are.
+  ///
+  /// A block gets the same colours on a larger footing: the medium radius
+  /// and a hairline, because a block is a card rather than a chip, and a
+  /// gutter dimmed to the tertiary step so the numbers stay countable
+  /// without competing with the code.
   CodeTextStyle resolve([SemanticSwatch swatch = SemanticSwatch.neutral]) {
     final surface = SurfaceResolver(_theme)
         .resolve(swatch, SurfaceVariant.subtle)
         .copyWith(radius: _theme.radii.small);
     final opacities = _theme.opacities;
+    final palette = _theme.palette;
+    final text = TextResolver(_theme);
+    final mono = text.resolve(TextRole.code);
     return CodeTextStyle(
       surface: surface,
-      textStyle: TextResolver(_theme).resolve(TextRole.code),
+      textStyle: mono,
       ring:
           SurfaceResolver(_theme).resolve(swatch, SurfaceVariant.solid).fill ??
           surface.foreground,
@@ -298,7 +306,105 @@ class CodeTextResolver {
       hover: surface.foreground.withValues(alpha: opacities.hover),
       pressed: surface.foreground.withValues(alpha: opacities.pressed),
       disabledOpacity: opacities.disabled,
+      blockSurface: surface.copyWith(
+        border: palette.divider,
+        radius: _theme.radii.medium,
+      ),
+      blockPadding: EdgeInsets.symmetric(
+        horizontal: _theme.space.x4,
+        vertical: _theme.space.x3,
+      ),
+      syntax: _syntax(mono),
+      gutterStyle: mono.copyWith(
+        color: palette.text.withValues(alpha: opacities.tertiary),
+      ),
+      gutterGap: _theme.space.x4,
+      gutterDivider: palette.divider,
+      lineHighlight: palette.text.withValues(alpha: opacities.hover),
     );
+  }
+
+  /// What each syntax scope wears, in the palette's own voice.
+  ///
+  /// The mapping is semantic before it is decorative: keywords are the
+  /// brand, strings read as something that went right, comments are text
+  /// stepped down to tertiary, and a diff's deletions wear the error
+  /// swatch — so a theme that swaps its palette gets a coherent code
+  /// colouring for free instead of a scheme borrowed from somewhere else.
+  ///
+  /// Keys are highlight.js v11 scope names. Scopes with no entry keep the
+  /// plain monospace, which is what makes an unregistered language degrade
+  /// to readable rather than to wrong.
+  Map<String, TextStyle> _syntax(TextStyle mono) {
+    final text = TextResolver(_theme);
+    TextStyle wear(SemanticSwatch swatch) =>
+        mono.copyWith(color: text.tint(swatch: swatch));
+    TextStyle graded(TextEmphasis emphasis) => mono.copyWith(
+      color: text.tint(emphasis: emphasis, on: _theme.palette.text),
+    );
+
+    final brand = wear(SemanticSwatch.primary);
+    final name = wear(SemanticSwatch.accent);
+    final literal = wear(SemanticSwatch.success);
+    final detail = wear(SemanticSwatch.info);
+    final aside = wear(SemanticSwatch.warning);
+    final quiet = graded(TextEmphasis.tertiary);
+
+    return {
+      // The language's own words.
+      'keyword': brand,
+      'built_in': brand,
+      'type': brand,
+      'literal': brand,
+      'operator': graded(TextEmphasis.secondary),
+      'punctuation': graded(TextEmphasis.secondary),
+      // What the author named.
+      'title': name,
+      'title.class': name,
+      'title.class.inherited': name,
+      'title.function': name,
+      'title.function.invoke': name,
+      'section': name,
+      'symbol': name,
+      'bullet': name,
+      'tag': brand,
+      'name': brand,
+      'selector-tag': brand,
+      // Values.
+      'string': literal,
+      'regexp': literal,
+      'char.escape': literal,
+      'subst': mono,
+      'addition': literal,
+      'number': detail,
+      'variable': detail,
+      'variable.language': detail,
+      'variable.constant': detail,
+      'template-variable': detail,
+      'params': detail,
+      'attr': detail,
+      'attribute': detail,
+      'property': detail,
+      'selector-attr': detail,
+      'selector-class': detail,
+      'selector-id': detail,
+      'selector-pseudo': detail,
+      'link': detail.copyWith(decoration: TextDecoration.underline),
+      // Beside the code rather than in it.
+      'comment': quiet,
+      'quote': quiet,
+      'meta': aside,
+      'meta.prompt': aside,
+      'meta keyword': aside,
+      'meta string': literal,
+      'doctag': aside,
+      'deletion': wear(SemanticSwatch.error),
+      // Markup, where the scope is a shape rather than a colour.
+      'strong': mono.copyWith(fontWeight: FontWeight.w700),
+      'emphasis': mono.copyWith(fontStyle: FontStyle.italic),
+      'formula': quiet,
+      'code': mono,
+    };
   }
 }
 
