@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart';
 import 'package:tomeui/tomeui.dart';
 
 /// A themed rectangle everything else sits on.
@@ -63,64 +64,155 @@ class Surface extends StatelessWidget {
       ),
     );
 
-    final stripes = style.striped && style.fill != null
-        ? _StripedFillPainter(
-            color: style.fill!,
-            radius: style.radius,
-            width: theme.strokes.hairline,
-          )
-        : null;
-    final dashes = style.dashed && style.border != null
-        ? _DashedBorderPainter(
-            color: style.border!,
-            radius: style.radius,
-            width: theme.strokes.hairline,
-          )
-        : null;
-    if (stripes != null || dashes != null) {
-      box = CustomPaint(painter: stripes, foregroundPainter: dashes, child: box);
+    if (style.dashed && style.border != null) {
+      box = CustomPaint(
+        foregroundPainter: _DashedBorderPainter(
+          color: style.border!,
+          radius: style.radius,
+          width: theme.strokes.hairline,
+        ),
+        child: box,
+      );
+    }
+    if (style.striped && style.fill != null) {
+      box = _StripedFill(
+        color: style.fill!,
+        radius: style.radius,
+        width: theme.strokes.hairline,
+        child: box,
+      );
     }
     return box;
   }
 }
 
+/// Marks the subtree an enclosing striped [Surface] keeps clear: the
+/// stripes part around it instead of running behind it.
+///
+/// [Placeholder] wraps its child in one automatically; reach for it
+/// directly only inside a custom striped surface.
+class StripeGap extends SingleChildRenderObjectWidget {
+  const StripeGap({super.child, super.key});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderStripeGap();
+}
+
+class _RenderStripeGap extends RenderProxyBox {}
+
 /// The diagonal wash behind a striped fill — hairlines at 45°, clipped to
-/// the surface's corners.
-class _StripedFillPainter extends CustomPainter {
-  const _StripedFillPainter({
+/// the surface's corners, parting around a descendant [StripeGap].
+class _StripedFill extends SingleChildRenderObjectWidget {
+  const _StripedFill({
     required this.color,
     required this.radius,
     required this.width,
+    super.child,
   });
 
   final Color color;
   final BorderRadius radius;
   final double width;
 
-  /// Horizontal run between stripes; ~6 logical pixels perpendicular.
-  static const _step = 8.0;
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderStripedFill(color, radius, width);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+  void updateRenderObject(
+    BuildContext context,
+    _RenderStripedFill renderObject,
+  ) {
+    renderObject
       ..color = color
-      ..strokeWidth = width;
-    canvas.clipRRect(radius.toRRect(Offset.zero & size));
+      ..radius = radius
+      ..width = width;
+  }
+}
+
+class _RenderStripedFill extends RenderProxyBox {
+  _RenderStripedFill(this._color, this._radius, this._width);
+
+  Color _color;
+  set color(Color value) {
+    if (value == _color) return;
+    _color = value;
+    markNeedsPaint();
+  }
+
+  BorderRadius _radius;
+  set radius(BorderRadius value) {
+    if (value == _radius) return;
+    _radius = value;
+    markNeedsPaint();
+  }
+
+  double _width;
+  set width(double value) {
+    if (value == _width) return;
+    _width = value;
+    markNeedsPaint();
+  }
+
+  /// Horizontal run between stripes
+  static const _step = 12.0;
+
+  /// How much clear margin the gap gets beyond its own bounds.
+  static const _breath = 4.0;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final canvas = context.canvas;
+    final bounds = offset & size;
+    canvas.save();
+    canvas.clipRRect(_radius.toRRect(bounds));
+
+    final gap = _gapIn(this);
+    if (gap != null && gap.hasSize && !gap.size.isEmpty) {
+      final hole = MatrixUtils.transformRect(
+        gap.getTransformTo(this),
+        Offset.zero & gap.size,
+      ).shift(offset).inflate(_breath);
+      canvas.clipPath(
+        Path.combine(
+          PathOperation.difference,
+          Path()..addRect(bounds),
+          Path()..addRect(hole),
+        ),
+      );
+    }
+
+    final paint = Paint()
+      ..color = _color
+      ..strokeWidth = _width;
     // Down-and-right at 45°, starting far enough left to cover the corner.
     for (var x = -size.height; x < size.width; x += _step) {
       canvas.drawLine(
-        Offset(x, 0),
-        Offset(x + size.height, size.height),
+        offset + Offset(x, 0),
+        offset + Offset(x + size.height, size.height),
         paint,
       );
     }
+    canvas.restore();
+    super.paint(context, offset);
   }
 
-  @override
-  bool shouldRepaint(_StripedFillPainter oldDelegate) =>
-      oldDelegate.color != color ||
-      oldDelegate.radius != radius ||
-      oldDelegate.width != width;
+  /// The nearest [StripeGap] below [root], not crossing into a nested
+  /// striped surface — its gaps are its own.
+  static _RenderStripeGap? _gapIn(RenderObject root) {
+    _RenderStripeGap? found;
+    void visit(RenderObject child) {
+      if (found != null || child is _RenderStripedFill) return;
+      if (child is _RenderStripeGap) {
+        found = child;
+        return;
+      }
+      child.visitChildren(visit);
+    }
+
+    root.visitChildren(visit);
+    return found;
+  }
 }
 
 /// The dashed hairline a [SurfaceVariant.placeholder] wears.

@@ -12,10 +12,10 @@ class Opacities {
     this.secondary = 0.72,
     this.tertiary = 0.55,
     this.disabled = 0.38,
-    this.hover = 0.06,
-    this.pressed = 0.10,
+    this.hover = 0.10,
+    this.pressed = 0.16,
     this.focus = 0.12,
-    this.dragged = 0.16,
+    this.dragged = 0.20,
     this.divider = 0.12,
     this.scrim = 0.5,
   });

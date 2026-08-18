@@ -8,17 +8,22 @@ import 'package:tomeui/tomeui.dart';
 /// at `theme.widgets`, which reads this configuration against the palette.
 @immutable
 class WidgetStyles {
-  const WidgetStyles({this.surface = const SurfaceStyles()});
+  const WidgetStyles({
+    this.surface = const SurfaceStyles(),
+    this.text = const TextStyles(),
+  });
 
   final SurfaceStyles surface;
 
-  WidgetStyles copyWith({SurfaceStyles? surface}) =>
-      WidgetStyles(surface: surface ?? this.surface);
+  final TextStyles text;
+
+  WidgetStyles copyWith({SurfaceStyles? surface, TextStyles? text}) =>
+      WidgetStyles(surface: surface ?? this.surface, text: text ?? this.text);
 
   @override
   bool operator ==(Object other) =>
-      other is WidgetStyles && other.surface == surface;
+      other is WidgetStyles && other.surface == surface && other.text == text;
 
   @override
-  int get hashCode => surface.hashCode;
+  int get hashCode => Object.hash(surface, text);
 }

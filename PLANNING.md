@@ -12,9 +12,17 @@ Gray-zone rulings, decided once:
   controls composes it.
 - No data-display category (tables, avatars, tags) yet — those prove they're
   toolkit material before getting a home.
-- `widgets.dart` collisions: our `Placeholder` deliberately shadows Flutter's
-  (the barrel re-exports widgets.dart with `hide Placeholder` once ours
-  exists); `Banner` stays Flutter's — ours is `Callout`.
+- `widgets.dart` collisions: our `Placeholder` and `RadioGroup` deliberately
+  shadow Flutter's (the barrel re-exports widgets.dart hiding each one as
+  ours lands); `Banner` stays Flutter's — ours is `Callout`. Flutter's
+  `RadioGroup` is the registry `RawRadio` talks to; ours is a plain
+  inherited value, and the two have nothing to say to each other.
+- Words the toolkit says on its own account — the selection menu's verbs, a
+  copy affordance's confirmation — are tokens like any other: they live on
+  the theme as `Labels`, beside `Icons`. Defaults are English; an app with
+  localizations builds a theme per locale rather than passing strings down
+  through every widget. Widget-level overrides (`CodeText.copyLabel`) stay
+  as escape hatches, null meaning "ask the theme".
 - Styles are the theme→widget bridge: a style class (e.g. `ButtonStyle`)
   holds the resolved values a widget actually paints, and the built-in
   variant + swatch setup is just a mapping that populates those styles —
@@ -39,23 +47,71 @@ Gray-zone rulings, decided once:
 
 ## controls — the user changes something here
 
-- [ ] `Button` — A clickable surface
+- [x] `Button` — A clickable surface
   - Composed of a Surface and 3 slots: leading, center, and trailing.
   - Button.custom constructor accepts a single child instead of having slots. That constructor is also where you'd pass a custom ButtonStyle (the data class the theme actually resolves for a button — see the style ruling up top.)
-- [ ] `TextField`
-- [ ] `Checkbox`
-- [ ] `Switch`
+- [x] `TextField`
+  - Straight on the widgets layer's `EditableText`, dressed as a `Surface`:
+    swatch and variant like every other control, a focus ring in the
+    swatch's full voice, hover, and a disabled state.
+  - Carries its own words — `label` above, `helper` below, and `error`,
+    which replaces the helper *and* turns the box, caret, and ring to the
+    error swatch. `leading`/`trailing` hold an icon or a small button.
+  - The swatch dresses the chrome; what's typed keeps the page's text
+    colour. Uncontrolled unless handed a `controller`.
+  - Selection is wired end to end, and both presentations come off one
+    list (`textSelectionEntries`, which asks `EditableTextState` what it can
+    currently do and the theme's `Labels` what to call it):
+    - **Touch** wears `TextSelectionHandles` — a circle with one square
+      corner, turned toward the character it holds — and a long press
+      raises `TextSelectionMenu` as a bar of words above the selection,
+      below it when there's no room, clear of the handles either way.
+    - **Desktop** draws no handles and puts the same entries under a
+      right-click as a menu, rendered by the very `MenuPanel` a dropdown
+      `Menu` uses.
+    - The menu never takes the keyboard: focusing itself would collapse the
+      selection it's about (`ListWalk.autofocus: false`), so the desktop
+      list is walked by pointer, as native ones are.
+    - `contextMenuBuilder` is the seam — add entries to the default list,
+      reorder them, or replace the thing. What's *in* the default list is
+      the editor's business and varies by platform (Android shares, Apple
+      looks up); how it's presented is ours.
+- [x] `Checkbox`
+- [x] `RadioGroup` / `RadioButton` — the group is an inherited value the
+  buttons read their selected state from, so they need not be siblings.
+  Shadows Flutter's `RadioGroup` (see rulings).
+- [x] `Switch` — standalone it's a checkbox in another shape; inside a
+  `SwitchGroup` it's a radio button in another shape. One constructor: the
+  group above decides which, and `value` takes whatever type the choice is
+  made of.
 - [ ] `Slider`
 - [ ] `SegmentedControl`
-- [ ] `Select` — composes overlays' `Popover`
+- [x] `Select` — composes overlays' `Popover`
+  - Trigger is a `Button` in all but name; the list is a popover that
+    matches the trigger's width, walks with the arrow keys, and follows the
+    trigger when the page scrolls.
 
 ## text — words, dressed by the type scale
 
-- [ ] Semantic text — `HeadlineText`, `BodyText`, `CaptionText`, `TomeText` (our custom rich text renderer from ~/Projects/AI's ui library, deferred till later).
-  - Text widgets derive their color from the surrounding surface's foreground color.
-- [ ] `CodeText` — monospace with the copy affordance
-- [ ] `KickerText` — small spaced uppercase section label
-- [ ] `Link`
+- [x] Semantic text — one widget per stop on the scale, all sharing
+  `SemanticText`: `DisplayText`, `HeadlineText`, `TitleText`, `SubtitleText`,
+  `BodyText` (+ `.small`), `LabelText`, `CaptionText`.
+  - Text widgets derive their color from the surrounding surface's foreground
+    color: no swatch resolves to a style with *no* colour, so it inherits
+    what the surface speaks. A `swatch` tints; a `TextEmphasis` grades
+    whatever came out, against that same inherited colour.
+  - The roles that structure a page (display, headline, title) announce
+    themselves as headings.
+- [ ] `TomeText` — our custom rich text renderer from ~/Projects/AI's ui
+  library, deferred till later.
+- [x] `CodeText` — monospace with the copy affordance
+- [x] `KickerText` — small spaced uppercase section label. Uppercases at
+  paint time, so what a screen reader announces stays as written.
+- [x] `Link`
+  - Wears the swatch's link stop, steps toward contrast under the pointer
+    (deeper in light, brighter in dark), and underlines per `LinkUnderline`
+    — on hover by default. Takes a `TextRole` so it matches the words it
+    sits among.
 
 ## layout — arranging what's already built
 
@@ -96,7 +152,27 @@ Gray-zone rulings, decided once:
 
 - [ ] `Dialog` — plus the `showDialog` stand-in
 - [ ] `Sheet`
-- [ ] `Popover` — the floating surface menus and selects share
-- [ ] `Menu` — context and dropdown menus, on `Popover`
-- [ ] `Tooltip`
+- [x] `Popover` — the floating surface menus and selects share
+  - Controlled (`open` + `onDismiss`), anchored, with flip-and-slide
+    placement. `barrier: false` makes it an annotation that never takes
+    the pointer, which is what `Tooltip` rides on; `takeFocus: false` hands
+    the keyboard to content that walks itself, which is what `Select` does.
+  - Follows its anchor through every enclosing scrollable, and gives up
+    when the anchor scrolls out of view.
+- [x] `Menu` — context and dropdown menus, on `Popover`
+  - Entries are a sealed `MenuEntry`: `MenuItem` (leading icon, label,
+    trailing shortcut hint, optional swatch for a dangerous row),
+    `MenuSeparator`, `MenuSection`. A null `onPressed` disables an item, the
+    way it does on a `Button`.
+  - `ContextMenu` is the same menu summoned by right-click or long press,
+    hung off the *point* rather than the widget — which is what
+    `Popover.anchorRect` exists for.
+  - The keyboard walk `Select` grew is now shared: `ListWalk` owns the
+    highlight, the arrows, Home/End, and Enter/Space, and steps over
+    separators, section labels, and disabled rows. `ListWalkRow` is the row
+    body both widgets sit in.
+  - `MenuPanel` is everything a menu *is* except where it floats, which is
+    what lets a `TextField`'s desktop selection menu be the same rows in
+    the editor's own overlay rather than a second implementation.
+- [x] `Tooltip` — the first thing built on `Popover`
 - [ ] `Toaster` - Root level widget that manages the display of actual Toast widgets.
