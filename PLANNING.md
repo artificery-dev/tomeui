@@ -33,7 +33,26 @@ Gray-zone rulings, decided once:
 ## foundation — low touch but needed
 
 - [x] `TomeApp` — the application root
-- [ ] `Scaffold` — page skeleton: bars, body, insets
+- [x] `Scaffold` — page skeleton: bars, sidebars, body
+  - Five slots: `toolbars` and `statusbars` are *lists* — a shell's chrome
+    stacks, and each entry is a full-width band with a hairline between —
+    bracketing a row of `leading`, `body`, `trailing`. The bars span the
+    window and the sidebars start beneath them, which is what keeps a
+    toggle in a toolbar reachable while the sidebar it works is open.
+  - Sidebars adapt on one number, `ScaffoldStyle.minBodyWidth` (the
+    breakpoint's `compact`): a sidebar that can't leave a body that wide
+    beside it is presented as a drawer over the body instead, behind a
+    scrim, with Escape and a tap outside to dismiss. Leading has first
+    refusal, so trailing gives up its column first. The mode follows the
+    *window*, never what's currently showing.
+  - Open/shut is the scaffold's own, handed down as `ScaffoldState`
+    through `ScaffoldStateProvider`; `ScaffoldSidebarToggle(side)` is that
+    as a button, and draws nothing when the slot it points at is empty.
+    Each presentation remembers its own answer — closing a drawer isn't a
+    statement about the sidebar that comes back when the window widens.
+  - Deferred: safe-area insets. Edge-to-edge drawers and a notch want a
+    decision about which regions inset and which bleed, and that's its own
+    ruling.
 - [x] `Surface` — a themed rectangle everything else sits on
   - Surfaces can take on the appearance of any of our palette colors, defaulting to primary.
   - Variants:

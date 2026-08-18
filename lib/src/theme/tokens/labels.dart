@@ -29,6 +29,8 @@ class Labels {
     this.share = 'Share',
     this.scanText = 'Scan text',
     this.copied = 'Copied',
+    this.showSidebar = 'Show sidebar',
+    this.hideSidebar = 'Hide sidebar',
   });
 
   // The selection menu, in the order it usually reads.
@@ -50,6 +52,12 @@ class Labels {
   /// What a copy affordance says once it has copied.
   final String copied;
 
+  /// What a `ScaffoldSidebarToggle` announces itself as, either way
+  /// round. The button is a bare glyph, so this is the only name a
+  /// screen reader has for it.
+  final String showSidebar;
+  final String hideSidebar;
+
   Labels copyWith({
     String? cut,
     String? copy,
@@ -61,6 +69,8 @@ class Labels {
     String? share,
     String? scanText,
     String? copied,
+    String? showSidebar,
+    String? hideSidebar,
   }) => Labels(
     cut: cut ?? this.cut,
     copy: copy ?? this.copy,
@@ -72,6 +82,8 @@ class Labels {
     share: share ?? this.share,
     scanText: scanText ?? this.scanText,
     copied: copied ?? this.copied,
+    showSidebar: showSidebar ?? this.showSidebar,
+    hideSidebar: hideSidebar ?? this.hideSidebar,
   );
 
   @override
@@ -86,7 +98,9 @@ class Labels {
       other.searchWeb == searchWeb &&
       other.share == share &&
       other.scanText == scanText &&
-      other.copied == copied;
+      other.copied == copied &&
+      other.showSidebar == showSidebar &&
+      other.hideSidebar == hideSidebar;
 
   @override
   int get hashCode => Object.hash(
@@ -100,5 +114,7 @@ class Labels {
     share,
     scanText,
     copied,
+    showSidebar,
+    hideSidebar,
   );
 }

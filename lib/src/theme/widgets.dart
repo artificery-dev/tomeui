@@ -19,6 +19,8 @@ class Widgets {
 
   SurfaceResolver get surface => SurfaceResolver(_theme);
 
+  ScaffoldResolver get scaffold => ScaffoldResolver(_theme);
+
   ButtonResolver get button => ButtonResolver(_theme);
 
   CheckboxResolver get checkbox => CheckboxResolver(_theme);
@@ -43,6 +45,47 @@ class Widgets {
   LinkResolver get link => LinkResolver(_theme);
 
   CodeTextResolver get code => CodeTextResolver(_theme);
+}
+
+/// Resolves the theme into the [ScaffoldStyle] a `Scaffold` paints.
+class ScaffoldResolver {
+  const ScaffoldResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The shell's chrome: bars and sidebars on the palette's
+  /// [Palette.surface] — the colour cards, fields, and menus share — one
+  /// step off the page the body keeps, with a hairline where two regions
+  /// meet.
+  ///
+  /// [ScaffoldStyle.minBodyWidth] is [Breakpoints.compact]: a body squeezed
+  /// below the width we call a phone has stopped being a body with a
+  /// sidebar beside it. With the default 280pt sidebar that puts one
+  /// sidebar inline from 900 and both from 1180 — [Breakpoints.medium] and
+  /// very nearly [Breakpoints.expanded], which is what those numbers were
+  /// named for.
+  ScaffoldStyle resolve() {
+    final palette = _theme.palette;
+    final chrome = SurfaceStyle(
+      foreground: palette.text,
+      fill: palette.surface,
+      radius: _theme.radii.none,
+    );
+    return ScaffoldStyle(
+      bar: chrome,
+      sidebar: chrome,
+      divider: palette.divider,
+      dividerThickness: _theme.strokes.hairline,
+      // Darkens in both brightnesses: a scrim is a shadow over the page,
+      // and a pale one in dark mode would be a light leak instead.
+      scrim: palette.neutral.s950.withValues(alpha: _theme.opacities.scrim),
+      barPadding: EdgeInsets.symmetric(horizontal: _theme.space.x2),
+      sidebarWidth: 280,
+      drawerWidth: 320,
+      minBodyWidth: _theme.breakpoints.compact,
+      drawerShadow: _theme.shadows.high,
+    );
+  }
 }
 
 /// Resolves the theme into the [TextFieldStyle] a `TextField` paints.

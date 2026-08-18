@@ -8,6 +8,7 @@ export 'styles/menu_style.dart';
 export 'styles/popover_style.dart';
 export 'styles/select_style.dart';
 export 'styles/radio_style.dart';
+export 'styles/scaffold_style.dart';
 export 'styles/shade.dart';
 export 'styles/surface_style.dart';
 export 'styles/switch_style.dart';

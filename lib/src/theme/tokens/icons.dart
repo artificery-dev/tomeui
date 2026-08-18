@@ -25,6 +25,8 @@ class Icons {
     this.chevronUp = LucideIcons.chevronUp,
     this.chevronDown = LucideIcons.chevronDown,
     this.menu = LucideIcons.menu,
+    this.sidebarLeading = LucideIcons.panelLeft,
+    this.sidebarTrailing = LucideIcons.panelRight,
     this.close = LucideIcons.x,
     this.more = LucideIcons.ellipsis,
     this.moreVertical = LucideIcons.ellipsisVertical,
@@ -90,6 +92,11 @@ class Icons {
   final IconData chevronDown;
 
   final IconData menu;
+
+  /// The panels a shell opens and shuts — a `Scaffold`'s sidebars.
+  final IconData sidebarLeading;
+  final IconData sidebarTrailing;
+
   final IconData close;
 
   /// The overflow menu, horizontal.
@@ -162,6 +169,8 @@ class Icons {
     IconData? chevronUp,
     IconData? chevronDown,
     IconData? menu,
+    IconData? sidebarLeading,
+    IconData? sidebarTrailing,
     IconData? close,
     IconData? more,
     IconData? moreVertical,
@@ -216,6 +225,8 @@ class Icons {
     chevronUp: chevronUp ?? this.chevronUp,
     chevronDown: chevronDown ?? this.chevronDown,
     menu: menu ?? this.menu,
+    sidebarLeading: sidebarLeading ?? this.sidebarLeading,
+    sidebarTrailing: sidebarTrailing ?? this.sidebarTrailing,
     close: close ?? this.close,
     more: more ?? this.more,
     moreVertical: moreVertical ?? this.moreVertical,
