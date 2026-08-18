@@ -51,8 +51,20 @@ void main() {
         matching: find.byType(CustomPaint),
       ),
     );
-    expect(paint.painter, isNotNull, reason: 'the striped wash');
     expect(paint.foregroundPainter, isNotNull, reason: 'the dashed hairline');
+
+    // The striped wash parts around the child.
+    expect(
+      find.descendant(
+        of: find.byType(Placeholder),
+        matching: find.byType(StripeGap),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(StripeGap), matching: find.text('x')),
+      findsOneWidget,
+    );
 
     // Stripes are painted, not decorated: the box itself carries no fill.
     final decoration =

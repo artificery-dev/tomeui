@@ -8,7 +8,8 @@ enum SurfaceVariant {
   /// A tinted fill with a deep foreground — selected rows, quiet emphasis.
   soft,
 
-  /// The faintest fill — hover washes, zebra stripes, resting chrome.
+  /// The faintest fill inside its own quiet ring — hover washes, zebra
+  /// stripes, resting chrome.
   subtle,
 
   /// No fill, a hairline in the swatch — secondary actions, quiet edges.
@@ -155,6 +156,8 @@ class SurfaceStyles {
     this.subtle = const SurfaceShades(
       fill: Shade(light: 50, dark: 950),
       foreground: Shade(light: 600, dark: 400),
+      // A ring one whisper above the fill, quieter than outline's.
+      border: Shade(light: 200, dark: 800),
     ),
     this.outline = const SurfaceShades(
       border: Shade(light: 400, dark: 600),

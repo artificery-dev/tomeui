@@ -34,11 +34,12 @@ class Placeholder extends StatelessWidget {
     swatch: swatch,
     padding: padding,
     // Factors of 1 size the box to the child when constraints are loose;
-    // tight constraints win anyway, and then the child sits centred.
+    // tight constraints win anyway, and then the child sits centred. The
+    // gap keeps the stripes from running behind the child.
     child: Center(
       widthFactor: 1,
       heightFactor: 1,
-      child: child ?? const SizedBox.shrink(),
+      child: child == null ? const SizedBox.shrink() : StripeGap(child: child),
     ),
   );
 }

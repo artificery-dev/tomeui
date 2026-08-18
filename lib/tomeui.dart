@@ -6,8 +6,8 @@
 /// the widgets layer beneath it.
 library;
 
-// Ours shadows Flutter's Placeholder — see the rulings in PLANNING.md.
-export 'package:flutter/widgets.dart' hide Placeholder;
+// Ours shadow Flutter's — see the rulings in PLANNING.md.
+export 'package:flutter/widgets.dart' hide Placeholder, RadioGroup;
 
 export 'src/routing/routing.dart';
 export 'src/theme/theme.dart';

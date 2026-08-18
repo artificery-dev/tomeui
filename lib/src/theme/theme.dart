@@ -1,7 +1,18 @@
 import 'package:tomeui/tomeui.dart';
 
+export 'styles/button_style.dart';
+export 'styles/checkbox_style.dart';
+export 'styles/code_text_style.dart';
+export 'styles/link_style.dart';
+export 'styles/menu_style.dart';
+export 'styles/popover_style.dart';
+export 'styles/select_style.dart';
+export 'styles/radio_style.dart';
 export 'styles/shade.dart';
 export 'styles/surface_style.dart';
+export 'styles/switch_style.dart';
+export 'styles/text_field_style.dart';
+export 'styles/text_style.dart';
 export 'styles/widget_styles.dart';
 export 'theme_provider.dart';
 export 'tokens/tokens.dart';
@@ -20,13 +31,14 @@ export 'widgets.dart';
 /// nowhere else:
 ///
 /// ```dart
-/// theme.widgets.surface.resolve(Swatch.red, SurfaceVariant.soft)
+/// theme.widgets.surface.resolve(SemanticSwatch.error, SurfaceVariant.soft)
 /// ```
 @immutable
 class Theme {
   const Theme({
     this.palette = const Palette(),
     this.icons = const Icons(),
+    this.labels = const Labels(),
     this.typography = const Typography(),
     this.styles = const WidgetStyles(),
     this.space = const Space(),
@@ -41,6 +53,10 @@ class Theme {
 
   final Palette palette;
   final Icons icons;
+
+  /// The words the toolkit says on its own account.
+  final Labels labels;
+
   final Typography typography;
 
   /// The per-widget style configuration [widgets] resolves against.
@@ -61,6 +77,7 @@ class Theme {
   Theme copyWith({
     Palette? palette,
     Icons? icons,
+    Labels? labels,
     Typography? typography,
     WidgetStyles? styles,
     Space? space,
@@ -74,6 +91,7 @@ class Theme {
   }) => Theme(
     palette: palette ?? this.palette,
     icons: icons ?? this.icons,
+    labels: labels ?? this.labels,
     typography: typography ?? this.typography,
     styles: styles ?? this.styles,
     space: space ?? this.space,
@@ -91,6 +109,7 @@ class Theme {
       other is Theme &&
       other.palette == palette &&
       other.icons == icons &&
+      other.labels == labels &&
       other.typography == typography &&
       other.styles == styles &&
       other.space == space &&
@@ -106,6 +125,7 @@ class Theme {
   int get hashCode => Object.hash(
     palette,
     icons,
+    labels,
     typography,
     styles,
     space,
