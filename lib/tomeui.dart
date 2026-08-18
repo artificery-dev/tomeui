@@ -6,7 +6,8 @@
 /// the widgets layer beneath it.
 library;
 
-export 'package:flutter/widgets.dart';
+// Ours shadows Flutter's Placeholder — see the rulings in PLANNING.md.
+export 'package:flutter/widgets.dart' hide Placeholder;
 
 export 'src/routing/routing.dart';
 export 'src/theme/theme.dart';

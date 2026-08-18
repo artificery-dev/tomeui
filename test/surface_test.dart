@@ -27,18 +27,21 @@ void main() {
   ) async {
     await pump(
       tester,
-      const Surface(swatch: Swatch.red, child: Text('x')),
+      const Surface(swatch: SemanticSwatch.error, child: Text('x')),
       brightness: Brightness.light,
     );
-    expect(decorationOf(tester)?.color, Swatch.red.s500);
+    expect(decorationOf(tester)?.color, const Palette().error.s500);
 
-    await pump(tester, const Surface(swatch: Swatch.red, child: Text('x')));
-    expect(decorationOf(tester)?.color, Swatch.red.s400);
+    await pump(
+      tester,
+      const Surface(swatch: SemanticSwatch.error, child: Text('x')),
+    );
+    expect(decorationOf(tester)?.color, const Palette().error.s400);
   });
 
-  testWidgets('wears the theme accent by default', (tester) async {
+  testWidgets('wears the theme primary by default', (tester) async {
     await pump(tester, const Surface(child: Text('x')));
-    expect(decorationOf(tester)?.color, const Palette().accent.s400);
+    expect(decorationOf(tester)?.color, const Palette().primary.s400);
   });
 
   testWidgets('speaks its foreground to text and icons', (tester) async {
@@ -49,7 +52,7 @@ void main() {
       brightness: Brightness.light,
     );
 
-    final expected = const Palette().accent.contrastFor(500);
+    final expected = const Palette().primary.contrastFor(500);
     final element = tester.element(find.byType(Icon));
     expect(DefaultTextStyle.of(element).style.color, expected);
     expect(IconTheme.of(element).color, expected);
@@ -60,7 +63,7 @@ void main() {
       tester,
       const Surface(
         variant: SurfaceVariant.outline,
-        swatch: Swatch.emerald,
+        swatch: SemanticSwatch.success,
         child: Text('x'),
       ),
     );
@@ -68,7 +71,7 @@ void main() {
     final decoration = decorationOf(tester);
     expect(decoration?.color, isNull);
     final side = (decoration?.border as Border?)?.top;
-    expect(side?.color, Swatch.emerald.s600);
+    expect(side?.color, const Palette().success.s600);
     expect(side?.width, const Strokes().hairline);
   });
 
@@ -84,7 +87,7 @@ void main() {
     final element = tester.element(find.text('x'));
     expect(
       DefaultTextStyle.of(element).style.color,
-      const Palette().accent.s300,
+      const Palette().primary.s300,
     );
   });
 
@@ -125,7 +128,10 @@ void main() {
     for (final variant in SurfaceVariant.values) {
       for (final brightness in Brightness.values) {
         final theme = Theme(palette: Palette(brightness: brightness));
-        final style = theme.widgets.surface.resolve(Swatch.violet, variant);
+        final style = theme.widgets.surface.resolve(
+          SemanticSwatch.accent,
+          variant,
+        );
         expect(style.foreground, isNotNull, reason: '$variant $brightness');
         if (variant == SurfaceVariant.placeholder) {
           expect(style.dashed, isTrue);
@@ -137,12 +143,28 @@ void main() {
 
   test('a two-swatch theme gets the default mapping for free', () {
     const theme = Theme(
-      palette: Palette(accent: Swatch.rose, neutral: Swatch.stone),
+      palette: Palette(primary: Swatch.rose, neutral: Swatch.stone),
     );
     expect(theme.widgets.surface.resolve().fill, Swatch.rose.s400);
     expect(
-      theme.widgets.surface.resolve(null, SurfaceVariant.soft).fill,
+      theme.widgets.surface.resolve(
+        SemanticSwatch.primary,
+        SurfaceVariant.soft,
+      ).fill,
       Swatch.rose.s900,
+    );
+  });
+
+  test('the semantic mapping is the palette\'s to change', () {
+    const theme = Theme(palette: Palette(warning: Swatch.orange));
+    expect(
+      theme.widgets.surface.resolve(SemanticSwatch.warning).fill,
+      Swatch.orange.s400,
+    );
+    // The untouched roles keep their defaults.
+    expect(
+      theme.widgets.surface.resolve(SemanticSwatch.error).fill,
+      const Palette().error.s400,
     );
   });
 
@@ -160,13 +182,16 @@ void main() {
       ),
     );
 
-    final style = theme.widgets.surface.resolve(Swatch.blue);
+    final style = theme.widgets.surface.resolve(SemanticSwatch.accent);
     expect(style.fill, Swatch.blue.s300);
     expect(style.foreground, Swatch.zinc.s50);
 
     // Only the replaced mapping changed; soft still wears the default.
     expect(
-      theme.widgets.surface.resolve(Swatch.blue, SurfaceVariant.soft).fill,
+      theme.widgets.surface.resolve(
+        SemanticSwatch.accent,
+        SurfaceVariant.soft,
+      ).fill,
       Swatch.blue.s900,
     );
   });
@@ -185,7 +210,7 @@ void main() {
         surface: SurfaceStyles(solid: SurfaceShades(fill: Shade.fixed(450))),
       ),
     );
-    final fill = theme.widgets.surface.resolve(Swatch.blue).fill;
+    final fill = theme.widgets.surface.resolve(SemanticSwatch.accent).fill;
     expect(fill, isNot(Swatch.blue.s400));
     expect(fill, isNot(Swatch.blue.s500));
     expect(fill, Swatch.blue[450]);

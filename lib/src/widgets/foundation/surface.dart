@@ -4,8 +4,8 @@ import 'package:tomeui/tomeui.dart';
 
 /// A themed rectangle everything else sits on.
 ///
-/// A surface wears any [Swatch] — the theme's accent by default — in one of
-/// the [SurfaceVariant] treatments. The theme does the choosing
+/// A surface wears a [SemanticSwatch] — [SemanticSwatch.primary] by default
+/// — in one of the [SurfaceVariant] treatments. The theme does the choosing
 /// (`theme.widgets.surface.resolve`); the surface paints what it's told and
 /// speaks its foreground to everything inside through [DefaultTextStyle] and
 /// [IconTheme], which is how text widgets get their colour without ever
@@ -13,7 +13,7 @@ import 'package:tomeui/tomeui.dart';
 class Surface extends StatelessWidget {
   const Surface({
     this.variant = SurfaceVariant.solid,
-    this.swatch,
+    this.swatch = SemanticSwatch.primary,
     this.padding,
     this.child,
     super.key,
@@ -26,12 +26,12 @@ class Surface extends StatelessWidget {
     this.child,
     super.key,
   }) : variant = SurfaceVariant.solid,
-       swatch = null;
+       swatch = SemanticSwatch.primary;
 
   final SurfaceVariant variant;
 
-  /// The colour to wear. Null wears the theme's accent.
-  final Swatch? swatch;
+  /// The meaning to wear — the palette says which colour that is.
+  final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme — set only by [Surface.custom].
   final SurfaceStyle? style;
@@ -47,7 +47,8 @@ class Surface extends StatelessWidget {
     Widget box = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: style.fill,
+        // A striped fill is painted, not decorated.
+        color: style.striped ? null : style.fill,
         borderRadius: style.radius,
         border: style.border != null && !style.dashed
             ? Border.all(color: style.border!, width: theme.strokes.hairline)
@@ -62,18 +63,64 @@ class Surface extends StatelessWidget {
       ),
     );
 
-    if (style.dashed && style.border != null) {
-      box = CustomPaint(
-        foregroundPainter: _DashedBorderPainter(
-          color: style.border!,
-          radius: style.radius,
-          width: theme.strokes.hairline,
-        ),
-        child: box,
-      );
+    final stripes = style.striped && style.fill != null
+        ? _StripedFillPainter(
+            color: style.fill!,
+            radius: style.radius,
+            width: theme.strokes.hairline,
+          )
+        : null;
+    final dashes = style.dashed && style.border != null
+        ? _DashedBorderPainter(
+            color: style.border!,
+            radius: style.radius,
+            width: theme.strokes.hairline,
+          )
+        : null;
+    if (stripes != null || dashes != null) {
+      box = CustomPaint(painter: stripes, foregroundPainter: dashes, child: box);
     }
     return box;
   }
+}
+
+/// The diagonal wash behind a striped fill — hairlines at 45°, clipped to
+/// the surface's corners.
+class _StripedFillPainter extends CustomPainter {
+  const _StripedFillPainter({
+    required this.color,
+    required this.radius,
+    required this.width,
+  });
+
+  final Color color;
+  final BorderRadius radius;
+  final double width;
+
+  /// Horizontal run between stripes; ~6 logical pixels perpendicular.
+  static const _step = 8.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = width;
+    canvas.clipRRect(radius.toRRect(Offset.zero & size));
+    // Down-and-right at 45°, starting far enough left to cover the corner.
+    for (var x = -size.height; x < size.width; x += _step) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_StripedFillPainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.radius != radius ||
+      oldDelegate.width != width;
 }
 
 /// The dashed hairline a [SurfaceVariant.placeholder] wears.
