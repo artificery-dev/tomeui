@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'stories/stories.dart';
+import '../stories/stories.dart';
 import 'story.dart';
 import 'theme_config.dart';
 import 'widgets/inspector.dart';
