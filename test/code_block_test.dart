@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:re_highlight/languages/dart.dart';
 import 'package:tomeui/tomeui.dart';
 
 void main() {
@@ -61,7 +60,7 @@ void main() {
     expect(find.text('3'), findsNothing);
   });
 
-  testWidgets('an unregistered language still gets a numbered block', (
+  testWidgets('an unknown language still gets a numbered block', (
     tester,
   ) async {
     await pump(
@@ -77,13 +76,19 @@ void main() {
     );
   });
 
-  testWidgets('a registered language colours its scopes from the palette', (
+  test('every grammar re_highlight ships is known, aliases included', () {
+    expect(CodeSyntax.knows('dart'), isTrue);
+    expect(CodeSyntax.knows('javascript'), isTrue);
+    expect(CodeSyntax.knows('js'), isTrue);
+    expect(CodeSyntax.knows('yml'), isTrue);
+    expect(CodeSyntax.knows('no-such-language'), isFalse);
+    expect(CodeSyntax.knows(null), isFalse);
+    expect(CodeSyntax.languages.length, greaterThan(150));
+  });
+
+  testWidgets('a known language colours its scopes from the palette', (
     tester,
   ) async {
-    CodeSyntax.register('dart', langDart);
-    addTearDown(() => CodeSyntax.unregister('dart'));
-    expect(CodeSyntax.knows('dart'), isTrue);
-
     await pump(
       tester,
       const CodeText.block("const name = 'tome';", language: 'dart'),
@@ -102,9 +107,6 @@ void main() {
   });
 
   testWidgets('a construct spanning lines stays one construct', (tester) async {
-    CodeSyntax.register('dart', langDart);
-    addTearDown(() => CodeSyntax.unregister('dart'));
-
     await pump(
       tester,
       const CodeText.block(

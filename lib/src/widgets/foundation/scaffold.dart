@@ -258,13 +258,19 @@ class ScaffoldState extends State<Scaffold> {
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): _closeDrawers,
       },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          row,
-          _scrim(theme, style, drawers),
-          for (final side in drawers) _drawer(theme, style, side, width),
-        ],
+      // A drawer slides on a paint-time transform, which layout never sees
+      // — so the Stack has no overflow to notice and wouldn't clip on its
+      // own. Without this, a shut drawer paints over whatever is beside
+      // the scaffold rather than off its edge.
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            row,
+            _scrim(theme, style, drawers),
+            for (final side in drawers) _drawer(theme, style, side, width),
+          ],
+        ),
       ),
     );
   }

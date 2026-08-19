@@ -1,23 +1,10 @@
-import 'package:re_highlight/languages/dart.dart';
-import 'package:re_highlight/languages/json.dart';
-import 'package:re_highlight/languages/yaml.dart';
 import 'package:tomeui/tomeui.dart';
 
 import '../../src/knob.dart';
 import '../../src/story.dart';
 
-StoryGroup codeTextStories() {
-  // The registry starts empty on purpose, so the playground says which
-  // grammars it ships the way an app would.
-  CodeSyntax.register('dart', langDart);
-  CodeSyntax.register('json', langJson);
-  CodeSyntax.register('yaml', langYaml);
-
-  return StoryGroup(
-    name: 'CodeText',
-    stories: [_codeText(), _block()],
-  );
-}
+StoryGroup codeTextStories() =>
+    StoryGroup(name: 'CodeText', stories: [_codeText(), _block()]);
 
 Story _codeText() {
   final code = StringKnob('Code', 'flutter pub add tomeui');
@@ -40,8 +27,8 @@ Story _codeText() {
   );
 }
 
-/// One sample per grammar the playground registers, each written to put a
-/// few different scopes on screen at once.
+/// One sample per language the story offers, each written to put a few
+/// different scopes on screen at once.
 const _samples = {
   'dart': r"""/// What the resolver hands a widget to paint.
 class SurfaceStyle {
@@ -88,7 +75,7 @@ Story _block() {
   final callOut = BoolKnob('Call out two lines', false);
   final wrap = BoolKnob('Fold long lines', false);
   final copyable = BoolKnob('Copyable', true);
-  final registered = BoolKnob('Grammar registered', true);
+  final coloured = BoolKnob('Known language', true);
 
   return Story(
     name: 'Block',
@@ -99,7 +86,7 @@ Story _block() {
       callOut,
       wrap,
       copyable,
-      registered,
+      coloured,
     ],
     builder: (context) {
       final theme = ThemeProvider.of(context);
@@ -108,10 +95,10 @@ Story _block() {
         padding: EdgeInsets.all(theme.space.x6),
         child: CodeText.block(
           _samples[language.value]!,
-          // Naming a grammar nobody registered is the graceful case worth
-          // seeing: the card, the numbers, and the copy button all stay,
-          // and only the colour goes.
-          language: registered.value ? language.value : 'not-registered',
+          // Naming a language the registry doesn't know is the graceful
+          // case worth seeing: the card, the numbers, and the copy button
+          // all stay, and only the colour goes.
+          language: coloured.value ? language.value : 'not-a-language',
           lineNumbers: lineNumbers.value,
           firstLine: start,
           highlightLines: callOut.value ? {start + 2, start + 3} : const {},

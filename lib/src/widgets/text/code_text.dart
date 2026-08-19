@@ -28,10 +28,10 @@ import '../foundation/interactive.dart';
 /// CodeText.block(source, language: 'dart', highlightLines: const {12}),
 /// ```
 ///
-/// Colouring needs the grammar registered — see [CodeSyntax], which starts
-/// empty so that no app pays for languages it never shows. A block naming
-/// an unregistered language still gets its card, its numbers, and its copy
-/// button; only the colour is missing.
+/// Colour comes from [CodeSyntax], which knows every grammar
+/// `re_highlight` ships — so [language] is usually the only thing to say.
+/// A block naming one it doesn't know still gets its card, its numbers,
+/// and its copy button; only the colour is missing.
 class CodeText extends StatelessWidget {
   const CodeText(
     this.data, {

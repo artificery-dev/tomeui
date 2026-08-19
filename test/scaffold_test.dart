@@ -196,6 +196,26 @@ void main() {
     expect(scaffold.isOpen(ScaffoldSide.leading), isFalse);
   });
 
+  testWidgets('a shut drawer is clipped to the scaffold, not painted beside '
+      'it', (tester) async {
+    await pump(
+      tester,
+      const Scaffold(leading: Text('nav'), body: Text('body')),
+      width: style.minBodyWidth + 100,
+    );
+
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold));
+    expect(scaffold.isDrawer(ScaffoldSide.leading), isTrue);
+    // Parked off the left edge — and it slides there on a paint-time
+    // transform, which layout never sees, so something has to clip it or
+    // it draws over whatever sits beside the scaffold.
+    expect(tester.getTopLeft(find.text('nav')).dx, lessThan(0));
+    expect(
+      find.ancestor(of: find.text('nav'), matching: find.byType(ClipRect)),
+      findsWidgets,
+    );
+  });
+
   testWidgets('escape shuts an open drawer', (tester) async {
     await pump(
       tester,

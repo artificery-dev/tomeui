@@ -139,12 +139,14 @@ Gray-zone rulings, decided once:
   - The source is highlighted whole and *then* split into lines — a block
     comment or a triple-quoted string is one construct, and a tokenizer
     shown one line out of it would call the rest of the file code.
-  - `CodeSyntax` starts **empty**, and that's the ruling: grammars are big
-    (Swift alone is a few hundred KB of generated Dart) and a toolkit has
-    no business deciding which of them every app pays for. An app calls
-    `CodeSyntax.register('dart', langDart)`. A block naming an
-    unregistered language keeps its card, numbers, and copy button and
-    loses only the colour.
+  - `CodeSyntax` registers **every grammar `re_highlight` ships**, community
+    set included, so naming a language is all a block has to do and the
+    aliases (`js`, `yml`, `sh`) answer too. The set is a couple of MB of
+    generated Dart that every app linking Tome carries — bought
+    deliberately, for never having to think about it. `register` adds or
+    overrides one, `unregister` takes one out; a block naming a language
+    nobody knows keeps its card, numbers, and copy button and loses only
+    the colour.
 - [x] `KickerText` — small spaced uppercase section label. Uppercases at
   paint time, so what a screen reader announces stays as written.
 - [x] `Link`
