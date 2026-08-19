@@ -20,25 +20,38 @@ import 'text/semantic_text.dart';
 import 'tokens.dart';
 
 /// Everything the playground knows how to preview. One file per widget,
-/// laid out the way `package:tomeui` lays out the widgets themselves.
-List<StoryGroup> buildStories() => [
-  tokenStories(),
-  surfaceStories(),
-  scaffoldStories(),
-  buttonStories(),
-  checkboxStories(),
-  radioStories(),
-  switchStories(),
-  sliderStories(),
-  segmentedControlStories(),
-  popoverStories(),
-  selectStories(),
-  textFieldStories(),
-  textStories(),
-  kickerTextStories(),
-  linkStories(),
-  codeTextStories(),
-  menuStories(),
-  tooltipStories(),
-  placeholderStories(),
+/// laid out the way `package:tomeui` lays out the widgets themselves:
+/// categories in the order you meet them, widgets alphabetical within one.
+List<StoryCategory> buildStories() => [
+  StoryCategory(name: 'Theme', stories: tokenStories()),
+  StoryCategory(
+    name: 'Foundation',
+    groups: [placeholderStories(), scaffoldStories(), surfaceStories()],
+  ),
+  StoryCategory(
+    name: 'Controls',
+    groups: [
+      buttonStories(),
+      checkboxStories(),
+      radioStories(),
+      segmentedControlStories(),
+      selectStories(),
+      sliderStories(),
+      switchStories(),
+      textFieldStories(),
+    ],
+  ),
+  StoryCategory(
+    name: 'Text',
+    groups: [
+      codeTextStories(),
+      kickerTextStories(),
+      linkStories(),
+      semanticTextStories(),
+    ],
+  ),
+  StoryCategory(
+    name: 'Overlays',
+    groups: [menuStories(), popoverStories(), tooltipStories()],
+  ),
 ];

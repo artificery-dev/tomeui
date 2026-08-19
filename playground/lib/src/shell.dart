@@ -23,18 +23,20 @@ class PlaygroundShell extends StatefulWidget {
 }
 
 class _PlaygroundShellState extends State<PlaygroundShell> {
-  final List<StoryGroup> _groups = buildStories();
+  final List<StoryCategory> _categories = buildStories();
 
-  late Story _selected = _groups.first.stories.first;
-  // Groups start closed: the catalogue is a list of widgets first, and
-  // their stories only when you ask.
-  final Set<String> _expanded = {};
+  late Story _selected = _categories.first.allStories.first;
+  // Categories start open and groups closed: the catalogue reads as a
+  // shelved list of widgets first, and their stories only when you ask.
+  late final Set<String> _expanded = {
+    for (final category in _categories) category.name,
+  };
   int _tab = 0;
 
   @override
   void dispose() {
-    for (final group in _groups) {
-      for (final story in group.stories) {
+    for (final category in _categories) {
+      for (final story in category.allStories) {
         for (final knob in story.knobs) {
           knob.dispose();
         }
@@ -51,14 +53,14 @@ class _PlaygroundShellState extends State<PlaygroundShell> {
         SizedBox(
           width: 240,
           child: StoryList(
-            groups: _groups,
+            categories: _categories,
             selected: _selected,
             expanded: _expanded,
             onSelect: (story) => setState(() => _selected = story),
-            onToggle: (name) => setState(
-              () => _expanded.contains(name)
-                  ? _expanded.remove(name)
-                  : _expanded.add(name),
+            onToggle: (key) => setState(
+              () => _expanded.contains(key)
+                  ? _expanded.remove(key)
+                  : _expanded.add(key),
             ),
           ),
         ),

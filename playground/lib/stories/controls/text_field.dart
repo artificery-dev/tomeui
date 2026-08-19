@@ -4,8 +4,10 @@ import '../../src/knob.dart';
 import '../../src/story.dart';
 
 StoryGroup textFieldStories() =>
-    StoryGroup(name: 'TextField', stories: [_textField(), _multiLine()]);
+    StoryGroup(name: 'TextField', stories: [_textField()]);
 
+/// With `Multi-line` on, the box grows with the text — `Min lines` its
+/// height before a word is typed — instead of scrolling it past one line.
 Story _textField() {
   final label = StringKnob('Label', 'Port of call');
   final placeholder = StringKnob('Placeholder', 'Valparaíso');
@@ -13,6 +15,8 @@ Story _textField() {
   final error = StringKnob('Error', '');
   final leading = BoolKnob('Leading icon', false);
   final obscure = BoolKnob('Obscured', false);
+  final multiLine = BoolKnob('Multi-line', false);
+  final lines = DoubleKnob('Min lines', 3, min: 1, max: 8);
   final disabled = BoolKnob('Disabled', false);
   final variant = ListKnob<SurfaceVariant>(
     'Variant',
@@ -36,6 +40,8 @@ Story _textField() {
       error,
       leading,
       obscure,
+      multiLine,
+      lines,
       disabled,
       variant,
       swatch,
@@ -55,6 +61,8 @@ Story _textField() {
             ? Icon(ThemeProvider.of(context).icons.search)
             : null,
         obscureText: obscure.value,
+        minLines: multiLine.value ? lines.value.round() : null,
+        maxLines: multiLine.value ? null : 1,
         enabled: !disabled.value,
         variant: variant.value,
         swatch: swatch.value,
@@ -63,22 +71,3 @@ Story _textField() {
   );
 }
 
-/// The multi-line shape: the box grows with the text instead of scrolling
-/// it past a fixed height.
-Story _multiLine() {
-  final lines = DoubleKnob('Min lines', 3, min: 1, max: 8);
-
-  return Story(
-    name: 'Multi-line',
-    knobs: [lines],
-    builder: (_) => SizedBox(
-      width: 360,
-      child: TextField(
-        label: const Text('Log entry'),
-        placeholder: const Text('Eight bells, wind freshening…'),
-        minLines: lines.value.round(),
-        maxLines: null,
-      ),
-    ),
-  );
-}
