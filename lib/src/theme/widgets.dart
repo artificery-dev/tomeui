@@ -320,6 +320,7 @@ class CodeTextResolver {
       ),
       gutterGap: _theme.space.x4,
       gutterDivider: palette.divider,
+      gutterDividerThickness: _theme.strokes.hairline,
       lineHighlight: palette.text.withValues(alpha: opacities.hover),
     );
   }

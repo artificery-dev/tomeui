@@ -5,6 +5,10 @@ void main() {
   const theme = Theme();
   final style = theme.widgets.code.resolve();
 
+  /// One row of monospace at the block's own metrics.
+  double oneLineHeight(WidgetTester tester) =>
+      tester.getSize(find.text('1')).height;
+
   Future<void> pump(WidgetTester tester, Widget child) async {
     await tester.pumpWidget(
       TomeApp(home: Center(child: SizedBox(width: 600, child: child))),
@@ -45,6 +49,47 @@ void main() {
     expect(find.text('41'), findsOneWidget);
     expect(find.text('42'), findsOneWidget);
     expect(find.text('1'), findsNothing);
+  });
+
+  testWidgets('line numbers keep their line, however many digits', (
+    tester,
+  ) async {
+    double heightOf(int first) => tester.getSize(find.text('$first')).height;
+
+    await pump(tester, const CodeText.block('a\nb\nc'));
+    final oneLine = heightOf(1);
+
+    // The gutter is sized from a measurement, and the rule and the padding
+    // sit outside that box. Fold them into it and every number wide enough
+    // to need the room wraps to a second row.
+    for (final first in [9, 99, 200, 9999]) {
+      await pump(tester, CodeText.block('a\nb\nc', firstLine: first));
+      expect(heightOf(first), oneLine, reason: 'line $first folded');
+    }
+  });
+
+  testWidgets('the rule runs the whole of a folded line', (tester) async {
+    const long =
+        'a line long enough that folding it takes several whole rows inside '
+        'a narrow block, which is the case the rule has to survive';
+
+    await pump(
+      tester,
+      const CodeText.block('short\n$long\nshort', wrap: true),
+    );
+
+    final code = find.byWidgetPredicate(
+      (widget) =>
+          widget is RichText && widget.text.toPlainText().startsWith('a line'),
+    );
+    final row = find.ancestor(of: code, matching: find.byType(Row)).first;
+    // The rule hangs off whichever side of the row is the tall one, so on
+    // a folded line it has to be the code — on the gutter it would stop
+    // after the first row and leave the rule in pieces.
+    final ruled = find.ancestor(of: code, matching: find.byType(Container)).first;
+
+    expect(tester.getSize(row).height, greaterThan(oneLineHeight(tester)));
+    expect(tester.getSize(ruled).height, tester.getSize(row).height);
   });
 
   testWidgets('lineNumbers: false leaves the gutter off', (tester) async {

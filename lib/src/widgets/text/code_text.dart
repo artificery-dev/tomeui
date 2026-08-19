@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:tomeui/tomeui.dart';
@@ -202,7 +201,7 @@ class CodeText extends StatelessWidget {
                   i,
                   gutterWidth,
                   // Expanded so the fold happens at the card's edge.
-                  Expanded(child: _code(lines[i], style)),
+                  Expanded(child: _code(lines[i], style, rule: true)),
                 ),
             ],
           )
@@ -214,7 +213,11 @@ class CodeText extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (var i = 0; i < lines.length; i++)
-                      _wash(style, i, _gutter(style, i, gutterWidth)),
+                      _wash(
+                        style,
+                        i,
+                        _gutter(style, i, gutterWidth, rule: true),
+                      ),
                   ],
                 ),
               // The gutter stays put and only the code slides, which is the
@@ -277,7 +280,7 @@ class CodeText extends StatelessWidget {
     Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (lineNumbers) _gutter(style, index, gutterWidth),
+        if (lineNumbers) _gutter(style, index, gutterWidth, rule: false),
         code,
       ],
     ),
@@ -292,28 +295,62 @@ class CodeText extends StatelessWidget {
   /// Half the gap on each side of the rule, so the numbers and the code
   /// stand off it equally. The far half is [_code]'s, so that a called-out
   /// line's wash crosses the rule unbroken.
-  Widget _gutter(CodeTextStyle style, int index, double width) => Container(
-    width: width + style.gutterGap / 2,
+  ///
+  /// Only the number's own box is given a width; the padding and the rule
+  /// add themselves on top of it. Sizing the whole cell instead means
+  /// doing that sum by hand, and the rule's thickness comes out of the
+  /// number's room when the sum forgets it.
+  Widget _gutter(
+    CodeTextStyle style,
+    int index,
+    double width, {
+    required bool rule,
+  }) => Container(
     padding: EdgeInsetsDirectional.only(end: style.gutterGap / 2),
-    decoration: BoxDecoration(
-      border: BorderDirectional(end: BorderSide(color: style.gutterDivider)),
+    decoration: rule
+        ? BoxDecoration(border: BorderDirectional(end: _rule(style)))
+        : null,
+    child: SizedBox(
+      width: width,
+      child: Text(
+        '${firstLine + index}',
+        style: style.gutterStyle,
+        textAlign: TextAlign.end,
+        // A line number is one line, whatever the measurement says. It
+        // would rather be clipped than fold and put the gutter out of step
+        // with the code beside it.
+        maxLines: 1,
+        softWrap: false,
+      ),
     ),
-    alignment: AlignmentDirectional.topEnd,
-    child: Text('${firstLine + index}', style: style.gutterStyle),
   );
 
-  Widget _code(TextSpan line, CodeTextStyle style) => Padding(
-    padding: EdgeInsetsDirectional.only(
-      start: lineNumbers ? style.gutterGap / 2 : 0,
-    ),
-    child: Text.rich(
+  /// [rule] hands the code the line that divides it from the gutter,
+  /// for the layout where the code is the tall side of the row.
+  Widget _code(TextSpan line, CodeTextStyle style, {bool rule = false}) {
+    final text = Text.rich(
       line,
       style: style.textStyle,
       softWrap: wrap,
       // Clipped rather than ellipsised: what's off the right of a listing
       // is reached by scrolling to it, not summarised with a dot.
       overflow: TextOverflow.clip,
-    ),
+    );
+    if (!lineNumbers) return text;
+    return Container(
+      padding: EdgeInsetsDirectional.only(start: style.gutterGap / 2),
+      decoration: rule
+          ? BoxDecoration(border: BorderDirectional(start: _rule(style)))
+          : null,
+      child: text,
+    );
+  }
+
+  /// The line that divides the numbers from the code. Which side of the
+  /// row draws it depends on which side is guaranteed to be the tall one.
+  BorderSide _rule(CodeTextStyle style) => BorderSide(
+    color: style.gutterDivider,
+    width: style.gutterDividerThickness,
   );
 
   /// The code as one span per line.
@@ -374,9 +411,10 @@ class CodeText extends StatelessWidget {
     )..layout();
     final width = painter.width;
     painter.dispose();
-    // Never narrower than a digit: a gutter that collapsed would put the
-    // rule through the numbers.
-    return math.max(width, 0);
+    // Rounded up: laying out a paragraph at exactly its measured width is
+    // a coin toss on the last fractional pixel, and losing it folds the
+    // number.
+    return width.ceilToDouble();
   }
 }
 

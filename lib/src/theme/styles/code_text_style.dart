@@ -27,6 +27,7 @@ class CodeTextStyle {
     this.gutterStyle = const TextStyle(),
     this.gutterGap = 16,
     this.gutterDivider = const Color(0x00000000),
+    this.gutterDividerThickness = 1,
     this.lineHighlight = const Color(0x00000000),
   });
 
@@ -72,6 +73,7 @@ class CodeTextStyle {
   final TextStyle gutterStyle;
   final double gutterGap;
   final Color gutterDivider;
+  final double gutterDividerThickness;
 
   /// The wash behind a called-out line.
   final Color lineHighlight;
@@ -97,6 +99,7 @@ class CodeTextStyle {
     TextStyle? gutterStyle,
     double? gutterGap,
     Color? gutterDivider,
+    double? gutterDividerThickness,
     Color? lineHighlight,
   }) => CodeTextStyle(
     surface: surface ?? this.surface,
@@ -115,6 +118,8 @@ class CodeTextStyle {
     gutterStyle: gutterStyle ?? this.gutterStyle,
     gutterGap: gutterGap ?? this.gutterGap,
     gutterDivider: gutterDivider ?? this.gutterDivider,
+    gutterDividerThickness:
+        gutterDividerThickness ?? this.gutterDividerThickness,
     lineHighlight: lineHighlight ?? this.lineHighlight,
   );
 
@@ -137,6 +142,7 @@ class CodeTextStyle {
       other.gutterStyle == gutterStyle &&
       other.gutterGap == gutterGap &&
       other.gutterDivider == gutterDivider &&
+      other.gutterDividerThickness == gutterDividerThickness &&
       other.lineHighlight == lineHighlight;
 
   @override
@@ -157,6 +163,7 @@ class CodeTextStyle {
     gutterStyle,
     gutterGap,
     gutterDivider,
+    gutterDividerThickness,
     lineHighlight,
   );
 }
