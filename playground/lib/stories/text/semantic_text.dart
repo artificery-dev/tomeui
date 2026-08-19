@@ -3,53 +3,7 @@ import 'package:tomeui/tomeui.dart';
 import '../../src/knob.dart';
 import '../../src/story.dart';
 
-StoryGroup textStories() =>
-    StoryGroup(name: 'Text', stories: [_typeScale(), _oneLine(), _kicker()]);
-
-/// The whole scale at once, in the order it steps down — the fastest way to
-/// see whether a swapped [Typography] still reads as one system.
-Story _typeScale() => Story(
-  name: 'The scale',
-  builder: (context) {
-    final theme = ThemeProvider.of(context);
-    Widget row(String role, Widget sample) => Padding(
-      padding: EdgeInsets.only(bottom: theme.space.x4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          KickerText(role),
-          SizedBox(height: theme.space.x1),
-          sample,
-        ],
-      ),
-    );
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(theme.space.x6),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: theme.sizes.contentNarrow),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            row('display', const DisplayText('Weigh anchor')),
-            row('headline', const HeadlineText('Weigh anchor')),
-            row('title', const TitleText('Weigh anchor')),
-            row('subtitle', const SubtitleText('Weigh anchor')),
-            row('body', const BodyText('Weigh anchor, and make sail.')),
-            row(
-              'bodySmall',
-              const BodyText.small('Weigh anchor, and make sail.'),
-            ),
-            row('label', const LabelText('Weigh anchor')),
-            row('caption', const CaptionText('Logged at eight bells')),
-            row('code', const CodeText('flutter pub add tomeui')),
-          ],
-        ),
-      ),
-    );
-  },
-);
+StoryGroup textStories() => StoryGroup(name: 'Text', stories: [_oneLine()]);
 
 /// One line, every dial: the role it wears, how loudly, and on what.
 Story _oneLine() {
@@ -80,7 +34,7 @@ Story _oneLine() {
   final words = StringKnob('Words', 'Everything aboard, counted.');
 
   return Story(
-    name: 'One line',
+    name: 'Text',
     knobs: [role, emphasis, swatch, variant, words],
     // Sat on a surface deliberately: the point of the category is that
     // uncoloured text takes whatever the surface underneath it speaks.
@@ -106,31 +60,4 @@ class _RoleText extends SemanticText {
     super.emphasis,
     super.swatch,
   });
-}
-
-Story _kicker() {
-  final label = StringKnob('Label', 'Danger zone');
-  final emphasis = ListKnob<TextEmphasis>(
-    'Emphasis',
-    TextEmphasis.secondary,
-    options: TextEmphasis.values,
-    describe: (option) => option.name,
-  );
-
-  return Story(
-    name: 'Kicker',
-    knobs: [label, emphasis],
-    builder: (context) {
-      final theme = ThemeProvider.of(context);
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          KickerText(label.value, emphasis: emphasis.value),
-          SizedBox(height: theme.space.x2),
-          const BodyText('What the kicker introduces.'),
-        ],
-      );
-    },
-  );
 }

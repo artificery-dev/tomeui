@@ -14,6 +14,7 @@ import 'overlays/menu.dart';
 import 'overlays/popover.dart';
 import 'overlays/tooltip.dart';
 import 'text/code_text.dart';
+import 'text/kicker_text.dart';
 import 'text/link.dart';
 import 'text/semantic_text.dart';
 import 'tokens.dart';
@@ -34,6 +35,7 @@ List<StoryGroup> buildStories() => [
   selectStories(),
   textFieldStories(),
   textStories(),
+  kickerTextStories(),
   linkStories(),
   codeTextStories(),
   menuStories(),

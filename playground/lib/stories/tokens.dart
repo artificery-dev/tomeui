@@ -106,6 +106,14 @@ Widget _colors(BuildContext context) {
   ]);
 }
 
+/// The whole scale at once, in the order it steps down — the fastest way
+/// to see whether a swapped [Typography] still reads as one system, and
+/// where the semantic text widgets get their sizes from.
+///
+/// A specimen line per stop, named above and measured below. Raw styles
+/// rather than the widgets that wear them: this is the token, and what a
+/// [SemanticText] adds to it — colour, emphasis, a heading announcement —
+/// is the widget's business and has its own story.
 Widget _typography(BuildContext context) {
   final theme = ThemeProvider.of(context);
   final styles = theme.typography;
@@ -121,14 +129,16 @@ Widget _typography(BuildContext context) {
       ('caption', styles.caption),
       ('code', styles.code),
     ]) ...[
+      KickerText(name),
+      SizedBox(height: theme.space.x1),
       Text('The quick brown fox jumps over the lazy dog', style: style),
       SizedBox(height: theme.space.x1),
       _caption(
         theme,
-        '$name — ${style.fontSize}px · w${style.fontWeight!.value} · '
+        '${style.fontSize}px · w${style.fontWeight!.value} · '
         '${style.height}× leading',
       ),
-      SizedBox(height: theme.space.x4),
+      SizedBox(height: theme.space.x5),
     ],
   ]);
 }
