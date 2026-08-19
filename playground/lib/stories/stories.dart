@@ -2,7 +2,9 @@ import '../src/story.dart';
 import 'controls/button.dart';
 import 'controls/checkbox.dart';
 import 'controls/radio.dart';
+import 'controls/segmented_control.dart';
 import 'controls/select.dart';
+import 'controls/slider.dart';
 import 'controls/switch.dart';
 import 'controls/text_field.dart';
 import 'foundation/placeholder.dart';
@@ -26,6 +28,8 @@ List<StoryGroup> buildStories() => [
   checkboxStories(),
   radioStories(),
   switchStories(),
+  sliderStories(),
+  segmentedControlStories(),
   popoverStories(),
   selectStories(),
   textFieldStories(),
