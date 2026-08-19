@@ -3,8 +3,7 @@ import 'package:tomeui/tomeui.dart';
 import '../../src/knob.dart';
 import '../../src/story.dart';
 
-StoryGroup menuStories() =>
-    StoryGroup(name: 'Menu', stories: [_menu(), _contextMenu()]);
+StoryGroup menuStories() => StoryGroup(name: 'Menu', stories: [_menu()]);
 
 /// The entries a menu is made of, in one list: a section label, items with
 /// icons and shortcut hints, a separator, a disabled row, and a dangerous
@@ -70,16 +69,3 @@ Story _menu() {
   );
 }
 
-/// Right-click the panel — or long-press it on a touch screen — and the
-/// menu opens at the pointer rather than at the panel's edge.
-Story _contextMenu() => Story(
-  name: 'On right-click',
-  builder: (context) => SizedBox(
-    width: 360,
-    height: 220,
-    child: ContextMenu(
-      entries: _menuEntries(context, disabled: false),
-      child: const Placeholder(child: Text('Right-click me')),
-    ),
-  ),
-);

@@ -3,7 +3,8 @@ import 'package:tomeui/tomeui.dart';
 import '../../src/knob.dart';
 import '../../src/story.dart';
 
-StoryGroup textStories() => StoryGroup(name: 'Text', stories: [_oneLine()]);
+StoryGroup semanticTextStories() =>
+    StoryGroup(name: 'SemanticText', stories: [_oneLine()]);
 
 /// One line, every dial: the role it wears, how loudly, and on what.
 Story _oneLine() {

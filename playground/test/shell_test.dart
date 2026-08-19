@@ -28,28 +28,45 @@ void main() {
     });
   });
 
-  testWidgets('lists the catalogue: Tokens on top, flat single-story rows', (
+  testWidgets('lists the catalogue: Theme on top, flat single-story rows', (
     tester,
   ) async {
     await tester.pumpWidget(const PlaygroundApp());
 
-    // Groups start closed — the list is widgets first, stories on request
-    // — but the first story is still what the canvas opens on.
-    expect(inList('Tokens'), findsOneWidget);
-    expect(inList('Colors'), findsNothing);
+    // Categories shelve the widgets, and start open.
+    for (final category in [
+      'Theme',
+      'Foundation',
+      'Controls',
+      'Text',
+      'Overlays',
+    ]) {
+      expect(inList(category), findsOneWidget, reason: category);
+    }
+
+    // The token previews hang off Theme itself, with no widget between —
+    // and the first of them is what the canvas opens on.
+    expect(inList('Colors'), findsOneWidget);
+    expect(inList('Typography'), findsOneWidget);
     expect(find.text('derived roles'), findsOneWidget, reason: 'Colors');
 
-    // Opening Tokens spells its stories out, and closing folds them away.
-    await tapInList(tester, 'Tokens');
-    expect(inList('Colors'), findsOneWidget);
-    await tapInList(tester, 'Tokens');
-    expect(inList('Colors'), findsNothing);
-
-    // The widgets have one story each: flat rows wearing the widget's name.
+    // Every widget carries one story, so it is a flat row wearing the
+    // widget's own name — knobs cover what used to be a second story.
+    expect(inList('Switch'), findsOneWidget);
+    expect(inList('TextField'), findsOneWidget);
+    expect(inList('CodeText'), findsOneWidget);
     expect(inList('Surface'), findsOneWidget);
     expect(inList('Checkbox'), findsOneWidget);
     expect(inList('Placeholder'), findsOneWidget);
-    expect(inList('Gallery'), findsNothing);
+    expect(inList('Gallery'), findsNothing, reason: "Surface's story name");
+
+    // Closing a category folds its widgets away; opening it brings them
+    // back.
+    await tapInList(tester, 'Foundation');
+    expect(inList('Surface'), findsNothing);
+    expect(inList('Checkbox'), findsOneWidget, reason: 'a different category');
+    await tapInList(tester, 'Foundation');
+    expect(inList('Surface'), findsOneWidget);
 
     // Selecting Surface previews the gallery: a cell per variant × swatch.
     await tapInList(tester, 'Surface');

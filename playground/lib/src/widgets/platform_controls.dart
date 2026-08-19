@@ -197,13 +197,14 @@ class PlatformTabSwitch extends StatelessWidget {
   );
 }
 
-/// A row in the story list: a story, or a group header with a chevron.
+/// A row in the story list: a story, or a category or group header with a
+/// chevron.
 class PlatformListTile extends StatelessWidget {
   const PlatformListTile({
     required this.label,
     required this.onTap,
     this.selected = false,
-    this.indented = false,
+    this.depth = 0,
     this.trailing,
     super.key,
   });
@@ -212,14 +213,15 @@ class PlatformListTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool selected;
 
-  /// Stories inside a group sit one step in from their header.
-  final bool indented;
+  /// How far in the row sits: categories at 0, the widgets inside one at 1,
+  /// and a widget's stories at 2.
+  final int depth;
 
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final padding = EdgeInsetsDirectional.only(start: indented ? 32 : 16, end: 16);
+    final padding = EdgeInsetsDirectional.only(start: 16 + depth * 16, end: 16);
     return PlatformWidget(
       cupertino: (context) => CupertinoListTile(
         title: Text(label),

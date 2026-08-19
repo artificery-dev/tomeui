@@ -2,21 +2,19 @@ import 'package:tomeui/tomeui.dart';
 
 import '../src/story.dart';
 
-/// The Tokens pseudo-group: previews of the theme's raw material, one story
-/// per token family. Everything reads the ambient theme, so the App tab's
-/// changes show up here live.
-StoryGroup tokenStories() => StoryGroup(
-  name: 'Tokens',
-  stories: [
-    Story(name: 'Colors', builder: _colors),
-    Story(name: 'Typography', builder: _typography),
-    Story(name: 'Spacing', builder: _spacing),
-    Story(name: 'Radii', builder: _radii),
-    Story(name: 'Shadows', builder: _shadows),
-    Story(name: 'Strokes', builder: _strokes),
-    Story(name: 'Opacities', builder: _opacities),
-  ],
-);
+/// Previews of the theme's raw material, one story per token family — the
+/// Theme category's own stories, with no widget to group them under.
+/// Everything reads the ambient theme, so the App tab's changes show up
+/// here live.
+List<Story> tokenStories() => [
+  Story(name: 'Colors', builder: _colors),
+  Story(name: 'Opacities', builder: _opacities),
+  Story(name: 'Radii', builder: _radii),
+  Story(name: 'Shadows', builder: _shadows),
+  Story(name: 'Spacing', builder: _spacing),
+  Story(name: 'Strokes', builder: _strokes),
+  Story(name: 'Typography', builder: _typography),
+];
 
 const _rampStops = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
