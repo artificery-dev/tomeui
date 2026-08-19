@@ -30,6 +30,10 @@ class Widgets {
   /// Trailing underscore: `switch` is a keyword.
   SwitchResolver get switch_ => SwitchResolver(_theme);
 
+  SliderResolver get slider => SliderResolver(_theme);
+
+  SegmentedResolver get segmented => SegmentedResolver(_theme);
+
   PopoverResolver get popover => PopoverResolver(_theme);
 
   TooltipResolver get tooltip => TooltipResolver(_theme);
@@ -551,6 +555,112 @@ class TooltipResolver {
         shadow: _theme.shadows.low,
       ),
       textStyle: _theme.typography.bodySmall,
+    );
+  }
+}
+
+/// Resolves the theme into the [SliderStyle] a `Slider` paints.
+class SliderResolver {
+  const SliderResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The same dressing rule the switch follows, stretched along a line:
+  /// the travelled part of the track wears [swatch] at [variant]'s
+  /// treatment, the rest wears a neutral soft fill, and the thumb takes
+  /// the active track's foreground so it reads against the swatch it sits
+  /// on.
+  ///
+  /// [SurfaceVariant.solid] is left as solid here where a checkbox rests
+  /// as an outline: an empty box shouldn't look filled, but a track always
+  /// has a travelled part, however short.
+  SliderStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.primary,
+    SurfaceVariant variant = SurfaceVariant.solid,
+  ]) {
+    final surfaces = SurfaceResolver(_theme);
+    const pill = BorderRadius.all(Radius.circular(999));
+    final active = surfaces.resolve(swatch, variant).copyWith(radius: pill);
+    final inactive = surfaces
+        .resolve(
+          SemanticSwatch.neutral,
+          variant == SurfaceVariant.solid ? SurfaceVariant.soft : variant,
+        )
+        .copyWith(radius: pill);
+    final opacities = _theme.opacities;
+    return SliderStyle(
+      active: active,
+      inactive: inactive,
+      thumb: SurfaceStyle(
+        foreground: active.fill ?? active.foreground,
+        fill: active.foreground,
+        radius: pill,
+      ),
+      ring:
+          surfaces.resolve(swatch, SurfaceVariant.solid).fill ??
+          active.foreground,
+      trackHeight: _theme.space.x1 + _theme.strokes.hairline,
+      thumbSize: _theme.sizes.iconLarge,
+      height: _theme.sizes.control,
+      minWidth: _theme.sizes.contentNarrow / 4,
+      tick: inactive.foreground.withValues(alpha: opacities.tertiary),
+      tickSize: _theme.strokes.focus,
+      hover: inactive.foreground.withValues(alpha: opacities.hover),
+      pressed: inactive.foreground.withValues(alpha: opacities.pressed),
+      disabledOpacity: opacities.disabled,
+    );
+  }
+}
+
+/// Resolves the theme into the [SegmentedControlStyle] a
+/// `SegmentedControl` paints.
+class SegmentedResolver {
+  const SegmentedResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A trough in neutral with one segment's worth of [swatch] sliding
+  /// about inside it — the switch's track-and-thumb idea, widened until
+  /// the thumb has words on it.
+  ///
+  /// The chosen segment's words read against the indicator and everyone
+  /// else's against the track, so the two get their own styles rather than
+  /// one style graded down.
+  SegmentedControlStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.primary,
+    SurfaceVariant variant = SurfaceVariant.solid,
+  ]) {
+    final surfaces = SurfaceResolver(_theme);
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+    final track = surfaces
+        .resolve(SemanticSwatch.neutral, SurfaceVariant.soft)
+        .copyWith(radius: _theme.radii.medium);
+    final indicator = surfaces
+        .resolve(swatch, variant)
+        .copyWith(radius: _theme.radii.small);
+    final body = _theme.typography.body.copyWith(fontWeight: FontWeight.w500);
+    return SegmentedControlStyle(
+      track: track,
+      indicator: indicator,
+      selectedStyle: body.copyWith(color: indicator.foreground),
+      unselectedStyle: body.copyWith(
+        color: text.tint(emphasis: TextEmphasis.secondary, on: palette.text),
+      ),
+      ring:
+          surfaces.resolve(swatch, SurfaceVariant.solid).fill ??
+          indicator.foreground,
+      height: _theme.sizes.control,
+      inset: _theme.strokes.focus,
+      segmentPadding: EdgeInsets.symmetric(horizontal: _theme.space.x3),
+      gap: _theme.space.x2,
+      iconSize: _theme.sizes.icon,
+      // The washes are the track's foreground, so they read on the segments
+      // that have no indicator under them.
+      hover: track.foreground.withValues(alpha: opacities.hover),
+      pressed: track.foreground.withValues(alpha: opacities.pressed),
+      disabledOpacity: opacities.disabled,
     );
   }
 }

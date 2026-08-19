@@ -103,8 +103,33 @@ Gray-zone rulings, decided once:
   `SwitchGroup` it's a radio button in another shape. One constructor: the
   group above decides which, and `value` takes whatever type the choice is
   made of.
-- [ ] `Slider`
-- [ ] `SegmentedControl`
+- [x] `Slider` — a value picked off a line
+  - The switch's dressing rule stretched along a track: the travelled part
+    wears the swatch, the rest a neutral soft fill, and the thumb takes the
+    active track's foreground so it reads against what it sits on.
+  - `divisions` turns the line into stops — the thumb snaps, the arrows
+    step one at a time, and the track shows where they are. Continuous, the
+    arrows move a hundredth of the range.
+  - A tap anywhere on the band takes the thumb there; a slider you can only
+    drag is a slider you have to aim at. `onChangeStart`/`onChangeEnd`
+    bracket a drag for callers that commit once rather than every frame.
+  - Fills the width it's given — how long a slider is says how finely it
+    can be read — and takes `SliderStyle.minWidth` where the slot won't say.
+- [x] `SegmentedControl` — one of a few, all of them on screen
+  - A `RadioGroup` laid side by side in one trough, with an indicator that
+    slides to the answer: the switch's track-and-thumb idea widened until
+    the thumb has words on it.
+  - Segments are equal width, the widest setting it, so the indicator has
+    one distance to travel and the control doesn't reflow as the answer
+    changes. That falls out of `IntrinsicWidth` over a row of flexible
+    children — a row's intrinsic width with all children flexible is the
+    widest child times the count — so nothing is measured by hand.
+  - One focus stop for the whole control, the way a radio group is: the
+    arrows move the answer, Home and End take the ends, disabled segments
+    are stepped over, and the row doesn't wrap — falling off a control you
+    can see all of would only surprise.
+  - A null value is nothing chosen; the indicator fades in place rather
+    than travelling to or from nowhere.
 - [x] `Select` — composes overlays' `Popover`
   - Trigger is a `Button` in all but name; the list is a popover that
     matches the trigger's width, walks with the arrow keys, and follows the
