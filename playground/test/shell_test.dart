@@ -20,7 +20,7 @@ void main() {
   setUp(() {
     final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views
         .first;
-    view.physicalSize = const Size(1600, 1600);
+    view.physicalSize = const Size(1600, 3000);
     view.devicePixelRatio = 1;
     addTearDown(() {
       view.resetPhysicalSize();
@@ -39,6 +39,9 @@ void main() {
       'Foundation',
       'Controls',
       'Text',
+      'Layout',
+      'Navigation',
+      'Feedback',
       'Overlays',
     ]) {
       expect(inList(category), findsOneWidget, reason: category);

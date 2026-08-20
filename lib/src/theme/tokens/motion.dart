@@ -13,6 +13,7 @@ class Motion {
     this.fast = const Duration(milliseconds: 140),
     this.standard = const Duration(milliseconds: 240),
     this.slow = const Duration(milliseconds: 400),
+    this.repeat = const Duration(milliseconds: 1200),
     this.enter = Curves.easeOutCubic,
     this.exit = Curves.easeInCubic,
     this.move = Curves.easeInOutCubic,
@@ -22,6 +23,11 @@ class Motion {
   final Duration fast;
   final Duration standard;
   final Duration slow;
+
+  /// One turn of something that goes round and round: a spinner's rotation,
+  /// a skeleton's shimmer. Long, because a loop that repeats quickly reads
+  /// as urgency, and waiting isn't urgent.
+  final Duration repeat;
 
   /// Arriving: start quick, settle gently.
   final Curve enter;
@@ -38,6 +44,7 @@ class Motion {
     Duration? fast,
     Duration? standard,
     Duration? slow,
+    Duration? repeat,
     Curve? enter,
     Curve? exit,
     Curve? move,
@@ -46,6 +53,7 @@ class Motion {
     fast: fast ?? this.fast,
     standard: standard ?? this.standard,
     slow: slow ?? this.slow,
+    repeat: repeat ?? this.repeat,
     enter: enter ?? this.enter,
     exit: exit ?? this.exit,
     move: move ?? this.move,
@@ -58,11 +66,12 @@ class Motion {
       other.fast == fast &&
       other.standard == standard &&
       other.slow == slow &&
+      other.repeat == repeat &&
       other.enter == enter &&
       other.exit == exit &&
       other.move == move;
 
   @override
   int get hashCode =>
-      Object.hash(instant, fast, standard, slow, enter, exit, move);
+      Object.hash(instant, fast, standard, slow, repeat, enter, exit, move);
 }

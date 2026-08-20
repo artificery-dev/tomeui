@@ -9,6 +9,24 @@ enum PopoverSide { top, bottom, left, right }
 /// trailing. It slides off this to stay on screen.
 enum PopoverAlign { start, center, end }
 
+/// What a [Popover] puts between its panel and the page underneath.
+enum PopoverBarrier {
+  /// Nothing, and the panel takes no pointer either: an annotation over a
+  /// page that carries on as though it weren't there. What a tooltip wants.
+  none,
+
+  /// The page is sealed off. A tap outside dismisses instead of landing,
+  /// and the panel holds the keyboard, which is what puts Escape within
+  /// reach. What a menu or a select wants.
+  blocking,
+
+  /// A tap outside dismisses *and* lands, and the page still answers the
+  /// pointer's hovering. What a menu bar wants: clicking the next word
+  /// should open its menu rather than merely closing this one, and running
+  /// the pointer along the bar should walk the menus.
+  through,
+}
+
 /// The resolved values a [Popover] actually paints, plus the geometry it
 /// places itself by. The choosing happened in [PopoverResolver], at
 /// `theme.widgets.popover`.

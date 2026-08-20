@@ -94,7 +94,7 @@ class _TooltipState extends State<Tooltip> {
             open: _showing,
             side: widget.side,
             align: widget.align,
-            barrier: false,
+            barrier: PopoverBarrier.none,
             style: style.popover,
             anchor: widget.child,
             content: (context, _) => DefaultTextStyle.merge(

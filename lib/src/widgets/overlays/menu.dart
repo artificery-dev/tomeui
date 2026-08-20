@@ -94,6 +94,7 @@ class Menu extends StatelessWidget {
     this.side = PopoverSide.bottom,
     this.align = PopoverAlign.start,
     this.anchorRect,
+    this.barrier = PopoverBarrier.blocking,
     this.style,
     super.key,
   });
@@ -110,6 +111,11 @@ class Menu extends StatelessWidget {
 
   final PopoverSide side;
   final PopoverAlign align;
+
+  /// What goes between the panel and the page. A [MenuBar] passes
+  /// [PopoverBarrier.through], so that clicking the next word on the bar
+  /// opens its menu rather than only closing this one.
+  final PopoverBarrier barrier;
 
   /// Hang off a point rather than off [anchor] — see [Popover.anchorRect].
   /// This is what [ContextMenu] passes.
@@ -133,6 +139,7 @@ class Menu extends StatelessWidget {
       side: side,
       align: align,
       anchorRect: anchorRect,
+      barrier: barrier,
       onDismiss: onDismiss,
       // The list walks itself with the arrows, so it holds the keyboard;
       // Escape still carries up to the popover.

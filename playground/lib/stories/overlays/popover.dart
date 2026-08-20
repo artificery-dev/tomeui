@@ -20,7 +20,12 @@ Story _popover() {
     options: PopoverAlign.values,
     describe: (option) => option.name,
   );
-  final barrier = BoolKnob('Barrier', true);
+  final barrier = ListKnob<PopoverBarrier>(
+    'Barrier',
+    PopoverBarrier.blocking,
+    options: PopoverBarrier.values,
+    describe: (option) => option.name,
+  );
 
   return Story(
     name: 'Popover',

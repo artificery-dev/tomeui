@@ -21,6 +21,42 @@ class Widgets {
 
   ScaffoldResolver get scaffold => ScaffoldResolver(_theme);
 
+  CardResolver get card => CardResolver(_theme);
+
+  DividerResolver get divider => DividerResolver(_theme);
+
+  TitleBarResolver get titleBar => TitleBarResolver(_theme);
+
+  TabsResolver get tabs => TabsResolver(_theme);
+
+  DockResolver get dock => DockResolver(_theme);
+
+  BreadcrumbsResolver get breadcrumbs => BreadcrumbsResolver(_theme);
+
+  NavListResolver get navList => NavListResolver(_theme);
+
+  MenuBarResolver get menuBar => MenuBarResolver(_theme);
+
+  CommandPaletteResolver get commandPalette => CommandPaletteResolver(_theme);
+
+  DialogResolver get dialog => DialogResolver(_theme);
+
+  SheetResolver get sheet => SheetResolver(_theme);
+
+  ProgressResolver get progress => ProgressResolver(_theme);
+
+  ChipResolver get chip => ChipResolver(_theme);
+
+  BadgeResolver get badge => BadgeResolver(_theme);
+
+  CalloutResolver get callout => CalloutResolver(_theme);
+
+  EmptyStateResolver get emptyState => EmptyStateResolver(_theme);
+
+  SkeletonResolver get skeleton => SkeletonResolver(_theme);
+
+  ToastResolver get toast => ToastResolver(_theme);
+
   ButtonResolver get button => ButtonResolver(_theme);
 
   CheckboxResolver get checkbox => CheckboxResolver(_theme);
@@ -49,6 +85,655 @@ class Widgets {
   LinkResolver get link => LinkResolver(_theme);
 
   CodeTextResolver get code => CodeTextResolver(_theme);
+}
+
+/// Resolves the theme into the [ProgressStyle] a `Progress` draws.
+class ProgressResolver {
+  const ProgressResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The swatch at full voice on a groove of its own quietest tint: the
+  /// same pairing a slider's travelled and untravelled track use, because
+  /// they're the same picture — a length, and how much of it has happened.
+  ProgressStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+    final palette = _theme.palette;
+    final surface = SurfaceResolver(_theme);
+    final voice =
+        surface.resolve(swatch, SurfaceVariant.solid).fill ?? palette.text;
+
+    return ProgressStyle(
+      track:
+          surface.resolve(swatch, SurfaceVariant.subtle).fill ??
+          palette.divider,
+      indicator: voice,
+      thickness: _theme.space.x1,
+      spinnerSize: _theme.sizes.icon,
+      spinnerThickness: _theme.strokes.focus,
+      radius: _theme.radii.full,
+      minWidth: _theme.sizes.contentNarrow / 4,
+      period: _theme.motion.repeat,
+    );
+  }
+}
+
+/// Resolves the theme into the [ChipStyle] a `StatusChip` paints.
+class ChipResolver {
+  const ChipResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A chip says what state a thing is in, so it wears the meaning softly
+  /// — a row of solid chips would shout every status at once.
+  ChipStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.neutral,
+    SurfaceVariant variant = SurfaceVariant.soft,
+  ]) {
+    final surface = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, variant).copyWith(radius: _theme.radii.full);
+
+    return ChipStyle(
+      surface: surface,
+      textStyle: TextResolver(
+        _theme,
+      ).resolve(TextRole.label, on: surface.foreground),
+      height: _theme.sizes.controlCompact * 0.75,
+      padding: EdgeInsets.symmetric(horizontal: _theme.space.x2),
+      gap: _theme.space.x1,
+      iconSize: _theme.sizes.iconSmall * 0.85,
+      dotSize: _theme.space.x2 * 0.75,
+    );
+  }
+}
+
+/// Resolves the theme into the [BadgeStyle] a `Badge` paints.
+class BadgeResolver {
+  const BadgeResolver(this._theme);
+
+  final Theme _theme;
+
+  /// Solid, unlike a chip: a badge is a small thing competing with whatever
+  /// it rides on, and a tint would lose.
+  BadgeStyle resolve([SemanticSwatch swatch = SemanticSwatch.error]) {
+    final surface = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, SurfaceVariant.solid).copyWith(radius: _theme.radii.full);
+
+    return BadgeStyle(
+      surface: surface,
+      textStyle: _theme.typography.caption.copyWith(
+        color: surface.foreground,
+        fontWeight: FontWeight.w600,
+        height: 1,
+      ),
+      size: _theme.space.x4,
+      dotSize: _theme.space.x2,
+      padding: EdgeInsets.symmetric(horizontal: _theme.space.x1),
+      offset: Offset(_theme.space.x1, -_theme.space.x1),
+    );
+  }
+}
+
+/// Resolves the theme into the [CalloutStyle] a `Callout` paints.
+class CalloutResolver {
+  const CalloutResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A tinted block in the swatch's own voice — the page telling you
+  /// something, in the colour of what kind of something it is.
+  CalloutStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.info,
+    SurfaceVariant variant = SurfaceVariant.soft,
+  ]) {
+    final surface = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, variant).copyWith(radius: _theme.radii.medium);
+    final text = TextResolver(_theme);
+
+    return CalloutStyle(
+      surface: surface,
+      titleStyle: text.resolve(TextRole.label, on: surface.foreground),
+      messageStyle: text.resolve(TextRole.body, on: surface.foreground),
+      padding: EdgeInsets.all(_theme.space.x4),
+      gap: _theme.space.x3,
+      textGap: _theme.space.x1,
+      iconSize: _theme.sizes.icon,
+    );
+  }
+}
+
+/// Resolves the theme into the [EmptyStateStyle] an `EmptyState` paints.
+class EmptyStateResolver {
+  const EmptyStateResolver(this._theme);
+
+  final Theme _theme;
+
+  /// Quiet all through: nothing has gone wrong, there is simply nothing
+  /// here yet, and the loudest thing on screen should be whatever you can
+  /// do about it.
+  EmptyStateStyle resolve() {
+    final palette = _theme.palette;
+    final text = TextResolver(_theme);
+
+    return EmptyStateStyle(
+      titleStyle: text.resolve(TextRole.title, on: palette.text),
+      messageStyle: text.resolve(
+        TextRole.body,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      glyph: palette.text.withValues(alpha: _theme.opacities.tertiary),
+      iconSize: _theme.sizes.iconExtraLarge,
+      gap: _theme.space.x3,
+      actionGap: _theme.space.x6,
+      maxWidth: _theme.sizes.contentNarrow / 2,
+      padding: EdgeInsets.all(_theme.space.x6),
+    );
+  }
+}
+
+/// Resolves the theme into the [SkeletonStyle] a `Skeleton` paints.
+class SkeletonResolver {
+  const SkeletonResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A neutral shape with a light passing over it: the fill is the quietest
+  /// surface the palette has, and the sheen is the page's own foreground at
+  /// the faintest opacity it uses — bright enough to travel, too faint to
+  /// read as content.
+  SkeletonStyle resolve() {
+    final palette = _theme.palette;
+
+    return SkeletonStyle(
+      fill:
+          SurfaceResolver(
+            _theme,
+          ).resolve(SemanticSwatch.neutral, SurfaceVariant.subtle).fill ??
+          palette.divider,
+      sheen: palette.text.withValues(alpha: _theme.opacities.hover),
+      radius: _theme.radii.small,
+      lineHeight: _theme.space.x3,
+      lineGap: _theme.space.x2,
+      lastLineFraction: 0.6,
+      period: _theme.motion.repeat,
+    );
+  }
+}
+
+/// Resolves the theme into the [ToastStyle] a `Toast` paints.
+class ToastResolver {
+  const ToastResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The dialog's surface at toast size, under the same high shadow: a
+  /// toast floats over everything, and the swatch it's given colours its
+  /// glyph rather than the whole card — a wall of red is an emergency, and
+  /// most toasts aren't.
+  ToastStyle resolve() {
+    final palette = _theme.palette;
+
+    return ToastStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        border: palette.divider,
+        radius: _theme.radii.medium,
+      ),
+      messageStyle: TextResolver(
+        _theme,
+      ).resolve(TextRole.body, on: palette.text),
+      padding: EdgeInsets.all(_theme.space.x3),
+      gap: _theme.space.x3,
+      iconSize: _theme.sizes.icon,
+      width: _theme.sizes.contentNarrow * 0.5625,
+      stackGap: _theme.space.x2,
+      margin: EdgeInsets.all(_theme.space.x4),
+      position: ToastPosition.bottomTrailing,
+      life: const Duration(seconds: 4),
+      maxVisible: 3,
+      shadow: _theme.shadows.high,
+    );
+  }
+}
+
+/// Resolves the theme into the [DialogStyle] a `Dialog` paints.
+class DialogResolver {
+  const DialogResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A dialog is the surface a card and a menu share, lifted to the top of
+  /// the stack: the palette's own [Palette.surface] under the highest
+  /// shadow, over a scrim that darkens whatever it interrupted.
+  DialogStyle resolve() {
+    final palette = _theme.palette;
+    final text = TextResolver(_theme);
+
+    return DialogStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        radius: _theme.radii.large,
+      ),
+      titleStyle: text.resolve(TextRole.title, on: palette.text),
+      messageStyle: text.resolve(
+        TextRole.body,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      width: _theme.sizes.dialog,
+      padding: EdgeInsets.all(_theme.space.x6),
+      gap: _theme.space.x4,
+      actionGap: _theme.space.x2,
+      margin: _theme.space.x6,
+      // Darkens in both brightnesses: a scrim is a shadow over the page,
+      // and a pale one in dark mode would be a light leak instead.
+      scrim: palette.neutral.s950.withValues(alpha: _theme.opacities.scrim),
+      shadow: _theme.shadows.high,
+    );
+  }
+}
+
+/// Resolves the theme into the [SheetStyle] a `Sheet` paints.
+class SheetResolver {
+  const SheetResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The dialog's surface, come in from an edge: the same fill and shadow,
+  /// with the corners rounded only where the sheet isn't against the
+  /// screen. A side sheet is as wide as a sidebar, since that's what it
+  /// stands in for when there's no room to dock one.
+  SheetStyle resolve() {
+    final palette = _theme.palette;
+    final dialog = DialogResolver(_theme).resolve();
+
+    return SheetStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        radius: _theme.radii.none,
+      ),
+      titleStyle: dialog.titleStyle,
+      padding: EdgeInsets.all(_theme.space.x6),
+      gap: _theme.space.x4,
+      radius: _theme.radii.extraLarge.topLeft,
+      size: _theme.sizes.dialog * 0.8,
+      maxFraction: 0.9,
+      grabber: palette.divider,
+      grabberSize: Size(_theme.space.x8, _theme.space.x1),
+      scrim: dialog.scrim,
+      shadow: dialog.shadow,
+    );
+  }
+}
+
+/// Resolves the theme into the [NavListStyle] a `NavList` paints.
+class NavListResolver {
+  const NavListResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A sidebar list is quiet until it isn't: rows are secondary text on
+  /// nothing at all, and the row you're on wears [swatch] softly — the same
+  /// treatment a `Dock`'s indicator pill uses, so the rail and the sidebar
+  /// agree about what "here" looks like.
+  NavListStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+    final selected = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, SurfaceVariant.soft).copyWith(radius: _theme.radii.small);
+
+    return NavListStyle(
+      selected: selected,
+      selectedStyle: text.resolve(TextRole.label, on: selected.foreground),
+      textStyle: text.resolve(
+        TextRole.body,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      headingStyle: text.resolve(
+        TextRole.caption,
+        emphasis: TextEmphasis.tertiary,
+        on: palette.text,
+      ),
+      separator: palette.divider,
+      rowHeight: _theme.sizes.controlCompact,
+      padding: EdgeInsets.symmetric(horizontal: _theme.space.x2),
+      gap: _theme.space.x2,
+      indent: _theme.space.x5,
+      iconSize: _theme.sizes.iconSmall,
+      radius: _theme.radii.small,
+      headingPadding: EdgeInsets.fromLTRB(
+        _theme.space.x2,
+        _theme.space.x3,
+        _theme.space.x2,
+        _theme.space.x1,
+      ),
+      ring:
+          SurfaceResolver(_theme).resolve(swatch, SurfaceVariant.solid).fill ??
+          palette.text,
+      highlight: palette.text.withValues(alpha: opacities.hover),
+      hover: palette.text.withValues(alpha: opacities.hover),
+      pressed: palette.text.withValues(alpha: opacities.pressed),
+      disabledOpacity: opacities.disabled,
+    );
+  }
+}
+
+/// Resolves the theme into the [MenuBarStyle] a `MenuBar` paints.
+class MenuBarResolver {
+  const MenuBarResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The bar is words on the chrome it sits in — no fill of its own, since
+  /// it lives in a title bar that already has one — and a trigger holding
+  /// an open panel stays lit while you read it.
+  MenuBarStyle resolve() {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+
+    return MenuBarStyle(
+      menu: MenuResolver(_theme).resolve(),
+      textStyle: TextResolver(_theme).resolve(TextRole.body, on: palette.text),
+      height: _theme.sizes.controlCompact,
+      padding: EdgeInsets.symmetric(
+        horizontal: _theme.space.x2,
+        vertical: _theme.space.x1,
+      ),
+      gap: _theme.space.x1,
+      radius: _theme.radii.small,
+      ring:
+          SurfaceResolver(
+            _theme,
+          ).resolve(SemanticSwatch.primary, SurfaceVariant.solid).fill ??
+          palette.text,
+      open: palette.text.withValues(alpha: opacities.pressed),
+      hover: palette.text.withValues(alpha: opacities.hover),
+      pressed: palette.text.withValues(alpha: opacities.pressed),
+    );
+  }
+}
+
+/// Resolves the theme into the [CommandPaletteStyle] a `CommandPalette`
+/// paints.
+class CommandPaletteResolver {
+  const CommandPaletteResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The palette is a menu with a field on top: the panel is the surface
+  /// menus and popovers share, the rows are menu rows, and the field is a
+  /// text field with its box taken off — the panel is the box.
+  CommandPaletteStyle resolve() {
+    final palette = _theme.palette;
+    final field = TextFieldResolver(_theme).resolve();
+
+    return CommandPaletteStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        radius: _theme.radii.large,
+      ),
+      field: field.copyWith(
+        surface: SurfaceStyle(
+          foreground: palette.text,
+          radius: _theme.radii.none,
+        ),
+      ),
+      menu: MenuResolver(_theme).resolve(),
+      emptyStyle: TextResolver(_theme).resolve(
+        TextRole.body,
+        emphasis: TextEmphasis.tertiary,
+        on: palette.text,
+      ),
+      hintStyle: TextResolver(_theme).resolve(
+        TextRole.caption,
+        emphasis: TextEmphasis.tertiary,
+        on: palette.text,
+      ),
+      width: _theme.sizes.contentNarrow,
+      maxHeight: 400,
+      padding: EdgeInsets.all(_theme.space.x2),
+      topInset: _theme.space.x16 + _theme.space.x8,
+      // Darkens in both brightnesses: a scrim is a shadow over the page.
+      scrim: palette.neutral.s950.withValues(alpha: _theme.opacities.scrim),
+      shadow: _theme.shadows.high,
+    );
+  }
+}
+
+/// Resolves the theme into the [TitleBarStyle] a `TitleBar` paints.
+class TitleBarResolver {
+  const TitleBarResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A title bar is the scaffold's chrome by another name: the same fill
+  /// the bars and sidebars wear, so a bar built by hand and a bar the
+  /// shell drew are the one surface.
+  ///
+  /// The window buttons take a wash of the foreground, except closing —
+  /// which answers in [SemanticSwatch.error], the way every desktop draws
+  /// the one button that throws work away.
+  TitleBarStyle resolve() {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+    final close = SurfaceResolver(
+      _theme,
+    ).resolve(SemanticSwatch.error, SurfaceVariant.solid).fill;
+
+    return TitleBarStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        radius: _theme.radii.none,
+      ),
+      height: _theme.sizes.control + _theme.space.x2,
+      padding: EdgeInsets.symmetric(horizontal: _theme.space.x2),
+      gap: _theme.space.x2,
+      titleStyle: text.resolve(TextRole.label, on: palette.text),
+      subtitleStyle: text.resolve(
+        TextRole.caption,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      controlSize: _theme.sizes.controlCompact,
+      controlIconSize: _theme.sizes.iconSmall,
+      controlRing:
+          SurfaceResolver(
+            _theme,
+          ).resolve(SemanticSwatch.primary, SurfaceVariant.solid).fill ??
+          palette.text,
+      controlHover: palette.text.withValues(alpha: opacities.hover),
+      controlPressed: palette.text.withValues(alpha: opacities.pressed),
+      closeHover: close,
+      closePressed: close,
+    );
+  }
+}
+
+/// Resolves the theme into the [TabsStyle] a `Tabs` strip paints.
+class TabsResolver {
+  const TabsResolver(this._theme);
+
+  final Theme _theme;
+
+  /// Tabs are text first: the chosen one is the page's own voice with a
+  /// line under it in [swatch], and the rest step back to secondary rather
+  /// than into a box of their own. The strip sits on the palette's divider
+  /// so the unchosen tabs read as being *behind* the page the chosen one
+  /// opens onto.
+  TabsStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+    final voice =
+        SurfaceResolver(_theme).resolve(swatch, SurfaceVariant.solid).fill ??
+        palette.text;
+
+    return TabsStyle(
+      selectedStyle: text.resolve(TextRole.label, on: palette.text),
+      unselectedStyle: text.resolve(
+        TextRole.label,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      indicator: voice,
+      indicatorThickness: _theme.strokes.focus,
+      rule: palette.divider,
+      ruleThickness: _theme.strokes.hairline,
+      height: _theme.sizes.control,
+      padding: EdgeInsets.symmetric(horizontal: _theme.space.x3),
+      gap: _theme.space.x2,
+      iconSize: _theme.sizes.iconSmall,
+      radius: BorderRadius.only(
+        topLeft: _theme.radii.small.topLeft,
+        topRight: _theme.radii.small.topRight,
+      ),
+      ring: voice,
+      hover: palette.text.withValues(alpha: opacities.hover),
+      pressed: palette.text.withValues(alpha: opacities.pressed),
+      disabledOpacity: opacities.disabled,
+    );
+  }
+}
+
+/// Resolves the theme into the [DockStyle] a `Dock` paints.
+class DockResolver {
+  const DockResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The dock is chrome — the scaffold's own fill — and the chosen
+  /// destination wears the swatch as a soft pill behind its icon, with the
+  /// label beneath in the page's full voice. That way the answer reads at a
+  /// glance without the dock turning into a row of buttons.
+  DockStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+    final indicator = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, SurfaceVariant.soft).copyWith(radius: _theme.radii.full);
+
+    return DockStyle(
+      surface: SurfaceStyle(
+        foreground: palette.text,
+        fill: palette.surface,
+        radius: _theme.radii.none,
+      ),
+      indicator: indicator,
+      selectedStyle: text.resolve(TextRole.caption, on: palette.text),
+      unselectedStyle: text.resolve(
+        TextRole.caption,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      itemExtent: 80,
+      thickness: _theme.sizes.touchTarget + _theme.space.x4,
+      padding: EdgeInsets.all(_theme.space.x2),
+      gap: _theme.space.x1,
+      iconSize: _theme.sizes.icon,
+      indicatorPadding: EdgeInsets.symmetric(
+        horizontal: _theme.space.x4,
+        vertical: _theme.space.x1,
+      ),
+      ring:
+          SurfaceResolver(_theme).resolve(swatch, SurfaceVariant.solid).fill ??
+          palette.text,
+      hover: palette.text.withValues(alpha: opacities.hover),
+      pressed: palette.text.withValues(alpha: opacities.pressed),
+      disabledOpacity: opacities.disabled,
+    );
+  }
+}
+
+/// Resolves the theme into the [BreadcrumbsStyle] a `Breadcrumbs` trail
+/// paints.
+class BreadcrumbsResolver {
+  const BreadcrumbsResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A trail is small print: the way back is secondary, where you are is
+  /// the full voice, and the separators are the palette's divider — the
+  /// same line that separates anything else.
+  BreadcrumbsStyle resolve() {
+    final palette = _theme.palette;
+    final opacities = _theme.opacities;
+    final text = TextResolver(_theme);
+
+    return BreadcrumbsStyle(
+      textStyle: text.resolve(
+        TextRole.caption,
+        emphasis: TextEmphasis.secondary,
+        on: palette.text,
+      ),
+      currentStyle: text.resolve(TextRole.caption, on: palette.text),
+      separator: palette.divider,
+      separatorSize: _theme.sizes.iconSmall,
+      gap: _theme.space.x1,
+      iconSize: _theme.sizes.iconSmall,
+      padding: EdgeInsets.symmetric(
+        horizontal: _theme.space.x2,
+        vertical: _theme.space.x1,
+      ),
+      iconGap: _theme.space.x1,
+      radius: _theme.radii.small,
+      ring:
+          SurfaceResolver(
+            _theme,
+          ).resolve(SemanticSwatch.primary, SurfaceVariant.solid).fill ??
+          palette.text,
+      hover: palette.text.withValues(alpha: opacities.hover),
+      pressed: palette.text.withValues(alpha: opacities.pressed),
+    );
+  }
+}
+
+/// Resolves the theme into the [CardStyle] a `Card` paints.
+class CardResolver {
+  const CardResolver(this._theme);
+
+  final Theme _theme;
+
+  /// A card is a [Surface] that holds content rather than acting: it wears
+  /// the swatch quietly, and its slots keep [Space.x4] around themselves —
+  /// the same step the padding inside a panel uses, so a card in a column
+  /// of cards breathes evenly.
+  CardStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.neutral,
+    SurfaceVariant variant = SurfaceVariant.outline,
+  ]) => CardStyle(
+    surface: SurfaceResolver(_theme).resolve(swatch, variant).copyWith(
+      radius: _theme.radii.large,
+    ),
+    spacing: _theme.space.x4,
+  );
+}
+
+/// Resolves the theme into the [DividerStyle] a `Divider` draws.
+class DividerResolver {
+  const DividerResolver(this._theme);
+
+  final Theme _theme;
+
+  /// The palette's own [Palette.divider] at a [Strokes.hairline] — the same
+  /// line the scaffold draws between its regions, so a rule inside a page
+  /// and a rule around it are the one weight.
+  DividerStyle resolve() => DividerStyle(
+    color: _theme.palette.divider,
+    thickness: _theme.strokes.hairline,
+  );
 }
 
 /// Resolves the theme into the [ScaffoldStyle] a `Scaffold` paints.

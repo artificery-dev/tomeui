@@ -57,18 +57,33 @@ class Button extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     final style = this.style ?? theme.widgets.button.resolve(swatch, variant);
-    final surface = style.surface;
     final enabled = onPressed != null;
+
+    // A button in a run shares its edges: the corners facing a neighbour go
+    // square, and the rest of the shape is its own.
+    final slot = ButtonGroupSlot.maybeOf(context);
+    final surface = slot == null
+        ? style.surface
+        : style.surface.copyWith(
+            radius: slot.shape(
+              style.surface.radius,
+              Directionality.maybeOf(context) ?? TextDirection.ltr,
+            ),
+          );
 
     final content = DefaultTextStyle.merge(
       style: style.textStyle,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (leading != null) ...[leading!, SizedBox(width: style.gap)],
-          center,
-          if (trailing != null) ...[SizedBox(width: style.gap), trailing!],
-        ],
+      // Whatever the slot said has been said: a button nested in this one's
+      // slots belongs to no group.
+      child: ButtonGroupSlot.solo(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leading != null) ...[leading!, SizedBox(width: style.gap)],
+            center,
+            if (trailing != null) ...[SizedBox(width: style.gap), trailing!],
+          ],
+        ),
       ),
     );
 

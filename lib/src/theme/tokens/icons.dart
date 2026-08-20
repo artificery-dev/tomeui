@@ -31,6 +31,10 @@ class Icons {
     this.more = LucideIcons.ellipsis,
     this.moreVertical = LucideIcons.ellipsisVertical,
     this.externalLink = LucideIcons.externalLink,
+    // Window controls, for a [TitleBar] that draws its own.
+    this.windowMinimize = LucideIcons.minus,
+    this.windowMaximize = LucideIcons.square,
+    this.windowRestore = LucideIcons.minimize2,
     // Actions.
     this.add = LucideIcons.plus,
     this.remove = LucideIcons.minus,
@@ -106,6 +110,14 @@ class Icons {
   /// Leaves the app — warn the reader before the tap.
   final IconData externalLink;
 
+  /// The window buttons a desktop title bar draws itself. Closing is
+  /// [close] — a window is shut with the same glyph as everything else.
+  final IconData windowMinimize;
+  final IconData windowMaximize;
+
+  /// Back down from maximised.
+  final IconData windowRestore;
+
   final IconData add;
   final IconData remove;
   final IconData edit;
@@ -175,6 +187,9 @@ class Icons {
     IconData? more,
     IconData? moreVertical,
     IconData? externalLink,
+    IconData? windowMinimize,
+    IconData? windowMaximize,
+    IconData? windowRestore,
     IconData? add,
     IconData? remove,
     IconData? edit,
@@ -231,6 +246,9 @@ class Icons {
     more: more ?? this.more,
     moreVertical: moreVertical ?? this.moreVertical,
     externalLink: externalLink ?? this.externalLink,
+    windowMinimize: windowMinimize ?? this.windowMinimize,
+    windowMaximize: windowMaximize ?? this.windowMaximize,
+    windowRestore: windowRestore ?? this.windowRestore,
     add: add ?? this.add,
     remove: remove ?? this.remove,
     edit: edit ?? this.edit,
