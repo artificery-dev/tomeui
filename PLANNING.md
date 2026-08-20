@@ -17,12 +17,25 @@ Gray-zone rulings, decided once:
   ours lands); `Banner` stays Flutter's — ours is `Callout`. Flutter's
   `RadioGroup` is the registry `RawRadio` talks to; ours is a plain
   inherited value, and the two have nothing to say to each other.
+- Name collisions with a dependency are settled the same way: our
+  `TitleBarStyle` is the style `TitleBar` paints, and `window_manager`'s
+  same-named enum (which native bar to draw) is hidden at our import. An
+  app that wants the plugin's hides one of the two.
 - Words the toolkit says on its own account — the selection menu's verbs, a
   copy affordance's confirmation — are tokens like any other: they live on
   the theme as `Labels`, beside `Icons`. Defaults are English; an app with
   localizations builds a theme per locale rather than passing strings down
   through every widget. Widget-level overrides (`CodeText.copyLabel`) stay
   as escape hatches, null meaning "ask the theme".
+- What a popover puts between its panel and the page is a `PopoverBarrier`,
+  not a bool: `none` for an annotation nobody can click (a tooltip),
+  `blocking` for a page sealed off (a menu, a select), `through` for a press
+  that dismisses *and* lands (a menu bar, where clicking the next word
+  should open it rather than only closing this one).
+- A list's length is not a constant expression, so `assert(items.length > 0)`
+  in a constructor quietly makes `const Widget(...)` impossible. Those
+  asserts live in `build` instead — `SegmentedControl` still has the old
+  form, and should move when it's next touched.
 - Styles are the theme→widget bridge: a style class (e.g. `ButtonStyle`)
   holds the resolved values a widget actually paints, and the built-in
   variant + swatch setup is just a mapping that populates those styles —
@@ -182,43 +195,208 @@ Gray-zone rulings, decided once:
 
 ## layout — arranging what's already built
 
-- [ ] `Card`
+- [x] `Card`
   - Cards have A few slots: Header, Content, Footer in a vertical stack, then bookending that stack is Leading and Trailing. Each slot is spaced apart from the others using the Card's spacing property (the same term Row and Column use, for unity). Each slot takes one nullable spacing override: null inherits the card's spacing, a value is its own — including zero for full bleed header/footer/leading/trailing images/videos, etc.
-- [ ] `Divider` — including the fading treatment
-- [ ] `Spacing` — spacing tokens as widgets (Flutter's own term: the
+  - Spacing *is* the padding: a slot keeps its step between itself and its
+    neighbours and between itself and the card's edge, because those are
+    one measurement seen from either side. Where two slots meet the roomier
+    of the pair wins, so a full-bleed header runs to the corners without
+    dragging the content up with it.
+  - The contents are clipped to the corners, tightened by the hairline the
+    border takes — a slot that runs to the edge has to be cut by it.
+- [x] `Divider` — including the fading treatment
+  - `fade` swaps the flat line for a gradient that reaches full strength at
+    the middle and dissolves at both ends: a separator that divides without
+    drawing a box.
+- [x] `Spacing` — spacing tokens as widgets (Flutter's own term: the
       `spacing` parameter on Row/Column). Earns its keep in ListView, Stack,
       and slivers, where no spacing parameter exists.
-- [ ] `Inset` — the padding widget that only speaks the Space scale, so
+  - Measures along whichever axis it lands on — an enclosing flex's
+    direction, or failing that the way the constraints leave room to grow,
+    which is what a list hands its children — and takes nothing across it,
+    so a gap never widens what it sits in. `axis` says so outright.
+- [x] `Inset` — the padding widget that only speaks the Space scale, so
       off-scale padding is unrepresentable rather than merely discouraged:
-      `Inset.all(Space.x4)` vs `Padding(padding: EdgeInsets.all(16))`.
-- [ ] `BreakpointBuilder` — responsive switching
-- [ ] `ContainerSizeBuilder` - Respond to how much space you have available.
-- [ ] `ButtonGroup` — a row of buttons that reads as one control
+      `Inset.all(SpaceStep.x4)` vs `Padding(padding: EdgeInsets.all(16))`.
+  - The scale as an enum is `SpaceStep`, since `Space` is the token class
+    it resolves against. Directional: `start`/`end`, not left/right.
+- [x] `BreakpointBuilder` — responsive switching
+  - `Breakpoint` is the band — compact, medium, expanded, large — and the
+    theme's three thresholds are the floors of the three above compact.
+    `atLeast` compares them, since responsive code asks "roomier than", not
+    "equal to".
+- [x] `ContainerSizeBuilder` - Respond to how much space you have available.
+  - The same `Breakpoint` names, asked of the slot rather than the window:
+    a card that has to work in a sidebar and in a page body can't ask a
+    media query. An unbounded slot reports the roomiest band — nothing is
+    squeezing it, so there's nothing to fold up for.
+- [x] `ButtonGroup` — a row of buttons that reads as one control
   - Allows making buttons where the exterior corners are rounded but interior corners are square.
+  - The group tells each slot which corners are the run's outside through
+    `ButtonGroupSlot`, the way `SwitchGroup` tells a switch what it is; the
+    button reshapes itself and passes a `solo` slot down, so a button
+    nested inside one isn't shaped by a group it doesn't belong to.
+  - The run overlaps its children by a hairline, so where two outlined
+    buttons meet the edge is drawn once rather than twice.
 
 ## navigation — getting elsewhere, visibly (machinery stays in `routing/`)
 
-- [ ] `TitleBar` — the AppBar stand-in, also acts as the window control container on desktop. (using package:window_manager — dependency added)
-- [ ] `Tabs` - Scrollable in-page tabs: switching views, not places.
-- [ ] `Dock` — app navigation docked to an edge, one widget for both axes:
+- [x] `TitleBar` — the AppBar stand-in, also acts as the window control container on desktop. (using package:window_manager — dependency added)
+  - Presentational first: leading slots, title over subtitle, actions. The
+    window is the *second* job, and it only wakes on a desktop — dragging
+    moves the window, a double-click maximises it, and `windowControls`
+    draws the buttons. Windows and Linux get them by default; macOS doesn't,
+    since the system draws its own over a hidden native bar.
+  - `WindowControls` is public in its own right, for a bar built by hand.
+    Every window call is guarded: no window to talk to is a bar that simply
+    doesn't move, not an exception — which is also what makes it testable.
+  - A centred title is centred on the *bar*, over the slots rather than
+    between them, so it doesn't shift when a toggle appears beside it.
+- [x] `Tabs` - Scrollable in-page tabs: switching views, not places.
+  - Text first: the chosen tab is the page's full voice with a line under
+    it, the rest step back to secondary. No box, no fill — a tab is a word.
+  - The line is drawn in place rather than slid. Tabs are as wide as their
+    words, so there is no single distance for an indicator to travel; the
+    trick `SegmentedControl` plays with equal widths doesn't transfer.
+  - One focus stop, like a radio group: arrows move the choice, Home and
+    End take the ends, disabled tabs are stepped over. The strip scrolls
+    sideways rather than squeezing, and the chosen tab is brought into view.
+- [x] `Dock` — app navigation docked to an edge, one widget for both axes:
       vertical it's the rail, horizontal it's the phone's bottom bar. No
       overflow scrolling; overflow goes to a popover menu.
-- [ ] `Breadcrumbs` - Allows customizing the sperator, and allows each item to have an optional icon.
+  - Counting, not measuring: `DockStyle.itemExtent` says what one place
+    takes, so the number that fit falls out of the run's length. What's
+    left goes behind *More*, which takes a place of its own and wears the
+    chosen state when the answer is one of the ones it's holding.
+  - Along a bar the places share the width evenly; down a rail they take a
+    place apiece and the rail's full width across.
+- [x] `Breadcrumbs` - Allows customizing the sperator, and allows each item to have an optional icon.
+  - The last crumb is where you are: full voice, no press, whatever it was
+    given. The rest are quiet and light up under the pointer.
+  - Crumbs shrink before the trail overflows, so a long name ellipsizes
+    instead of pushing the trail off the end.
+- [x] `NavList` — the sidebar's list of places, which `Scaffold`'s leading
+      slot was always waiting for
+  - `NavEntry` is the shared vocabulary: `NavDestination` (also what a
+    `Dock` takes, so a rail and a sidebar are one list shown two ways),
+    `NavGroup` that folds, `NavHeading`, `NavSeparator`.
+  - A group holding where you are opens whatever it was told to do: a
+    selected row nobody can see is worse than an open group nobody asked
+    for.
+  - Walked with `ListWalk`, but not autofocused — a sidebar that took the
+    keyboard as the page opened would be a nuisance.
+- [x] `MenuBar` — the desktop application menu bar, on `Menu`
+  - Needs the page to stay reachable while a panel is down, which is what
+    `PopoverBarrier.through` was added for.
+  - Once a menu is open the bar is awake: the pointer switches menus, the
+    arrows walk them, Escape puts it to sleep. It knows a press is its own
+    because the pointer hovered its way there — which makes it desktop
+    furniture, and says so in its doc.
+  - Left/Right are heard by a keyboard handler rather than a `Shortcuts`
+    widget: while a panel is open the keyboard is in the overlay, which is
+    nowhere near the bar's own subtree.
+- [x] `CommandPalette` — everything the app can do, one keystroke away
+  - A field over a walked list, on `ListWalk` and the menu's own row
+    dressing. What starts with the query leads, what merely contains it
+    follows, and keywords find what a name doesn't.
+  - `showCommandPalette` puts it over the page on a `CommandPaletteRoute`
+    and returns when it closes. The command runs *after* the palette is
+    gone, so what it opens isn't opened behind it.
+  - It began on a hand-inserted overlay entry, which cost it a focus scope
+    (a scope wrapped over an autofocusing field, inside an entry mounting
+    that same frame, catches the overlay mid-mount) and made Escape a
+    keyboard handler. A `PopupRoute` gives both away for nothing, and it
+    moved onto one when `Dialog` proved the shape.
+- [x] `BackButton` — the way back, when there is one
+  - Draws nothing at all when the nearest navigator has nothing to pop: a
+    back button on the first page is a button that lies. Given an
+    `onPressed` of its own it shows regardless — the caller has said what
+    back means.
+  - No forward twin: a `Navigator` keeps what you came from, not where you
+    were going.
+- [x] `Pagination` — pages of something long
+  - Lives here rather than in a data-display category that doesn't exist
+    yet; it's a way to somewhere, and it's built out of `Button`s, so it
+    brought no style of its own.
+  - The ends are always shown and the middle elides, so the run doesn't
+    change width as you walk it. A gap of exactly one page is drawn as that
+    page — an ellipsis hiding one number is wider than the number.
 
 ## feedback — the system talks back
 
-- [ ] `Progress` — bar and spinner
-- [ ] `StatusChip`
-- [ ] `Badge`
-- [ ] `Toast`
-- [ ] `Callout`
-- [ ] `EmptyState`
-- [ ] `Skeleton` — loading placeholder
+- [x] `Progress` — bar and spinner
+  - One widget, two constructors. A null value is work of unknown length:
+    the bar sweeps, the spinner turns, and neither pretends to measure
+    anything. A value stops the motion — a measured bar that also swept
+    would be saying two things at once.
+  - In an unbounded row a bar takes `ProgressStyle.minWidth`, the same rule
+    `Slider` follows for the same reason.
+- [x] `StatusChip`
+  - A soft stadium: a row of solid chips would shout every status at once.
+    `dot` gives it the swatch at full voice, which is the loudest thing on
+    a quiet chip.
+  - Not pressable. A chip that did something would be a `Button` shaped
+    like a chip, and should say so.
+- [x] `Badge`
+  - The split with `StatusChip`: a badge is a *mark on* something — a count
+    or a dot riding past its corner — and a chip is a *word about*
+    something. If it needs a word, it's a chip.
+  - Solid where a chip is soft, since a badge is small and competing with
+    whatever it rides on. A count of zero draws nothing: a badge saying
+    nothing happened shouldn't be there.
+- [x] `Toast`
+  - Reports what already happened, so it never asks a question — an action
+    undoes or opens, and anything more belongs in a `Dialog`.
+  - The swatch colours the *glyph*, not the card. A wall of red is an
+    emergency and most toasts aren't.
+- [x] `Callout`
+  - The page speaking for itself, where a chip speaks for one row. Its
+    glyph follows the swatch unless told otherwise, which is what makes it
+    readable before it's read — `Callout.glyphFor` is that mapping, and
+    `Toast` borrows it.
+- [x] `EmptyState`
+  - Quiet all through: nothing has gone wrong, so the loudest thing on
+    screen is the action. Words wrap at a readable measure rather than
+    running the width of the slot.
+- [x] `Skeleton` — loading placeholder
+  - A shimmering surface, not the striped one `Placeholder` wears: a still
+    grey box reads as a thing that has loaded and is grey, while a light
+    passing over it reads as a thing on its way.
+  - The sheen travels from off one edge to off the other, so the shape
+    rests between passes — a sheen that never leaves is a pattern, not a
+    passing light.
+  - Where the reader asked for less motion it holds still and leans on its
+    semantics instead. Decoration is the first thing that should stop.
 
 ## overlays — above the page, summoned and dismissed
 
-- [ ] `Dialog` — plus the `showDialog` stand-in
-- [ ] `Sheet`
+- [x] `Dialog` — plus the `showDialog` stand-in
+  - Slots: an optional icon in a swatch, title, message, free content, and
+    the actions in a row that finishes on the right, where the eye does.
+  - `DialogRoute` is a `PopupRoute`, not a hand-rolled overlay entry —
+    that's what buys the things a modal shouldn't reimplement: the keyboard
+    trapped inside, the focus handed back on the way out, the system's back
+    gesture understood, and a result returned to whoever pushed it.
+    `showDialog` is the stand-in for Material's function of the same name,
+    and completes with what popped the route or null.
+  - The route lives beside the widget it presents rather than in
+    `routing/`: a modal route is how a `Dialog` is *shown*, the way a
+    popover is how a menu is shown.
+  - A route hangs off the navigator, not off the subtree that pushed it, so
+    it carries the theme in scope where it was asked for and puts it back
+    on the far side — `dressForOverlay`, which `Popover` had been doing
+    inline and now shares. Without it a modal wears whatever theme happens
+    to be above the navigator, which is the *app's*, not the section's.
+- [x] `Sheet`
+  - One widget for both jobs: the phone's bottom sheet and the desktop's
+    side sheet, told which by `SheetSide`. The corners round only on the
+    edges the sheet isn't against.
+  - A bottom sheet wears a grabber and can be thrown back down — far enough
+    or fast enough, and it goes. A side sheet has nothing to throw it at
+    and doesn't pretend otherwise.
+  - `SheetRoute` for the same reasons `DialogRoute` is one. It caps itself
+    at `SheetStyle.maxFraction` of the screen: past that it's a page, and
+    should be pushed as one.
 - [x] `Popover` — the floating surface menus and selects share
   - Controlled (`open` + `onDismiss`), anchored, with flip-and-slide
     placement. `barrier: false` makes it an annotation that never takes
@@ -242,4 +420,13 @@ Gray-zone rulings, decided once:
     what lets a `TextField`'s desktop selection menu be the same rows in
     the editor's own overlay rather than a second implementation.
 - [x] `Tooltip` — the first thing built on `Popover`
-- [ ] `Toaster` - Root level widget that manages the display of actual Toast widgets.
+- [x] `Toaster` - Root level widget that manages the display of actual Toast widgets.
+      Built with feedback's `Toast`, where it belongs — a manager and the
+      thing it manages are one piece of work, and it lives in
+      `feedback/toast.dart` beside it.
+  - Holds the queue: `maxVisible` show at once and the rest wait their
+    turn, since a screen of toasts is a screen nobody reads.
+  - The pointer resting on a toast stops its clock. A message that vanished
+    while it was being read may as well not have been shown.
+  - Its toasts are dressed with `dressForOverlay` like any other floating
+    thing, so a section's theme reaches them.

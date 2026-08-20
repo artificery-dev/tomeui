@@ -1,5 +1,12 @@
 import 'package:flutter/widgets.dart';
 
+/// One named step on the [Space] scale.
+///
+/// What [Inset] and [Spacing] take instead of a number, so off-scale
+/// padding is unrepresentable rather than merely discouraged: there is no
+/// way to write `13`.
+enum SpaceStep { none, x1, x2, x3, x4, x5, x6, x8, x10, x12, x16 }
+
 /// The spacing scale, on a 4px base by default.
 ///
 /// Named the Tailwind way — `x4` is four units, not four pixels — so a gap
@@ -31,6 +38,21 @@ class Space {
   final double x10;
   final double x12;
   final double x16;
+
+  /// What a named step measures on this scale.
+  double resolve(SpaceStep step) => switch (step) {
+    SpaceStep.none => 0,
+    SpaceStep.x1 => x1,
+    SpaceStep.x2 => x2,
+    SpaceStep.x3 => x3,
+    SpaceStep.x4 => x4,
+    SpaceStep.x5 => x5,
+    SpaceStep.x6 => x6,
+    SpaceStep.x8 => x8,
+    SpaceStep.x10 => x10,
+    SpaceStep.x12 => x12,
+    SpaceStep.x16 => x16,
+  };
 
   Space copyWith({
     double? x1,

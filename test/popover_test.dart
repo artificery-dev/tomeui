@@ -18,7 +18,7 @@ void main() {
     PopoverSide side = PopoverSide.bottom,
     PopoverAlign align = PopoverAlign.center,
     VoidCallback? onDismiss,
-    bool barrier = true,
+    PopoverBarrier barrier = PopoverBarrier.blocking,
   }) => tester.pumpWidget(
     TomeApp(
       home: Align(
@@ -145,7 +145,7 @@ void main() {
             Center(
               child: Popover(
                 open: true,
-                barrier: false,
+                barrier: PopoverBarrier.none,
                 anchor: const SizedBox(width: 100, height: 40),
                 content: (_, _) =>
                     const SizedBox(key: panelKey, width: 80, height: 40),

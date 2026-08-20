@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:tomeui/tomeui.dart';
 
+import '../foundation/overlay_dress.dart';
+
 /// Builds a popover's contents, told the anchor's rectangle so a panel can
 /// match the trigger it hangs off — a select's list is the width of its
 /// closed control.
@@ -34,7 +36,7 @@ class Popover extends StatefulWidget {
     this.onDismiss,
     this.side = PopoverSide.bottom,
     this.align = PopoverAlign.center,
-    this.barrier = true,
+    this.barrier = PopoverBarrier.blocking,
     this.takeFocus = true,
     this.anchorRect,
     this.style,
@@ -58,10 +60,8 @@ class Popover extends StatefulWidget {
   final PopoverSide side;
   final PopoverAlign align;
 
-  /// Whether the page behind is sealed off: taps outside dismiss instead of
-  /// falling through, and Escape closes. A tooltip passes false — it
-  /// annotates the page without interrupting it.
-  final bool barrier;
+  /// What goes between the panel and the page — see [PopoverBarrier].
+  final PopoverBarrier barrier;
 
   /// Whether the panel claims the keyboard on the content's behalf, which
   /// is what puts Escape within reach of a panel of plain words.
@@ -92,14 +92,18 @@ class _PopoverState extends State<Popover> with SingleTickerProviderStateMixin {
   final List<ScrollPosition> _watched = [];
   bool _following = false;
   final FocusScopeNode _scope = FocusScopeNode(debugLabel: 'Popover');
-  late final AnimationController _animation = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 140),
-  );
+  // Built here rather than lazily: a controller wants a ticker, a ticker
+  // asks the tree, and a popover that was never opened would be asking it
+  // from dispose — too late to be answered.
+  late final AnimationController _animation;
 
   @override
   void initState() {
     super.initState();
+    _animation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 140),
+    );
     if (widget.open) _scheduleSync();
   }
 
@@ -245,28 +249,14 @@ class _PopoverState extends State<Popover> with SingleTickerProviderStateMixin {
         gap: style.gap,
         margin: style.margin,
       ),
-      // An overlay entry hangs off the Overlay, not off the page, so none
-      // of the page's dressing reaches it — without this the panel's text
-      // falls back to the framework's debug style. Set, not merged: there
-      // is nothing sane underneath to merge with.
-      child: ThemeProvider(
+      child: dressForOverlay(
         theme: theme,
-        child: DefaultTextStyle(
-          style: theme.typography.body.copyWith(
-            color: style.surface.foreground,
-          ),
-          child: IconTheme(
-            data: IconThemeData(
-              color: style.surface.foreground,
-              size: theme.sizes.icon,
-            ),
-            child: panel,
-          ),
-        ),
+        foreground: style.surface.foreground,
+        child: panel,
       ),
     );
 
-    if (!widget.barrier) {
+    if (widget.barrier == PopoverBarrier.none) {
       // A tooltip must not eat the pointer: it's an annotation, and the
       // thing it annotates stays clickable underneath.
       return Positioned.fill(child: IgnorePointer(child: placed));
@@ -275,10 +265,18 @@ class _PopoverState extends State<Popover> with SingleTickerProviderStateMixin {
     return Stack(
       children: [
         Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onDismiss,
-          ),
+          child: widget.barrier == PopoverBarrier.blocking
+              ? GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onDismiss,
+                )
+              // Translucent: the press dismisses on its way past, and
+              // carries on to whatever it was aimed at. Hover passes too,
+              // which is what lets a bar's next word light up.
+              : Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (_) => widget.onDismiss?.call(),
+                ),
         ),
         // A barrier popover takes the keyboard with it — that's what makes
         // Escape reach it, and what a menu or select wants anyway. The

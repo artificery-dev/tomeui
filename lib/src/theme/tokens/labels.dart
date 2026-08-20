@@ -31,6 +31,16 @@ class Labels {
     this.copied = 'Copied',
     this.showSidebar = 'Show sidebar',
     this.hideSidebar = 'Hide sidebar',
+    this.more = 'More',
+    this.minimizeWindow = 'Minimize',
+    this.maximizeWindow = 'Maximize',
+    this.restoreWindow = 'Restore',
+    this.closeWindow = 'Close window',
+    this.back = 'Back',
+    this.commands = 'Search commands',
+    this.noMatches = 'No matches',
+    this.dismiss = 'Dismiss',
+    this.loading = 'Loading',
   });
 
   // The selection menu, in the order it usually reads.
@@ -58,6 +68,30 @@ class Labels {
   final String showSidebar;
   final String hideSidebar;
 
+  /// What a `Dock` calls the destinations it hadn't room for.
+  final String more;
+
+  /// What a `TitleBar`'s window buttons announce themselves as. Bare
+  /// glyphs, so this is the only name a screen reader has for them.
+  final String minimizeWindow;
+  final String maximizeWindow;
+  final String restoreWindow;
+  final String closeWindow;
+
+  /// What a `BackButton` announces itself as — a bare chevron otherwise.
+  final String back;
+
+  /// The `CommandPalette`'s prompt, and what it says when nothing matches.
+  final String commands;
+  final String noMatches;
+
+  /// What a `Toast`'s or a `Callout`'s close button announces itself as.
+  final String dismiss;
+
+  /// What a `Progress` or a `Skeleton` says it is doing, for a screen
+  /// reader that can't see it doing it.
+  final String loading;
+
   Labels copyWith({
     String? cut,
     String? copy,
@@ -71,6 +105,16 @@ class Labels {
     String? copied,
     String? showSidebar,
     String? hideSidebar,
+    String? more,
+    String? minimizeWindow,
+    String? maximizeWindow,
+    String? restoreWindow,
+    String? closeWindow,
+    String? back,
+    String? commands,
+    String? noMatches,
+    String? dismiss,
+    String? loading,
   }) => Labels(
     cut: cut ?? this.cut,
     copy: copy ?? this.copy,
@@ -84,6 +128,16 @@ class Labels {
     copied: copied ?? this.copied,
     showSidebar: showSidebar ?? this.showSidebar,
     hideSidebar: hideSidebar ?? this.hideSidebar,
+    more: more ?? this.more,
+    minimizeWindow: minimizeWindow ?? this.minimizeWindow,
+    maximizeWindow: maximizeWindow ?? this.maximizeWindow,
+    restoreWindow: restoreWindow ?? this.restoreWindow,
+    closeWindow: closeWindow ?? this.closeWindow,
+    back: back ?? this.back,
+    commands: commands ?? this.commands,
+    noMatches: noMatches ?? this.noMatches,
+    dismiss: dismiss ?? this.dismiss,
+    loading: loading ?? this.loading,
   );
 
   @override
@@ -100,10 +154,22 @@ class Labels {
       other.scanText == scanText &&
       other.copied == copied &&
       other.showSidebar == showSidebar &&
-      other.hideSidebar == hideSidebar;
+      other.hideSidebar == hideSidebar &&
+      other.more == more &&
+      other.minimizeWindow == minimizeWindow &&
+      other.maximizeWindow == maximizeWindow &&
+      other.restoreWindow == restoreWindow &&
+      other.closeWindow == closeWindow &&
+      other.back == back &&
+      other.commands == commands &&
+      other.noMatches == noMatches &&
+      other.dismiss == dismiss &&
+      other.loading == loading;
 
+  // Past twenty, `Object.hash` runs out of parameters, and the set only
+  // grows as widgets learn new things to say.
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     cut,
     copy,
     paste,
@@ -116,5 +182,15 @@ class Labels {
     copied,
     showSidebar,
     hideSidebar,
-  );
+    more,
+    minimizeWindow,
+    maximizeWindow,
+    restoreWindow,
+    closeWindow,
+    back,
+    commands,
+    noMatches,
+    dismiss,
+    loading,
+  ]);
 }
