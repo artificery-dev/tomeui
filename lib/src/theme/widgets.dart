@@ -457,15 +457,15 @@ class NavListResolver {
     // icon never leaves its padding behind. Row height leaves the icon a
     // comfortable margin above and below.
     final (iconSize, fontSize, rowHeight, gap, hPad) = switch (size) {
-      NavListSize.small => (16.0, 14.0, 34.0, _theme.space.x2, _theme.space.x2),
+      NavListSize.small => (16.0, 13.0, 32.0, _theme.space.x2, _theme.space.x2),
       NavListSize.medium => (
-        24.0,
-        16.0,
-        44.0,
-        _theme.space.x3,
-        _theme.space.x3,
+        20.0,
+        14.0,
+        38.0,
+        _theme.space.x2,
+        _theme.space.x2,
       ),
-      NavListSize.large => (32.0, 18.0, 56.0, _theme.space.x3, _theme.space.x4),
+      NavListSize.large => (24.0, 16.0, 44.0, _theme.space.x3, _theme.space.x3),
     };
 
     // Selected and unselected share one role, so a row's letters don't
