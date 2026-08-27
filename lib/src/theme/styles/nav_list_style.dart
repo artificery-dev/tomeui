@@ -1,5 +1,18 @@
 import 'package:tomeui/tomeui.dart';
 
+/// How large a [NavList] sits: its icons, its type, and the room around
+/// them, scaled together. [medium] is the default.
+enum NavListSize {
+  /// 16px icons.
+  small,
+
+  /// 24px icons.
+  medium,
+
+  /// 32px icons.
+  large,
+}
+
 /// The resolved values a [NavList] paints. The choosing happened in
 /// [NavListResolver], at `theme.widgets.navList`.
 @immutable

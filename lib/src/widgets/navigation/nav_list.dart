@@ -41,6 +41,7 @@ class NavList<T> extends StatefulWidget {
     required this.onChanged,
     required this.entries,
     this.swatch = SemanticSwatch.primary,
+    this.size = NavListSize.medium,
     this.style,
     super.key,
   });
@@ -56,6 +57,9 @@ class NavList<T> extends StatefulWidget {
 
   /// The meaning the row you're on wears.
   final SemanticSwatch swatch;
+
+  /// How large the rows sit — icons, type, and spacing together.
+  final NavListSize size;
 
   /// The style to paint, bypassing the theme.
   final NavListStyle? style;
@@ -125,7 +129,9 @@ class _NavListState<T> extends State<NavList<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    final style = widget.style ?? theme.widgets.navList.resolve(widget.swatch);
+    final style =
+        widget.style ??
+        theme.widgets.navList.resolve(widget.swatch, widget.size);
     final rows = _rows;
 
     return Semantics(
