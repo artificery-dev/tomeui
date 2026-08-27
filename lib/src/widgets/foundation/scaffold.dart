@@ -7,10 +7,9 @@ import 'package:tomeui/tomeui.dart';
 ///
 /// A [Scaffold] dresses each toolbar and status bar in the theme's bar
 /// surface and [ScaffoldStyle.barPadding]. A bar that implements this
-/// interface is handed the band bare instead: no fill, no gutter, only the
-/// hairline that separates band from body. [TitleBar] is one — its window
-/// buttons run to the very corner of the window, which a gutter would hold
-/// them out of.
+/// interface is handed the band bare instead: no fill, no gutter.
+/// [TitleBar] is one — its window buttons run to the very corner of the
+/// window, which a gutter would hold them out of.
 abstract interface class SelfDressedBar implements Widget {}
 
 /// The page skeleton: bars across the top and bottom, sidebars down the
@@ -30,9 +29,11 @@ abstract interface class SelfDressedBar implements Widget {}
 ///
 /// [toolbars] and [statusbars] are lists rather than single widgets because
 /// a shell's chrome stacks — a title row over a tab row, a status row under
-/// a find bar — and each one is a full-width band with a hairline between.
-/// They bracket the body *and* the sidebars: a toolbar spans the window,
-/// and the sidebars start beneath it. That keeps a
+/// a find bar — and each one is a full-width band. The theme's hairline is
+/// the *body's* frame: drawn along the body's own edges where chrome
+/// stands, never through the chrome, so the lines read as framing the
+/// page. The bands bracket the body *and* the sidebars: a toolbar spans
+/// the window, and the sidebars start beneath it. That keeps a
 /// [ScaffoldSidebarToggle] in a toolbar visible while the sidebar it
 /// controls is open, which is the whole reason to reach for it a second
 /// time.
@@ -221,11 +222,9 @@ class ScaffoldState extends State<Scaffold> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final bar in widget.toolbars)
-                _band(style, bar, edge: _BandEdge.bottom),
+              for (final bar in widget.toolbars) _band(style, bar),
               Expanded(child: _body(theme, style, constraints.maxWidth)),
-              for (final bar in widget.statusbars)
-                _band(style, bar, edge: _BandEdge.top),
+              for (final bar in widget.statusbars) _band(style, bar),
             ],
           ),
         );
@@ -233,20 +232,30 @@ class ScaffoldState extends State<Scaffold> {
     );
   }
 
-  /// One toolbar or status bar: the chrome dress, its gutters, and the
-  /// hairline that separates it from whatever is on the body's side of it.
-  /// A [SelfDressedBar] keeps only the hairline.
-  Widget _band(ScaffoldStyle style, Widget bar, {required _BandEdge edge}) =>
-      DecoratedBox(
-        decoration: BoxDecoration(border: _edge(style, edge)),
-        child: bar is SelfDressedBar
-            ? bar
-            : Surface.custom(
-                style: style.bar,
-                padding: style.barPadding,
-                child: bar,
-              ),
-      );
+  /// One toolbar or status bar: the chrome dress and its gutters. A
+  /// [SelfDressedBar] is handed the band bare.
+  Widget _band(ScaffoldStyle style, Widget bar) => bar is SelfDressedBar
+      ? bar
+      : Surface.custom(style: style.bar, padding: style.barPadding, child: bar);
+
+  /// The hairline is the body's frame: drawn on each of the body's own
+  /// edges where chrome stands — under the toolbars but only across the
+  /// body, along an inline sidebar, never through the chrome itself — so
+  /// the lines read as framing the page rather than slicing the window.
+  BoxBorder? _frame(ScaffoldStyle style) {
+    if (style.dividerThickness <= 0) return null;
+    final line = BorderSide(
+      color: style.divider,
+      width: style.dividerThickness,
+    );
+    bool beside(ScaffoldSide side) => has(side) && !isDrawer(side);
+    return BorderDirectional(
+      top: widget.toolbars.isEmpty ? BorderSide.none : line,
+      bottom: widget.statusbars.isEmpty ? BorderSide.none : line,
+      start: beside(ScaffoldSide.leading) ? line : BorderSide.none,
+      end: beside(ScaffoldSide.trailing) ? line : BorderSide.none,
+    );
+  }
 
   Widget _body(Theme theme, ScaffoldStyle style, double width) {
     final row = Row(
@@ -254,7 +263,12 @@ class ScaffoldState extends State<Scaffold> {
       children: [
         if (has(ScaffoldSide.leading) && !isDrawer(ScaffoldSide.leading))
           _inline(theme, style, ScaffoldSide.leading),
-        Expanded(child: widget.body ?? const SizedBox.shrink()),
+        Expanded(
+          child: DecoratedBox(
+            decoration: BoxDecoration(border: _frame(style)),
+            child: widget.body ?? const SizedBox.shrink(),
+          ),
+        ),
         if (has(ScaffoldSide.trailing) && !isDrawer(ScaffoldSide.trailing))
           _inline(theme, style, ScaffoldSide.trailing),
       ],
@@ -306,7 +320,7 @@ class ScaffoldState extends State<Scaffold> {
             child: SizedBox(
               width: style.sidebarWidth,
               height: double.infinity,
-              child: _panel(style, side, inner: true),
+              child: _panel(style, side),
             ),
           ),
         ),
@@ -342,7 +356,7 @@ class ScaffoldState extends State<Scaffold> {
                   node: _scopes[side]!,
                   child: DecoratedBox(
                     decoration: BoxDecoration(boxShadow: style.drawerShadow),
-                    child: _panel(style, side, inner: false),
+                    child: _panel(style, side),
                   ),
                 ),
               ),
@@ -397,43 +411,14 @@ class ScaffoldState extends State<Scaffold> {
     );
   }
 
-  /// The panel a sidebar's contents sit on. [inner] adds the hairline that
-  /// divides it from the body — a drawer is over the body rather than
-  /// beside it, and wears a shadow instead.
-  Widget _panel(ScaffoldStyle style, ScaffoldSide side, {required bool inner}) {
-    final edge = side == ScaffoldSide.leading
-        ? _BandEdge.trailing
-        : _BandEdge.leading;
-    return DecoratedBox(
-      decoration: BoxDecoration(border: inner ? _edge(style, edge) : null),
-      child: Surface.custom(
-        style: style.sidebar,
-        padding: style.sidebarPadding,
-        child: _slot(side)!,
-      ),
-    );
-  }
-
-  /// The hairline on one edge of a region, or nothing when the theme has
-  /// turned dividers off.
-  BoxBorder? _edge(ScaffoldStyle style, _BandEdge edge) {
-    if (style.dividerThickness <= 0) return null;
-    final side = BorderSide(
-      color: style.divider,
-      width: style.dividerThickness,
-    );
-    return switch (edge) {
-      _BandEdge.top => Border(top: side),
-      _BandEdge.bottom => Border(bottom: side),
-      // Directional, so the hairline lands on the body's side of the panel
-      // in either reading direction.
-      _BandEdge.leading => BorderDirectional(start: side),
-      _BandEdge.trailing => BorderDirectional(end: side),
-    };
-  }
+  /// The panel a sidebar's contents sit on. No hairline of its own — the
+  /// line between sidebar and body is the body's frame.
+  Widget _panel(ScaffoldStyle style, ScaffoldSide side) => Surface.custom(
+    style: style.sidebar,
+    padding: style.sidebarPadding,
+    child: _slot(side)!,
+  );
 }
-
-enum _BandEdge { top, bottom, leading, trailing }
 
 /// What one of a [Scaffold]'s sidebars is doing, the instant it's read.
 @immutable

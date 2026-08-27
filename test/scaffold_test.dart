@@ -321,6 +321,35 @@ void main() {
     );
   });
 
+  testWidgets('the hairline frames the body, not the chrome', (tester) async {
+    await pump(
+      tester,
+      const Scaffold(
+        toolbars: [Text('bar')],
+        leading: Text('nav'),
+        body: Text('body'),
+      ),
+    );
+
+    final frame =
+        tester
+                .widget<DecoratedBox>(
+                  find
+                      .ancestor(
+                        of: find.text('body'),
+                        matching: find.byType(DecoratedBox),
+                      )
+                      .first,
+                )
+                .decoration
+            as BoxDecoration;
+    final border = frame.border! as BorderDirectional;
+    expect(border.top, isNot(BorderSide.none), reason: 'under the toolbar');
+    expect(border.start, isNot(BorderSide.none), reason: 'along the sidebar');
+    expect(border.bottom, BorderSide.none, reason: 'no status bars');
+    expect(border.end, BorderSide.none, reason: 'no trailing sidebar');
+  });
+
   testWidgets('an inline sidebar panel fills its full height', (tester) async {
     await pump(
       tester,
