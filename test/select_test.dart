@@ -44,12 +44,14 @@ void main() {
   testWidgets('closed, it shows the chosen option — or the placeholder', (
     tester,
   ) async {
+    // hitTestable: every label also rides in the trigger invisibly to fix
+    // its width, and only the shown one takes the pointer.
     await pump(tester);
-    expect(find.text('Pick a watch'), findsOneWidget);
+    expect(find.text('Pick a watch').hitTestable(), findsOneWidget);
 
     await pump(tester, value: Watch.dog);
-    expect(find.text('Pick a watch'), findsNothing);
-    expect(find.text('Dog'), findsOneWidget);
+    expect(find.text('Pick a watch').hitTestable(), findsNothing);
+    expect(find.text('Dog').hitTestable(), findsOneWidget);
   });
 
   testWidgets('opens on tap and closes on choosing', (tester) async {
@@ -76,7 +78,39 @@ void main() {
     await tester.pumpAndSettle();
 
     // Nothing was told to change, so nothing did.
-    expect(find.text('Morning'), findsOneWidget);
+    expect(find.text('Morning').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('the trigger is as wide as its widest option, whatever is '
+      'chosen', (tester) async {
+    await pump(tester, value: Watch.dog);
+    final withShort = tester.getSize(find.byType(Button)).width;
+
+    await pump(tester, value: Watch.forenoon);
+    expect(
+      tester.getSize(find.byType(Button)).width,
+      withShort,
+      reason: 'choosing must never resize the control',
+    );
+  });
+
+  testWidgets('the open list hugs its widest row, not the allowance', (
+    tester,
+  ) async {
+    await pump(tester, value: Watch.morning);
+    await openList(tester);
+
+    final list = tester.getSize(find.byType(SingleChildScrollView)).width;
+    expect(
+      list,
+      lessThan(const Theme().sizes.dialog / 2),
+      reason: 'a short word list must not take the whole allowance',
+    );
+    expect(
+      list,
+      greaterThanOrEqualTo(tester.getSize(find.byType(Button)).width),
+      reason: 'and never narrower than its trigger',
+    );
   });
 
   testWidgets('the list is never narrower than its trigger', (tester) async {

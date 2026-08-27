@@ -144,7 +144,32 @@ class _SelectState<T> extends State<Select<T>> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(child: label),
+            // Every answer rides along invisibly, so the trigger is as
+            // wide as its widest option and choosing never resizes it.
+            Flexible(
+              child: Stack(
+                alignment: AlignmentDirectional.centerStart,
+                children: [
+                  for (final option in widget.options)
+                    Visibility(
+                      visible: false,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: option.label,
+                    ),
+                  if (widget.placeholder != null)
+                    Visibility(
+                      visible: false,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: widget.placeholder!,
+                    ),
+                  label,
+                ],
+              ),
+            ),
             SizedBox(width: style.trigger.gap),
             Icon(theme.icons.chevronDown, size: theme.sizes.iconSmall),
           ],
@@ -173,22 +198,26 @@ class _SelectState<T> extends State<Select<T>> {
         maxWidth: math.max(anchor.width, theme.sizes.dialog),
         maxHeight: style.maxListHeight,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < widget.options.length; i++)
-              _Option(
-                option: widget.options[i],
-                style: style,
-                chosen: widget.options[i].value == widget.value,
-                highlighted: i == highlight,
-                tick: theme.icons.confirm,
-                onHover: () => highlightTo(i),
-                onTap: () => _choose(i),
-              ),
-          ],
+      // As wide as the widest row and no wider — without saying so, the
+      // stretched column would take the whole allowance instead.
+      child: IntrinsicWidth(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < widget.options.length; i++)
+                _Option(
+                  option: widget.options[i],
+                  style: style,
+                  chosen: widget.options[i].value == widget.value,
+                  highlighted: i == highlight,
+                  tick: theme.icons.confirm,
+                  onHover: () => highlightTo(i),
+                  onTap: () => _choose(i),
+                ),
+            ],
+          ),
         ),
       ),
     ),
