@@ -73,4 +73,24 @@ void main() {
           .fill,
     );
   });
+
+  testWidgets('standing alone in a bounded box, a badge keeps its own '
+      'size', (tester) async {
+    // The pill must hug its label: with room on offer it used to expand
+    // to the whole allowance — a red column where a tooltip's NYI badge
+    // should be.
+    await tester.pumpWidget(
+      const TomeApp(
+        home: SizedBox(
+          width: 300,
+          height: 300,
+          child: Column(children: [Badge.label(Text('NYI'))]),
+        ),
+      ),
+    );
+
+    final size = tester.getSize(find.byType(Badge));
+    expect(size.height, lessThan(30));
+    expect(size.width, lessThan(60));
+  });
 }

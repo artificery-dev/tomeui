@@ -90,14 +90,16 @@ class Badge extends StatelessWidget {
               child: Surface.custom(
                 style: style.surface,
                 padding: style.padding,
+                // Both factors: without them the Center expands to any
+                // bounded constraint, and a badge standing alone in a
+                // tooltip or a row balloons to the whole allowance.
                 child: Center(
                   widthFactor: 1,
+                  heightFactor: 1,
                   child: DefaultTextStyle.merge(
                     style: style.textStyle,
                     maxLines: 1,
-                    child:
-                        label ??
-                        Text(count! > max ? '$max+' : '$count'),
+                    child: label ?? Text(count! > max ? '$max+' : '$count'),
                   ),
                 ),
               ),
