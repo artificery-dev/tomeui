@@ -36,6 +36,120 @@ void main() {
     );
   });
 
+  testWidgets('it centres down the slot, not just across it', (tester) async {
+    await pump(
+      tester,
+      Center(
+        child: SizedBox(
+          width: 400,
+          height: 600,
+          child: EmptyState(
+            icon: const Icons().folder,
+            title: const Text('Nothing here'),
+            action: Button(onPressed: () {}, center: const Text('Add one')),
+          ),
+        ),
+      ),
+    );
+
+    final slot = tester.getRect(find.byType(EmptyState));
+    // The stack of glyph, words, and action — the whole of what it says.
+    final said = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(EmptyState),
+            matching: find.byType(Column),
+          )
+          .first,
+    );
+    expect(said.center.dy, moreOrLessEquals(slot.center.dy, epsilon: 1));
+    expect(said.center.dx, moreOrLessEquals(slot.center.dx, epsilon: 1));
+    expect(said.height, lessThan(slot.height));
+  });
+
+  testWidgets('the faintest panel by default, and none when asked', (
+    tester,
+  ) async {
+    final theme = const Theme();
+    final panel = theme.widgets.emptyState.resolve().surface;
+    final subtle = theme.widgets.surface.resolve(
+      SemanticSwatch.neutral,
+      SurfaceVariant.subtle,
+    );
+    expect(panel.fill, subtle.fill);
+    expect(panel.border, subtle.border);
+    expect(
+      theme.widgets.emptyState
+          .resolve(SemanticSwatch.neutral, SurfaceVariant.ghost)
+          .surface
+          .fill,
+      isNull,
+      reason: 'ghost is still the way to draw no panel at all',
+    );
+
+    await pump(
+      tester,
+      const EmptyState(
+        variant: SurfaceVariant.outline,
+        title: Text('Nothing here'),
+      ),
+    );
+
+    final surface = tester.widget<Surface>(
+      find
+          .descendant(
+            of: find.byType(EmptyState),
+            matching: find.byType(Surface),
+          )
+          .first,
+    );
+    expect(
+      surface.style,
+      theme.widgets.emptyState
+          .resolve(SemanticSwatch.neutral, SurfaceVariant.outline)
+          .surface,
+    );
+  });
+
+  test('the words keep the page\'s voice until the panel would swallow it', () {
+    for (final brightness in Brightness.values) {
+      final theme = Theme(palette: Palette(brightness: brightness));
+      final quiet = theme.widgets.emptyState.resolve();
+      expect(
+        quiet.titleStyle.color,
+        theme.palette.text,
+        reason: 'a faint panel changes nothing about the heading',
+      );
+
+      // Whatever it lands on, the heading reads against the panel it is
+      // printed on — which is the whole of the rule.
+      for (final variant in SurfaceVariant.values) {
+        for (final swatch in SemanticSwatch.values) {
+          final style = theme.widgets.emptyState.resolve(swatch, variant);
+          final fill = style.surface.fill;
+          if (fill == null) continue;
+          expect(
+            contrastRatio(style.titleStyle.color!, fill),
+            greaterThanOrEqualTo(4.5),
+            reason: '$swatch $variant in $brightness',
+          );
+        }
+      }
+    }
+  });
+
+  test('a fill loud enough to swallow the page hands the words over', () {
+    // Near-white on a bright sky-400 panel is not a heading anybody reads,
+    // so a solid one speaks in the surface's own foreground instead.
+    const theme = Theme();
+    final loud = theme.widgets.emptyState.resolve(
+      SemanticSwatch.primary,
+      SurfaceVariant.solid,
+    );
+    expect(loud.titleStyle.color, loud.surface.foreground);
+    expect(loud.titleStyle.color, isNot(theme.palette.text));
+  });
+
   testWidgets('the words wrap at a readable measure, not the slot’s width', (
     tester,
   ) async {

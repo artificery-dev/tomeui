@@ -31,10 +31,12 @@ class Icons {
     this.more = LucideIcons.ellipsis,
     this.moreVertical = LucideIcons.ellipsisVertical,
     this.externalLink = LucideIcons.externalLink,
-    // Window controls, for a [TitleBar] that draws its own.
-    this.windowMinimize = LucideIcons.minus,
-    this.windowMaximize = LucideIcons.square,
-    this.windowRestore = LucideIcons.minimize2,
+    // Window controls, for a [TitleBar] that draws its own. Null is the
+    // standard shape, painted — see [WindowGlyph].
+    this.windowMinimize,
+    this.windowMaximize,
+    this.windowRestore,
+    this.windowClose,
     // Actions.
     this.add = LucideIcons.plus,
     this.remove = LucideIcons.minus,
@@ -110,13 +112,23 @@ class Icons {
   /// Leaves the app — warn the reader before the tap.
   final IconData externalLink;
 
-  /// The window buttons a desktop title bar draws itself. Closing is
-  /// [close] — a window is shut with the same glyph as everything else.
-  final IconData windowMinimize;
-  final IconData windowMaximize;
+  /// The window buttons a desktop title bar draws itself.
+  ///
+  /// Null — the default — means the standard shape, which [WindowControls]
+  /// paints: a line, a square, two squares, a cross, all at one weight.
+  /// No icon set has them. A dash meant for arithmetic is shorter and
+  /// rounder than the square beside it, and every set's "restore" is the
+  /// pair of arrows that means *leave full screen*. Name a glyph here and
+  /// it is drawn instead of the shape.
+  final IconData? windowMinimize;
+  final IconData? windowMaximize;
 
   /// Back down from maximised.
-  final IconData windowRestore;
+  final IconData? windowRestore;
+
+  /// Shutting the window. Distinct from [close], which is the general
+  /// ✕ every other affordance wears.
+  final IconData? windowClose;
 
   final IconData add;
   final IconData remove;
@@ -190,6 +202,7 @@ class Icons {
     IconData? windowMinimize,
     IconData? windowMaximize,
     IconData? windowRestore,
+    IconData? windowClose,
     IconData? add,
     IconData? remove,
     IconData? edit,
@@ -249,6 +262,7 @@ class Icons {
     windowMinimize: windowMinimize ?? this.windowMinimize,
     windowMaximize: windowMaximize ?? this.windowMaximize,
     windowRestore: windowRestore ?? this.windowRestore,
+    windowClose: windowClose ?? this.windowClose,
     add: add ?? this.add,
     remove: remove ?? this.remove,
     edit: edit ?? this.edit,

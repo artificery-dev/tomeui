@@ -84,6 +84,47 @@ void main() {
     expect(dismissed, 1);
   });
 
+  testWidgets('the glyph and the close button ride the title\'s line', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      SizedBox(
+        width: 400,
+        child: Callout(
+          title: const Text('Unsigned'),
+          message: const Text('Nothing sails until it is.'),
+          onDismiss: () {},
+        ),
+      ),
+    );
+
+    final title = tester.getRect(find.text('Unsigned'));
+    final glyph = tester.getRect(find.byIcon(const Icons().info));
+    final close = tester.getRect(find.byIcon(const Icons().close));
+    expect(glyph.center.dy, moreOrLessEquals(title.center.dy, epsilon: 1));
+    expect(close.center.dy, moreOrLessEquals(title.center.dy, epsilon: 1));
+  });
+
+  testWidgets('the actions finish at the trailing edge', (tester) async {
+    await pump(
+      tester,
+      SizedBox(
+        width: 400,
+        child: Callout(
+          title: const Text('Unsigned'),
+          actions: [Button(onPressed: () {}, center: const Text('Sign'))],
+        ),
+      ),
+    );
+
+    final style = const Theme().widgets.callout.resolve(SemanticSwatch.info);
+    final inset = style.padding.resolve(TextDirection.ltr).right;
+    final block = tester.getRect(find.byType(Callout));
+    final action = tester.getRect(find.byType(Button));
+    expect(action.right, moreOrLessEquals(block.right - inset, epsilon: 1));
+  });
+
   testWidgets('one that cannot has no such button', (tester) async {
     await pump(tester, const Callout(title: Text('Unsigned')));
     expect(find.byIcon(const Icons().close), findsNothing);

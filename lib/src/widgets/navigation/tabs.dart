@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/services.dart';
 import 'package:tomeui/tomeui.dart';
 
@@ -9,6 +11,7 @@ class TabOption<T> {
     required this.value,
     required this.label,
     this.icon,
+    this.onClose,
     this.enabled = true,
   });
 
@@ -17,8 +20,17 @@ class TabOption<T> {
 
   final Widget label;
 
-  /// A glyph ahead of the label.
+  /// A glyph ahead of the label — what a tab of documents usually leads
+  /// with, since a name alone is slower to find than a name with a shape.
   final IconData? icon;
+
+  /// Shutting this tab. Null is a tab that can't be shut, and grows no
+  /// button for it.
+  ///
+  /// The button keeps its place whether or not it's showing, so a strip
+  /// doesn't shuffle under the pointer as it crosses one tab to reach
+  /// another.
+  final VoidCallback? onClose;
 
   final bool enabled;
 }
@@ -26,9 +38,13 @@ class TabOption<T> {
 /// In-page tabs: switching views, not places.
 ///
 /// A [Dock] takes you somewhere; a tab strip changes what the page you're
-/// already on is showing. The chosen tab wears the page's full voice with
-/// a line under it, the rest step back, and the whole strip sits on a
-/// hairline that the indicator interrupts.
+/// already on is showing. The tab you're on wears the swatch at full voice
+/// and the rest the quietest surface there is; they sit shoulder to
+/// shoulder, rounded at the top and square at the bottom, where the pane
+/// they open onto begins.
+///
+/// [TabOption.onClose] grows a button that shows on the tab you're on and
+/// on whichever one the pointer is over — the way an editor's do.
 ///
 /// ```dart
 /// Tabs<Pane>(
@@ -193,30 +209,17 @@ class _TabsState<T> extends State<Tabs<T>> {
             curve: theme.motion.move,
             child: SizedBox(
               height: style.height,
-              child: Stack(
-                children: [
-                  // The rule runs the width of the strip, under everything:
-                  // the tabs' own indicators sit on top of it.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: SizedBox(
-                      height: style.ruleThickness,
-                      child: ColoredBox(color: style.rule),
-                    ),
-                  ),
-                  SingleChildScrollView(
-                    controller: _scroll,
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < widget.tabs.length; i++)
-                          _tab(theme, style, i, selected),
-                      ],
-                    ),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                controller: _scroll,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: style.tabGap,
+                  children: [
+                    for (var i = 0; i < widget.tabs.length; i++)
+                      _tab(theme, style, i, selected),
+                  ],
+                ),
               ),
             ),
           ),
@@ -224,6 +227,15 @@ class _TabsState<T> extends State<Tabs<T>> {
       ),
     );
   }
+
+  /// A wash lands *on* the fill, not instead of it — a fill-less variant
+  /// grows one the moment it's touched, the way a ghost button does.
+  static Color? _dress(Color? fill, Color? wash) => switch ((fill, wash)) {
+    (final fill?, final wash?) => Color.alphaBlend(wash, fill),
+    (final fill?, null) => fill,
+    (null, final wash?) => wash,
+    _ => null,
+  };
 
   Widget _tab(Theme theme, TabsStyle style, int index, int selected) {
     final tab = widget.tabs[index];
@@ -237,6 +249,18 @@ class _TabsState<T> extends State<Tabs<T>> {
         ? style.hover
         : null;
     final textStyle = chosen ? style.selectedStyle : style.unselectedStyle;
+    final surface = chosen ? style.selected : style.unselected;
+
+    // A cross keeps its own box around the glyph, so a tab that has one
+    // gives back half of that box on the trailing side. Otherwise the
+    // padding is counted twice over and the cross sits adrift of the edge
+    // it belongs to.
+    final direction = Directionality.of(context);
+    final pad = style.padding.resolve(direction);
+    final trim = tab.onClose == null ? 0.0 : style.closeSize / 2;
+    final padding = direction == TextDirection.rtl
+        ? pad.copyWith(left: math.max(0, pad.left - trim))
+        : pad.copyWith(right: math.max(0, pad.right - trim));
 
     return KeyedSubtree(
       key: _keys[index],
@@ -245,9 +269,7 @@ class _TabsState<T> extends State<Tabs<T>> {
         enabled: live,
         inMutuallyExclusiveGroup: true,
         child: MouseRegion(
-          cursor: live
-              ? SystemMouseCursors.click
-              : SystemMouseCursors.basic,
+          cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
           onEnter: (_) => setState(() => _hovered = index),
           onExit: (_) => _leave(index),
           child: GestureDetector(
@@ -269,54 +291,124 @@ class _TabsState<T> extends State<Tabs<T>> {
                 visible: _focused && chosen && _enabled,
                 color: style.ring,
                 radius: style.radius,
-                child: DecoratedBox(
+                // Dressed in place rather than slid: tabs are as wide as
+                // their words, so there is no one distance for a marker to
+                // travel. The colour crosses instead.
+                child: AnimatedContainer(
+                  duration: theme.motion.fast,
+                  curve: theme.motion.move,
+                  padding: padding,
                   decoration: BoxDecoration(
-                    color: wash,
-                    borderRadius: style.radius,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: style.padding,
-                          child: AnimatedDefaultTextStyle(
-                            style: textStyle,
-                            duration: theme.motion.fast,
-                            curve: theme.motion.move,
-                            child: IconTheme.merge(
-                              data: IconThemeData(
-                                color: textStyle.color,
-                                size: style.iconSize,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (tab.icon != null) ...[
-                                    Icon(tab.icon),
-                                    SizedBox(width: style.gap),
-                                  ],
-                                  Center(child: tab.label),
-                                ],
-                              ),
-                            ),
+                    color: _dress(surface.fill, wash),
+                    border: surface.border == null
+                        ? null
+                        : Border.all(
+                            color: surface.border!,
+                            width: theme.strokes.hairline,
                           ),
-                        ),
+                    borderRadius: surface.radius,
+                  ),
+                  child: AnimatedDefaultTextStyle(
+                    style: textStyle,
+                    duration: theme.motion.fast,
+                    curve: theme.motion.move,
+                    child: IconTheme.merge(
+                      data: IconThemeData(
+                        color: textStyle.color,
+                        size: style.iconSize,
                       ),
-                      // The line under the chosen tab, drawn in place rather
-                      // than slid: tabs are as wide as their words, so there
-                      // is no one distance for an indicator to travel.
-                      AnimatedContainer(
-                        duration: theme.motion.fast,
-                        curve: theme.motion.move,
-                        height: style.indicatorThickness,
-                        color: chosen
-                            ? style.indicator
-                            : const Color(0x00000000),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (tab.icon != null) ...[
+                            Icon(tab.icon),
+                            SizedBox(width: style.gap),
+                          ],
+                          Center(child: tab.label),
+                          if (tab.onClose != null) ...[
+                            SizedBox(width: style.gap),
+                            _Close(
+                              style: style,
+                              // Shown on the tab you're on and the one
+                              // under the pointer; laid out either way, so
+                              // the strip doesn't shuffle as the pointer
+                              // crosses it.
+                              showing: live && (chosen || _hovered == index),
+                              colour: textStyle.color,
+                              duration: theme.motion.fast,
+                              curve: theme.motion.move,
+                              onPressed: live ? tab.onClose : null,
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The button that shuts a tab: a cross that fades in rather than one that
+/// appears, and holds its place whether or not it's showing.
+class _Close extends StatefulWidget {
+  const _Close({
+    required this.style,
+    required this.showing,
+    required this.colour,
+    required this.duration,
+    required this.curve,
+    required this.onPressed,
+  });
+
+  final TabsStyle style;
+  final bool showing;
+  final Color? colour;
+  final Duration duration;
+  final Curve curve;
+  final VoidCallback? onPressed;
+
+  @override
+  State<_Close> createState() => _CloseState();
+}
+
+class _CloseState extends State<_Close> {
+  bool _over = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ThemeProvider.maybeOf(context) ?? const Theme();
+    final style = widget.style;
+
+    return AnimatedOpacity(
+      opacity: widget.showing ? 1 : 0,
+      duration: widget.duration,
+      curve: widget.curve,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _over = true),
+        onExit: (_) => setState(() => _over = false),
+        child: GestureDetector(
+          // The tab underneath takes every press this one doesn't.
+          onTap: widget.showing ? widget.onPressed : null,
+          child: Semantics(
+            button: true,
+            label: theme.labels.dismiss,
+            child: Container(
+              width: style.closeSize,
+              height: style.closeSize,
+              decoration: BoxDecoration(
+                color: _over && widget.showing ? style.hover : null,
+                borderRadius: BorderRadius.all(theme.radii.small.topLeft),
+              ),
+              child: Icon(
+                theme.icons.close,
+                size: style.closeIconSize,
+                color: widget.colour,
               ),
             ),
           ),

@@ -175,43 +175,35 @@ class SheetRoute<T> extends PopupRoute<T> {
   ) {
     final panel = Builder(builder: builder);
 
+    // The panel alone — where it sits on the screen and how it arrives are
+    // [buildTransitions]'s business, because a slide measured against a
+    // full-screen box is a slide of a whole screen.
     return dressForOverlay(
       theme: _theme,
       child: CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): () {
-          if (barrierDismissible) Navigator.of(context).maybePop();
-        },
-      },
-        child: Align(
-          alignment: switch (side) {
-            SheetSide.bottom => Alignment.bottomCenter,
-            SheetSide.leading => AlignmentDirectional.centerStart.resolve(
-              Directionality.of(context),
-            ),
-            SheetSide.trailing => AlignmentDirectional.centerEnd.resolve(
-              Directionality.of(context),
-            ),
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            if (barrierDismissible) Navigator.of(context).maybePop();
           },
-          child: LayoutBuilder(
-            builder: (context, constraints) => ConstrainedBox(
-              constraints: side == SheetSide.bottom
-                  ? BoxConstraints(
-                      maxHeight: constraints.maxHeight * _style.maxFraction,
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) => ConstrainedBox(
+            constraints: side == SheetSide.bottom
+                ? BoxConstraints(
+                    maxHeight: constraints.maxHeight * _style.maxFraction,
+                  )
+                : BoxConstraints(
+                    maxWidth: _style.size,
+                    minHeight: constraints.maxHeight,
+                  ),
+            child: Focus(
+              autofocus: true,
+              child: side == SheetSide.bottom && draggable
+                  ? _Draggable(
+                      onDismiss: () => Navigator.of(context).maybePop(),
+                      child: panel,
                     )
-                  : BoxConstraints(
-                      maxWidth: _style.size,
-                      minHeight: constraints.maxHeight,
-                    ),
-              child: Focus(
-                autofocus: true,
-                child: side == SheetSide.bottom && draggable
-                    ? _Draggable(
-                        onDismiss: () => Navigator.of(context).maybePop(),
-                        child: panel,
-                      )
-                    : panel,
-              ),
+                  : panel,
             ),
           ),
         ),
@@ -229,7 +221,11 @@ class SheetRoute<T> extends PopupRoute<T> {
     final eased = CurvedAnimation(
       parent: animation,
       curve: _motion.enter,
-      reverseCurve: _motion.exit,
+      // Flipped, so the exit is the *shape* of `exit` rather than its
+      // mirror: an un-flipped ease-in run backwards travels more than half
+      // its distance in the first quarter of the time and spends the rest
+      // creeping, which reads as no exit animation at all.
+      reverseCurve: _motion.exit.flipped,
     );
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final from = switch (side) {
@@ -237,9 +233,27 @@ class SheetRoute<T> extends PopupRoute<T> {
       SheetSide.leading => Offset(rtl ? 1 : -1, 0),
       SheetSide.trailing => Offset(rtl ? -1 : 1, 0),
     };
-    return SlideTransition(
-      position: Tween(begin: from, end: Offset.zero).animate(eased),
-      child: child,
+
+    // The slide is inside the alignment, so a sheet travels its own height
+    // rather than the screen's. Outside it, `Offset(0, 1)` moves a
+    // full-screen box a full screen: the panel is gone in the first
+    // handful of frames and the rest of the animation happens where nobody
+    // can see it — which is what made a sheet look like it left without
+    // animating at all.
+    return Align(
+      alignment: switch (side) {
+        SheetSide.bottom => Alignment.bottomCenter,
+        SheetSide.leading => AlignmentDirectional.centerStart.resolve(
+          Directionality.of(context),
+        ),
+        SheetSide.trailing => AlignmentDirectional.centerEnd.resolve(
+          Directionality.of(context),
+        ),
+      },
+      child: SlideTransition(
+        position: Tween(begin: from, end: Offset.zero).animate(eased),
+        child: child,
+      ),
     );
   }
 }
@@ -281,10 +295,7 @@ class _DraggableState extends State<_Draggable> {
         setState(() => _offset = 0);
       }
     },
-    child: Transform.translate(
-      offset: Offset(0, _offset),
-      child: widget.child,
-    ),
+    child: Transform.translate(offset: Offset(0, _offset), child: widget.child),
   );
 }
 

@@ -39,13 +39,13 @@ Story _progress() {
             const Spacing(SpaceStep.x3),
             Progress.spinner(value: measured, swatch: swatch.value),
             const Spacing(SpaceStep.x8),
-            // Where a spinner earns its keep: inside something else.
+            // Where a spinner earns its keep: inside something else — and
+            // where it would drown, since a button wearing the same swatch
+            // is the very colour the spinner would paint itself.
             Button(
               onPressed: () {},
-              leading: Progress.spinner(
-                value: measured,
-                swatch: SemanticSwatch.primary,
-              ),
+              swatch: swatch.value,
+              leading: Progress.spinner(value: measured, swatch: swatch.value),
               center: const Text('Signing…'),
             ),
           ],

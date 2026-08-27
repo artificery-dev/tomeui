@@ -137,7 +137,7 @@ class Swatch {
   /// per-instance contrast pick for arbitrary swatch/stop combinations.
   Color contrastFor(num stop, {double minContrast = _minTextContrast}) {
     final background = this[stop];
-    if (_contrastRatio(background, s50) >= minContrast) {
+    if (contrastRatio(background, s50) >= minContrast) {
       return s50;
     }
     return s950;
@@ -512,7 +512,13 @@ class Swatch {
 }
 
 /// WCAG relative-luminance contrast ratio between two colors, in `[1, 21]`.
-double _contrastRatio(Color a, Color b) {
+/// How far apart two colours are to the eye, as the WCAG ratio: 1 is the
+/// same colour, 21 is black against white.
+///
+/// The measure a widget uses to ask whether what it is about to paint will
+/// be seen at all — a swatch handed to something drawn *on* that swatch is
+/// a colour painting itself.
+double contrastRatio(Color a, Color b) {
   final luminanceA = a.computeLuminance();
   final luminanceB = b.computeLuminance();
   final lighter = luminanceA > luminanceB ? luminanceA : luminanceB;

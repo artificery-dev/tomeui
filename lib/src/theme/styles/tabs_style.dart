@@ -7,10 +7,11 @@ class TabsStyle {
   const TabsStyle({
     required this.selectedStyle,
     required this.unselectedStyle,
-    required this.indicator,
-    this.indicatorThickness = 2,
-    required this.rule,
-    this.ruleThickness = 1,
+    required this.selected,
+    required this.unselected,
+    this.tabGap = 0,
+    this.closeSize = 18,
+    this.closeIconSize = 12,
     this.height = 40,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
     this.gap = 8,
@@ -29,12 +30,23 @@ class TabsStyle {
   final TextStyle unselectedStyle;
 
   /// The line under the chosen tab.
-  final Color indicator;
-  final double indicatorThickness;
+  /// The tab you're on: the swatch at full voice, because it's the page
+  /// you're looking at rather than one of the ways to it.
+  final SurfaceStyle selected;
 
   /// The hairline the whole strip sits on, which the indicator interrupts.
-  final Color rule;
-  final double ruleThickness;
+  /// The rest: the quietest surface there is, so a strip of them reads as
+  /// a row of words on a page rather than a row of buttons.
+  final SurfaceStyle unselected;
+
+  /// Between one tab and the next. Nought by default: tabs sit shoulder to
+  /// shoulder, and the notch their rounded tops leave is the only daylight
+  /// between them.
+  final double tabGap;
+
+  /// The box a tab's close button keeps, and the cross inside it.
+  final double closeSize;
+  final double closeIconSize;
 
   final double height;
 
@@ -58,10 +70,11 @@ class TabsStyle {
   TabsStyle copyWith({
     TextStyle? selectedStyle,
     TextStyle? unselectedStyle,
-    Color? indicator,
-    double? indicatorThickness,
-    Color? rule,
-    double? ruleThickness,
+    SurfaceStyle? selected,
+    SurfaceStyle? unselected,
+    double? tabGap,
+    double? closeSize,
+    double? closeIconSize,
     double? height,
     EdgeInsetsGeometry? padding,
     double? gap,
@@ -74,10 +87,11 @@ class TabsStyle {
   }) => TabsStyle(
     selectedStyle: selectedStyle ?? this.selectedStyle,
     unselectedStyle: unselectedStyle ?? this.unselectedStyle,
-    indicator: indicator ?? this.indicator,
-    indicatorThickness: indicatorThickness ?? this.indicatorThickness,
-    rule: rule ?? this.rule,
-    ruleThickness: ruleThickness ?? this.ruleThickness,
+    selected: selected ?? this.selected,
+    unselected: unselected ?? this.unselected,
+    tabGap: tabGap ?? this.tabGap,
+    closeSize: closeSize ?? this.closeSize,
+    closeIconSize: closeIconSize ?? this.closeIconSize,
     height: height ?? this.height,
     padding: padding ?? this.padding,
     gap: gap ?? this.gap,
@@ -94,10 +108,11 @@ class TabsStyle {
       other is TabsStyle &&
       other.selectedStyle == selectedStyle &&
       other.unselectedStyle == unselectedStyle &&
-      other.indicator == indicator &&
-      other.indicatorThickness == indicatorThickness &&
-      other.rule == rule &&
-      other.ruleThickness == ruleThickness &&
+      other.selected == selected &&
+      other.unselected == unselected &&
+      other.tabGap == tabGap &&
+      other.closeSize == closeSize &&
+      other.closeIconSize == closeIconSize &&
       other.height == height &&
       other.padding == padding &&
       other.gap == gap &&
@@ -112,10 +127,11 @@ class TabsStyle {
   int get hashCode => Object.hash(
     selectedStyle,
     unselectedStyle,
-    indicator,
-    indicatorThickness,
-    rule,
-    ruleThickness,
+    selected,
+    unselected,
+    tabGap,
+    closeSize,
+    closeIconSize,
     height,
     padding,
     gap,

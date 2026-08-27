@@ -93,15 +93,15 @@ class _NavListState<T> extends State<NavList<T>> {
 
   /// The entries as rows, with folded groups' contents left out.
   List<_Row> get _rows => [
-    for (final entry in widget.entries) ...switch (entry) {
-      NavGroup<Object?>(:final destinations) => [
-        _Row(entry, group: entry),
-        if (_open(entry))
-          for (final destination in destinations)
-            _Row(destination, depth: 1),
-      ],
-      _ => [_Row(entry)],
-    },
+    for (final entry in widget.entries)
+      ...switch (entry) {
+        NavGroup<Object?>(:final destinations) => [
+          _Row(entry, group: entry),
+          if (_open(entry))
+            for (final destination in destinations) _Row(destination, depth: 1),
+        ],
+        _ => [_Row(entry)],
+      },
   ];
 
   bool _walkable(_Row row) => switch (row.entry) {
@@ -116,9 +116,7 @@ class _NavListState<T> extends State<NavList<T>> {
       case NavDestination<T>(:final value, :final enabled):
         if (enabled && value != widget.value) widget.onChanged!(value);
       case final NavGroup<Object?> group:
-        setState(
-          () => _open(group) ? _shut.add(group) : _shut.remove(group),
-        );
+        setState(() => _open(group) ? _shut.add(group) : _shut.remove(group));
       default:
         break;
     }
@@ -148,20 +146,69 @@ class _NavListState<T> extends State<NavList<T>> {
           builder: (context, highlight, highlightTo) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (index, row) in rows.indexed)
-                _line(
-                  theme: theme,
-                  style: style,
-                  row: row,
-                  highlighted: index == highlight,
-                  onHover: () => highlightTo(index),
-                ),
-            ],
+            children: _folded(theme, style, highlight, highlightTo),
           ),
         ),
       ),
     );
+  }
+
+  /// The rows, with each group's destinations inside a fold of their own.
+  ///
+  /// The walk still sees the flat list — a shut group's rows are no part of
+  /// it — so the indices here are counted the same way [_rows] counts them.
+  /// A group on its way shut keeps drawing its rows while they collapse,
+  /// and they are not walkable while they go: a row leaving is not a row
+  /// you can arrive at.
+  List<Widget> _folded(
+    Theme theme,
+    NavListStyle style,
+    int? highlight,
+    ValueChanged<int> highlightTo,
+  ) {
+    final children = <Widget>[];
+    var index = 0;
+
+    for (final entry in widget.entries) {
+      final at = index++;
+      children.add(
+        _line(
+          theme: theme,
+          style: style,
+          row: _Row(entry, group: entry is NavGroup<Object?> ? entry : null),
+          highlighted: at == highlight,
+          onHover: () => highlightTo(at),
+        ),
+      );
+
+      if (entry is! NavGroup<Object?>) continue;
+      final open = _open(entry);
+      final first = index;
+      if (open) index += entry.destinations.length;
+
+      children.add(
+        _Fold(
+          open: open,
+          duration: theme.motion.standard,
+          curve: theme.motion.move,
+          builder: (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (offset, destination) in entry.destinations.indexed)
+                _line(
+                  theme: theme,
+                  style: style,
+                  row: _Row(destination, depth: 1),
+                  highlighted: open && first + offset == highlight,
+                  onHover: open ? () => highlightTo(first + offset) : () {},
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+    return children;
   }
 
   Widget _line({
@@ -289,11 +336,21 @@ class _NavRow extends StatelessWidget {
                 ),
                 if (trailing != null) ...[
                   SizedBox(width: style.gap),
-                  IconTheme.merge(
-                    data: IconThemeData(color: textStyle.color),
-                    child: DefaultTextStyle.merge(
-                      style: style.headingStyle,
-                      child: trailing!,
+                  // A column of its own, at least a glyph wide: a chevron
+                  // and a count flush to the same edge still sit on
+                  // different centres, and a sidebar reads down its
+                  // trailing edge.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: style.iconSize),
+                    child: Center(
+                      widthFactor: 1,
+                      child: IconTheme.merge(
+                        data: IconThemeData(color: textStyle.color),
+                        child: DefaultTextStyle.merge(
+                          style: style.headingStyle,
+                          child: trailing!,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -304,4 +361,40 @@ class _NavRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A run of rows that opens and shuts by its own height.
+///
+/// The rows stay laid out the whole way and the fold clips them, which is
+/// what makes a group collapse rather than vanish and leave a gap closing
+/// after it. Shut and still, it builds nothing at all — a sidebar shouldn't
+/// carry the weight of every group it isn't showing.
+class _Fold extends StatelessWidget {
+  const _Fold({
+    required this.open,
+    required this.duration,
+    required this.curve,
+    required this.builder,
+  });
+
+  final bool open;
+  final Duration duration;
+  final Curve curve;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(end: open ? 1 : 0),
+    duration: duration,
+    curve: curve,
+    builder: (context, extent, _) => extent == 0
+        ? const SizedBox.shrink()
+        : ClipRect(
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              heightFactor: extent,
+              child: builder(context),
+            ),
+          ),
+  );
 }

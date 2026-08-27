@@ -2,10 +2,12 @@ import 'package:tomeui/tomeui.dart';
 
 /// What state a thing is in, in one word.
 ///
-/// A small stadium wearing a [SemanticSwatch] softly: `Delivered` in
+/// A small stadium wearing a [SemanticSwatch] quietly: `Delivered` in
 /// success, `Overdue` in error, `Draft` in neutral. It marks a *thing* —
 /// a row, a card, a heading — rather than the page, which is what
-/// separates it from a [Callout].
+/// separates it from a [Callout], and it wears [SurfaceVariant.subtle] to
+/// say so: a row of chips sits in a list, and a list of tinted fills is a
+/// list nobody can read past.
 ///
 /// ```dart
 /// StatusChip(label: const Text('Delivered'), swatch: SemanticSwatch.success)
@@ -21,7 +23,7 @@ class StatusChip extends StatelessWidget {
     this.icon,
     this.dot = false,
     this.swatch = SemanticSwatch.neutral,
-    this.variant = SurfaceVariant.soft,
+    this.variant = SurfaceVariant.subtle,
     this.style,
     super.key,
   }) : assert(

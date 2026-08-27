@@ -29,7 +29,11 @@ void main() {
   List<NavEntry> flat() => [
     const NavHeading(Text('Ship')),
     NavDestination(value: 'Log', label: const Text('Log'), icon: _icons.file),
-    NavDestination(value: 'Crew', label: const Text('Crew'), icon: _icons.group),
+    NavDestination(
+      value: 'Crew',
+      label: const Text('Crew'),
+      icon: _icons.group,
+    ),
     const NavSeparator(),
     NavDestination(value: 'Charts', label: const Text('Charts')),
   ];
@@ -37,7 +41,10 @@ void main() {
   Color? fillBehind(WidgetTester tester, String label) {
     final container = tester.widget<AnimatedContainer>(
       find
-          .ancestor(of: find.text(label), matching: find.byType(AnimatedContainer))
+          .ancestor(
+            of: find.text(label),
+            matching: find.byType(AnimatedContainer),
+          )
           .first,
     );
     return (container.decoration as BoxDecoration?)?.color;
@@ -233,5 +240,82 @@ void main() {
       tester.getRect(find.text('12')).left,
       greaterThan(tester.getRect(find.text('Log')).left),
     );
+  });
+
+  testWidgets('a group folds rather than vanishing', (tester) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: NavList<String>(
+            value: 'log',
+            onChanged: (_) {},
+            entries: [
+              const NavDestination(value: 'log', label: Text('Log')),
+              NavGroup<String>(
+                label: const Text('Cargo'),
+                destinations: const [
+                  NavDestination(value: 'manifest', label: Text('Manifest')),
+                  NavDestination(value: 'soundings', label: Text('Soundings')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final open = tester.getSize(find.byType(NavList<String>)).height;
+    expect(find.text('Manifest'), findsOneWidget);
+
+    await tester.tap(find.text('Cargo'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    // Part way: the rows are still there, and the list is shorter than it
+    // was but taller than it will be — a fold, not a disappearance.
+    final midway = tester.getSize(find.byType(NavList<String>)).height;
+    expect(find.text('Manifest'), findsOneWidget, reason: 'still collapsing');
+    expect(midway, lessThan(open));
+
+    await tester.pumpAndSettle();
+    final shut = tester.getSize(find.byType(NavList<String>)).height;
+    expect(shut, lessThan(midway));
+    expect(find.text('Manifest'), findsNothing, reason: 'shut and still');
+  });
+
+  testWidgets('trailing widgets share a column, whatever they are', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: SizedBox(
+            width: 240,
+            child: NavList<String>(
+              value: 'manifest',
+              onChanged: (_) {},
+              entries: [
+                NavGroup<String>(
+                  label: const Text('Cargo'),
+                  destinations: const [
+                    NavDestination(
+                      value: 'manifest',
+                      label: Text('Manifest'),
+                      trailing: Text('3'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // The chevron on the group and the count on the row below it are
+    // different widths flush to the same edge, which reads as two edges.
+    final chevron = tester.getRect(find.byIcon(const Icons().chevronDown));
+    final count = tester.getRect(find.text('3'));
+    expect(chevron.center.dx, moreOrLessEquals(count.center.dx, epsilon: 1));
   });
 }

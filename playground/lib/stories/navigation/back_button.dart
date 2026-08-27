@@ -54,6 +54,9 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
+    // Stretched, so the page under the bar is the width of the window
+    // rather than the width of the words in it.
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       TitleBar(
         leading: [BackButton(label: label ? const Text('Back') : null)],

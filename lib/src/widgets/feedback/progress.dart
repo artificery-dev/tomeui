@@ -17,8 +17,12 @@ import 'package:tomeui/tomeui.dart';
 /// spinner turns, and neither pretends to measure anything. A value between
 /// 0 and 1 is a measurement, and the widget stops moving on its own.
 class Progress extends StatefulWidget {
-  const Progress.bar({this.value, this.swatch = SemanticSwatch.primary, this.style, super.key})
-    : _spinner = false;
+  const Progress.bar({
+    this.value,
+    this.swatch = SemanticSwatch.primary,
+    this.style,
+    super.key,
+  }) : _spinner = false;
 
   const Progress.spinner({
     this.value,
@@ -41,7 +45,8 @@ class Progress extends StatefulWidget {
   State<Progress> createState() => _ProgressState();
 }
 
-class _ProgressState extends State<Progress> with SingleTickerProviderStateMixin {
+class _ProgressState extends State<Progress>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _turn = AnimationController(vsync: this);
 
   // The theme is a dependency, and dependencies aren't there yet in
@@ -85,7 +90,14 @@ class _ProgressState extends State<Progress> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    final style = widget.style ?? theme.widgets.progress.resolve(widget.swatch);
+    final style =
+        widget.style ??
+        theme.widgets.progress.resolve(
+          widget.swatch,
+          // What it's being drawn on, so a spinner inside a button of its
+          // own swatch doesn't paint the button onto the button.
+          SurfaceDress.maybeOf(context),
+        );
     final value = widget.value?.clamp(0.0, 1.0);
 
     return Semantics(
@@ -104,7 +116,10 @@ class _ProgressState extends State<Progress> with SingleTickerProviderStateMixin
       width: constraints.maxWidth.isFinite ? null : style.minWidth,
       height: style.thickness,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: style.track, borderRadius: style.radius),
+        decoration: BoxDecoration(
+          color: style.track,
+          borderRadius: style.radius,
+        ),
         child: ClipRRect(
           borderRadius: style.radius,
           child: value == null
@@ -116,15 +131,17 @@ class _ProgressState extends State<Progress> with SingleTickerProviderStateMixin
                     radius: style.radius,
                   ),
                 )
-              : Align(
+              // The alignment belongs to the fraction, not to an [Align]
+              // around it: an Align loosens what it hands down, and a
+              // childless [DecoratedBox] under a loose height is a fill
+              // nought pixels tall.
+              : FractionallySizedBox(
                   alignment: AlignmentDirectional.centerStart,
-                  child: FractionallySizedBox(
-                    widthFactor: value,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: style.indicator,
-                        borderRadius: style.radius,
-                      ),
+                  widthFactor: value,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: style.indicator,
+                      borderRadius: style.radius,
                     ),
                   ),
                 ),
@@ -138,6 +155,12 @@ class _ProgressState extends State<Progress> with SingleTickerProviderStateMixin
     child: AnimatedBuilder(
       animation: _turn,
       builder: (context, _) => CustomPaint(
+        // A picture that changes every frame is one the raster cache should
+        // leave alone: cached, it gets blitted through whatever transform
+        // is above it — a button's hover lift, say — and an arc drawn once
+        // at one size and stretched to another is an arc with steps in it.
+        willChange: true,
+        isComplex: false,
         painter: _SpinnerPainter(
           track: style.track,
           indicator: style.indicator,

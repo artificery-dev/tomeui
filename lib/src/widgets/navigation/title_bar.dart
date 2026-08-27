@@ -123,19 +123,30 @@ class TitleBar extends StatelessWidget {
     final row = Row(
       children: [
         for (final widget in leading) ...[widget, SizedBox(width: style.gap)],
-        if (!centerTitle) Flexible(child: words),
-        const Spacer(),
+        // One flexible child, which takes *all* the room the slots leave —
+        // a `Flexible` for the words beside a `Spacer` would split it
+        // between them, and whatever the loose half didn't want would sit
+        // at the end of the row, holding the actions out of the corner.
+        Expanded(child: centerTitle ? const SizedBox.shrink() : words),
         for (final widget in actions) ...[SizedBox(width: style.gap), widget],
-        if (controls) ...[
-          SizedBox(width: style.gap),
-          WindowControls(style: style),
-        ],
+      ],
+    );
+
+    // The window's own buttons are the one thing the bar's padding doesn't
+    // hold in: they run to the very corner and the full height of the bar,
+    // square, the way a desktop's do. Everything else keeps its inset.
+    final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: Padding(padding: style.padding, child: row),
+        ),
+        if (controls) WindowControls(style: style),
       ],
     );
 
     Widget bar = Surface.custom(
       style: style.surface,
-      padding: style.padding,
       child: SizedBox(
         height: style.height,
         child: centerTitle
@@ -146,20 +157,33 @@ class TitleBar extends StatelessWidget {
             // slots.
             ? Stack(
                 alignment: Alignment.center,
-                children: [row, IgnorePointer(child: Center(child: words))],
+                children: [
+                  content,
+                  IgnorePointer(child: Center(child: words)),
+                ],
               )
-            : row,
+            : content,
       ),
     );
 
     if (drag) {
-      bar = GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        // The bar's own children take the pointer first; what's left of it
-        // is the window's handle.
-        onPanStart: (_) => _startDragging(),
-        onDoubleTap: _toggleMaximized,
-        child: bar,
+      bar = Stack(
+        children: [
+          // Behind the bar rather than around it. Wrapped around, the
+          // double-tap recognizer joins the arena of every press the bar's
+          // children take, and holds it for `kDoubleTapTimeout` before
+          // letting a tap through — a third of a second between clicking a
+          // menu and seeing it. Behind, it is only in the path of the
+          // presses that reached the bar itself.
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) => _startDragging(),
+              onDoubleTap: _toggleMaximized,
+            ),
+          ),
+          bar,
+        ],
       );
     }
     return bar;
@@ -248,35 +272,45 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     final style = widget.style ?? theme.widgets.titleBar.resolve();
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _WindowButton(
-          style: style,
-          icon: theme.icons.windowMinimize,
-          label: theme.labels.minimizeWindow,
-          onPressed: () => _act(windowManager.minimize),
-        ),
-        _WindowButton(
-          style: style,
-          icon: _maximized
-              ? theme.icons.windowRestore
-              : theme.icons.windowMaximize,
-          label: _maximized
-              ? theme.labels.restoreWindow
-              : theme.labels.maximizeWindow,
-          onPressed: () => _act(
-            _maximized ? windowManager.unmaximize : windowManager.maximize,
+    return SizedBox(
+      height: style.height,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        // Full bleed: each button is as tall as the bar and square with it
+        // — a window button is a corner of the window rather than a control
+        // on a page, so it keeps no margin of its own.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _WindowButton(
+            style: style,
+            glyph: WindowGlyph.minimize,
+            icon: theme.icons.windowMinimize,
+            label: theme.labels.minimizeWindow,
+            onPressed: () => _act(windowManager.minimize),
           ),
-        ),
-        _WindowButton(
-          style: style,
-          icon: theme.icons.close,
-          label: theme.labels.closeWindow,
-          danger: true,
-          onPressed: () => _act(windowManager.close),
-        ),
-      ],
+          _WindowButton(
+            style: style,
+            glyph: _maximized ? WindowGlyph.restore : WindowGlyph.maximize,
+            icon: _maximized
+                ? theme.icons.windowRestore
+                : theme.icons.windowMaximize,
+            label: _maximized
+                ? theme.labels.restoreWindow
+                : theme.labels.maximizeWindow,
+            onPressed: () => _act(
+              _maximized ? windowManager.unmaximize : windowManager.maximize,
+            ),
+          ),
+          _WindowButton(
+            style: style,
+            glyph: WindowGlyph.close,
+            icon: theme.icons.windowClose,
+            label: theme.labels.closeWindow,
+            danger: true,
+            onPressed: () => _act(windowManager.close),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -284,6 +318,7 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
 class _WindowButton extends StatelessWidget {
   const _WindowButton({
     required this.style,
+    required this.glyph,
     required this.icon,
     required this.label,
     required this.onPressed,
@@ -291,7 +326,13 @@ class _WindowButton extends StatelessWidget {
   });
 
   final TitleBarStyle style;
-  final IconData icon;
+
+  /// The standard shape to paint, when the theme hasn't named a glyph.
+  final WindowGlyph glyph;
+
+  /// The theme's glyph for this button, or null for [glyph]'s own shape.
+  final IconData? icon;
+
   final String label;
   final VoidCallback onPressed;
 
@@ -308,20 +349,120 @@ class _WindowButton extends StatelessWidget {
       ringRadius: BorderRadius.zero,
       hover: danger ? style.closeHover : style.controlHover,
       pressed: danger ? style.closePressed : style.controlPressed,
-      builder: (context, state) => Container(
-        width: style.controlSize,
-        height: style.controlSize,
-        color: state.wash,
-        child: Icon(
-          icon,
-          size: style.controlIconSize,
-          // Over the red, the glyph has to be what reads on it rather than
-          // what read on the bar.
-          color: danger && state.wash != null
-              ? style.surface.fill ?? style.surface.foreground
-              : style.surface.foreground,
-        ),
-      ),
+      builder: (context, state) {
+        // Over the red, the glyph has to be what reads on *it* rather than
+        // what read on the bar — and only while the red is actually there.
+        // A wash at rest is the hover colour at zero alpha, not null, so
+        // asking whether there is one at all painted the close cross in
+        // the bar's own fill: a button you could press and never see.
+        final washed = danger && (state.hovered || state.pressed);
+        final colour = washed
+            ? style.surface.fill ?? style.surface.foreground
+            : style.surface.foreground;
+
+        return AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            color: state.wash,
+            child: Center(
+              child: icon != null
+                  ? Icon(icon, size: style.controlIconSize, color: colour)
+                  : CustomPaint(
+                      size: Size.square(style.controlIconSize),
+                      painter: _WindowGlyphPainter(
+                        glyph: glyph,
+                        color: colour,
+                        stroke: style.glyphStroke,
+                      ),
+                    ),
+            ),
+          ),
+        );
+      },
     ),
   );
+}
+
+/// The four shapes a window button wears.
+///
+/// Painted rather than borrowed from an icon set, because no icon set has
+/// them: a dash drawn for arithmetic is shorter and rounder than the square
+/// beside it, and a set's "restore" is the pair of arrows that means *leave
+/// full screen*. Every desktop draws these four at one weight, and so does
+/// [WindowControls] — unless the theme names a glyph of its own
+/// ([Icons.windowMinimize] and its neighbours).
+enum WindowGlyph { minimize, maximize, restore, close }
+
+class _WindowGlyphPainter extends CustomPainter {
+  const _WindowGlyphPainter({
+    required this.glyph,
+    required this.color,
+    required this.stroke,
+  });
+
+  final WindowGlyph glyph;
+  final Color color;
+  final double stroke;
+
+  /// How far the back square of [WindowGlyph.restore] stands out from the
+  /// front one, as a fraction of the glyph.
+  static const _offset = 0.25;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.square
+      ..strokeJoin = StrokeJoin.miter
+      ..color = color;
+
+    // A stroke straddles the line it's given, so the shapes are drawn half
+    // a stroke inside the box and end up square with it.
+    final box = (Offset.zero & size).deflate(stroke / 2);
+
+    switch (glyph) {
+      case WindowGlyph.minimize:
+        canvas.drawLine(
+          Offset(box.left, box.center.dy),
+          Offset(box.right, box.center.dy),
+          paint,
+        );
+      case WindowGlyph.maximize:
+        canvas.drawRect(box, paint);
+      case WindowGlyph.restore:
+        final step = size.width * _offset;
+        final front = Rect.fromLTRB(
+          box.left,
+          box.top + step,
+          box.right - step,
+          box.bottom,
+        );
+        final back = front.translate(step, -step);
+        canvas
+          ..drawRect(front, paint)
+          // Only what stands clear of the front square: its bottom and
+          // left edges are behind it, and a line nobody can see is a line
+          // that shouldn't be drawn.
+          ..drawPath(
+            Path()
+              ..moveTo(back.left, front.top)
+              ..lineTo(back.left, back.top)
+              ..lineTo(back.right, back.top)
+              ..lineTo(back.right, back.bottom)
+              ..lineTo(front.right, back.bottom),
+            paint,
+          );
+      case WindowGlyph.close:
+        canvas
+          ..drawLine(box.topLeft, box.bottomRight, paint)
+          ..drawLine(box.topRight, box.bottomLeft, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_WindowGlyphPainter oldDelegate) =>
+      oldDelegate.glyph != glyph ||
+      oldDelegate.color != color ||
+      oldDelegate.stroke != stroke;
 }

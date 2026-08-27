@@ -15,8 +15,18 @@ import 'package:tomeui/tomeui.dart';
 /// ```
 ///
 /// Quiet all through: nothing has gone wrong, so the loudest thing on
-/// screen is the [action]. Centred in whatever it's given, and its words
-/// wrap at a readable measure rather than running the width of the slot.
+/// screen is the [action]. Its words wrap at a readable measure rather
+/// than running the width of the slot, and the whole thing sits centred in
+/// the room it's given — an empty state fills the emptiness it's reporting,
+/// which is what makes it read as the slot rather than as a note left in
+/// the corner of one. Under unbounded room it hugs its words instead.
+///
+/// It wears a [SurfaceVariant] like anything else, and the default is
+/// [SurfaceVariant.subtle]: the faintest panel the palette has, which is
+/// what an empty slot looks like — present, and plainly not full. Give it
+/// [SurfaceVariant.outline] for the bordered card, or
+/// [SurfaceVariant.ghost] for no panel at all, where the empty state is
+/// already inside one.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     this.title,
@@ -24,6 +34,8 @@ class EmptyState extends StatelessWidget {
     this.icon,
     this.illustration,
     this.action,
+    this.swatch = SemanticSwatch.neutral,
+    this.variant = SurfaceVariant.subtle,
     this.style,
     super.key,
   }) : assert(
@@ -43,19 +55,31 @@ class EmptyState extends StatelessWidget {
   /// The one thing to do about it.
   final Widget? action;
 
+  /// The meaning to wear — neutral by default: absence is quiet.
+  final SemanticSwatch swatch;
+
+  /// The panel it draws for itself — the faintest one by default, and
+  /// [SurfaceVariant.ghost] where none is wanted.
+  final SurfaceVariant variant;
+
   /// The style to paint, bypassing the theme.
   final EmptyStateStyle? style;
 
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    final style = this.style ?? theme.widgets.emptyState.resolve();
+    final style =
+        this.style ?? theme.widgets.emptyState.resolve(swatch, variant);
 
     return Semantics(
       container: true,
-      child: Center(
-        child: Padding(
-          padding: style.padding,
+      child: Surface.custom(
+        style: style.surface,
+        padding: style.padding,
+        // No factors: given room, the panel takes it and centres its words
+        // in it; given none — an unbounded column, a scroll view — Align
+        // shrinks to the words anyway, so it never forces a slot open.
+        child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: style.maxWidth),
             child: Column(

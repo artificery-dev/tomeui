@@ -207,7 +207,9 @@ class DialogRoute<T> extends PopupRoute<T> {
     final eased = CurvedAnimation(
       parent: animation,
       curve: _motion.enter,
-      reverseCurve: _motion.exit,
+      // See the note on `SheetRoute`: an exit curve used raw as a reverse
+      // curve is the mirror of the motion it names.
+      reverseCurve: _motion.exit.flipped,
     );
     // Comes up to meet you rather than dropping in: a short rise, and a
     // scale that starts near enough to full that nothing lurches.

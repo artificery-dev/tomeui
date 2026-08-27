@@ -97,9 +97,8 @@ void main() {
 
     const style = Theme();
     final resolved = style.widgets.breadcrumbs.resolve();
-    Color? colorOf(String label) => DefaultTextStyle.of(
-      tester.element(find.text(label)),
-    ).style.color;
+    Color? colorOf(String label) =>
+        DefaultTextStyle.of(tester.element(find.text(label))).style.color;
 
     expect(colorOf('Manifest'), resolved.currentStyle.color);
     expect(colorOf('Fleet'), resolved.textStyle.color);
@@ -108,5 +107,38 @@ void main() {
       isNot(colorOf('Manifest')),
       reason: 'the way back is quieter than where you are',
     );
+  });
+
+  testWidgets('the separators speak with the crumbs, not with the page', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: Breadcrumbs(
+            crumbs: [
+              Crumb(label: const Text('Fleet'), onPressed: () {}),
+              const Crumb(label: Text('Endeavour')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final style = const Theme().widgets.breadcrumbs.resolve();
+    expect(style.separator, style.textStyle.color);
+    expect(
+      style.separator,
+      isNot(const Theme().palette.divider),
+      reason: 'a chevron at a divider\'s weight vanishes into the page',
+    );
+
+    final chevron = tester.widget<Icon>(
+      find.descendant(
+        of: find.byType(Breadcrumbs),
+        matching: find.byType(Icon),
+      ),
+    );
+    expect(chevron.color, style.textStyle.color);
   });
 }

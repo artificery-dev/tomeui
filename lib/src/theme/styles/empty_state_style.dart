@@ -5,6 +5,7 @@ import 'package:tomeui/tomeui.dart';
 @immutable
 class EmptyStateStyle {
   const EmptyStateStyle({
+    required this.surface,
     required this.titleStyle,
     required this.messageStyle,
     required this.glyph,
@@ -14,6 +15,11 @@ class EmptyStateStyle {
     this.maxWidth = 320,
     this.padding = const EdgeInsets.all(24),
   });
+
+  /// The panel the words sit on — [SurfaceVariant.ghost] by default, which
+  /// is no panel at all: an empty state is usually the slot's own emptiness
+  /// rather than a thing placed in it.
+  final SurfaceStyle surface;
 
   final TextStyle titleStyle;
   final TextStyle messageStyle;
@@ -36,6 +42,7 @@ class EmptyStateStyle {
   final EdgeInsetsGeometry padding;
 
   EmptyStateStyle copyWith({
+    SurfaceStyle? surface,
     TextStyle? titleStyle,
     TextStyle? messageStyle,
     Color? glyph,
@@ -45,6 +52,7 @@ class EmptyStateStyle {
     double? maxWidth,
     EdgeInsetsGeometry? padding,
   }) => EmptyStateStyle(
+    surface: surface ?? this.surface,
     titleStyle: titleStyle ?? this.titleStyle,
     messageStyle: messageStyle ?? this.messageStyle,
     glyph: glyph ?? this.glyph,
@@ -58,6 +66,7 @@ class EmptyStateStyle {
   @override
   bool operator ==(Object other) =>
       other is EmptyStateStyle &&
+      other.surface == surface &&
       other.titleStyle == titleStyle &&
       other.messageStyle == messageStyle &&
       other.glyph == glyph &&
@@ -69,6 +78,7 @@ class EmptyStateStyle {
 
   @override
   int get hashCode => Object.hash(
+    surface,
     titleStyle,
     messageStyle,
     glyph,
