@@ -3,6 +3,16 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:tomeui/tomeui.dart';
 
+/// A band that dresses itself — its own surface, its own gutters.
+///
+/// A [Scaffold] dresses each toolbar and status bar in the theme's bar
+/// surface and [ScaffoldStyle.barPadding]. A bar that implements this
+/// interface is handed the band bare instead: no fill, no gutter, only the
+/// hairline that separates band from body. [TitleBar] is one — its window
+/// buttons run to the very corner of the window, which a gutter would hold
+/// them out of.
+abstract interface class SelfDressedBar implements Widget {}
+
 /// The page skeleton: bars across the top and bottom, sidebars down the
 /// sides, and the body in the middle.
 ///
@@ -183,8 +193,7 @@ class ScaffoldState extends State<Scaffold> {
   /// or not it's open, since the mode is a fact about the window.
   void _measure(double width, ScaffoldStyle style) {
     final wide = width - style.sidebarWidth >= style.minBodyWidth;
-    final both =
-        width - style.sidebarWidth * 2 >= style.minBodyWidth;
+    final both = width - style.sidebarWidth * 2 >= style.minBodyWidth;
     _isDrawer[ScaffoldSide.leading] = !wide;
     _isDrawer[ScaffoldSide.trailing] = has(ScaffoldSide.leading)
         ? !both
@@ -226,14 +235,17 @@ class ScaffoldState extends State<Scaffold> {
 
   /// One toolbar or status bar: the chrome dress, its gutters, and the
   /// hairline that separates it from whatever is on the body's side of it.
+  /// A [SelfDressedBar] keeps only the hairline.
   Widget _band(ScaffoldStyle style, Widget bar, {required _BandEdge edge}) =>
       DecoratedBox(
         decoration: BoxDecoration(border: _edge(style, edge)),
-        child: Surface.custom(
-          style: style.bar,
-          padding: style.barPadding,
-          child: bar,
-        ),
+        child: bar is SelfDressedBar
+            ? bar
+            : Surface.custom(
+                style: style.bar,
+                padding: style.barPadding,
+                child: bar,
+              ),
       );
 
   Widget _body(Theme theme, ScaffoldStyle style, double width) {
@@ -569,9 +581,7 @@ class ScaffoldSidebarToggle extends StatelessWidget {
 
     return Semantics(
       toggled: sidebar.open,
-      label: sidebar.open
-          ? theme.labels.hideSidebar
-          : theme.labels.showSidebar,
+      label: sidebar.open ? theme.labels.hideSidebar : theme.labels.showSidebar,
       child: Button(
         onPressed: () => scaffold.toggle(side),
         variant: variant,

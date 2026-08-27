@@ -223,4 +223,49 @@ void main() {
 
     expect(find.byIcon(const Icons().close), findsOneWidget);
   });
+
+  testWidgets('the drag detector sits inside the surface, where hits reach '
+      'it', (tester) async {
+    // Behind the bar, the surface's decoration absorbed every press before
+    // the detector could hear one: a bar that couldn't move the window.
+    await pump(
+      tester,
+      const TitleBar(
+        dragToMove: true,
+        windowControls: false,
+        title: Text('Manifest'),
+      ),
+    );
+
+    expect(
+      find.descendant(
+        of: find.descendant(
+          of: find.byType(TitleBar),
+          matching: find.byType(Surface),
+        ),
+        matching: find.byType(GestureDetector),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the title takes no pointer — a drag over the words is the '
+      'window\'s', (tester) async {
+    await pump(
+      tester,
+      const TitleBar(
+        dragToMove: true,
+        windowControls: false,
+        title: Text('Manifest'),
+      ),
+    );
+
+    expect(
+      find.ancestor(
+        of: find.text('Manifest'),
+        matching: find.byType(IgnorePointer),
+      ),
+      findsWidgets,
+    );
+  });
 }
