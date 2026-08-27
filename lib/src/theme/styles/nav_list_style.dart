@@ -6,10 +6,10 @@ enum NavListSize {
   /// 16px icons.
   small,
 
-  /// 24px icons.
+  /// 20px icons.
   medium,
 
-  /// 32px icons.
+  /// 24px icons.
   large,
 }
 
