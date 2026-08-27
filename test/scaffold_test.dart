@@ -22,11 +22,13 @@ void main() {
 
   /// The width a sidebar's panel is actually occupying, which is what the
   /// reveal animates and what "open" means on screen.
-  double panelWidth(WidgetTester tester, String label) =>
-      tester.getSize(find.ancestor(
-        of: find.text(label),
-        matching: find.byType(ClipRect),
-      ).first).width;
+  double panelWidth(WidgetTester tester, String label) => tester
+      .getSize(
+        find
+            .ancestor(of: find.text(label), matching: find.byType(ClipRect))
+            .first,
+      )
+      .width;
 
   testWidgets('stacks toolbars above and status bars below the body', (
     tester,
@@ -237,10 +239,7 @@ void main() {
   });
 
   testWidgets('each presentation remembers its own answer', (tester) async {
-    const page = Scaffold(
-      leading: Text('nav'),
-      body: Text('body'),
-    );
+    const page = Scaffold(leading: Text('nav'), body: Text('body'));
 
     // Shut it while it's a drawer.
     await pump(tester, page, width: style.minBodyWidth + 100);
@@ -296,6 +295,43 @@ void main() {
           },
         ),
       ),
+    );
+  });
+
+  testWidgets('a TitleBar dresses its own band: no gutter holds it in', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Scaffold(
+        toolbars: [TitleBar(title: Text('Manifest'), windowControls: true)],
+        body: SizedBox(),
+      ),
+    );
+
+    final scaffold = tester.getRect(find.byType(Scaffold));
+    final bar = tester.getRect(find.byType(TitleBar));
+    expect(bar.left, scaffold.left);
+    expect(bar.right, scaffold.right);
+
+    expect(
+      tester.getRect(find.byType(WindowControls)).right,
+      scaffold.right,
+      reason: 'the window buttons reach the window corner',
+    );
+  });
+
+  testWidgets('a bar that is not self-dressed keeps the gutter', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Scaffold(toolbars: [Text('plain')], body: SizedBox()),
+    );
+
+    expect(
+      tester.getRect(find.text('plain')).left,
+      style.barPadding.resolve(TextDirection.ltr).left,
     );
   });
 }

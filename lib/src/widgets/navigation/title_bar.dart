@@ -37,7 +37,7 @@ import '../foundation/interactive.dart';
 ///
 /// Off desktop the bar is a bar: the window machinery is never reached, so
 /// this is the same widget on a phone with none of it running.
-class TitleBar extends StatelessWidget {
+class TitleBar extends StatelessWidget implements SelfDressedBar {
   const TitleBar({
     this.title,
     this.subtitle,
@@ -127,7 +127,15 @@ class TitleBar extends StatelessWidget {
         // a `Flexible` for the words beside a `Spacer` would split it
         // between them, and whatever the loose half didn't want would sit
         // at the end of the row, holding the actions out of the corner.
-        Expanded(child: centerTitle ? const SizedBox.shrink() : words),
+        //
+        // No pointer for the words: a title is what the page is, not a
+        // control, and text that took the hit would hold a drag that
+        // should fall through to the window.
+        Expanded(
+          child: centerTitle
+              ? const SizedBox.shrink()
+              : IgnorePointer(child: words),
+        ),
         for (final widget in actions) ...[SizedBox(width: style.gap), widget],
       ],
     );
@@ -145,36 +153,34 @@ class TitleBar extends StatelessWidget {
       ],
     );
 
-    Widget bar = Surface.custom(
-      style: style.surface,
-      child: SizedBox(
-        height: style.height,
-        child: centerTitle
-            // Centred means centred on the *bar*, not on what the slots
-            // left over, so a title doesn't shift when a toggle appears
-            // beside it. It rides over the row and takes no pointer, which
-            // asks that a centred title be short enough not to reach the
-            // slots.
-            ? Stack(
-                alignment: Alignment.center,
-                children: [
-                  content,
-                  IgnorePointer(child: Center(child: words)),
-                ],
-              )
-            : content,
-      ),
-    );
+    Widget inner = centerTitle
+        // Centred means centred on the *bar*, not on what the slots
+        // left over, so a title doesn't shift when a toggle appears
+        // beside it. It rides over the row and takes no pointer, which
+        // asks that a centred title be short enough not to reach the
+        // slots.
+        ? Stack(
+            alignment: Alignment.center,
+            children: [
+              content,
+              IgnorePointer(child: Center(child: words)),
+            ],
+          )
+        : content;
 
     if (drag) {
-      bar = Stack(
+      inner = Stack(
         children: [
-          // Behind the bar rather than around it. Wrapped around, the
-          // double-tap recognizer joins the arena of every press the bar's
-          // children take, and holds it for `kDoubleTapTimeout` before
-          // letting a tap through — a third of a second between clicking a
-          // menu and seeing it. Behind, it is only in the path of the
-          // presses that reached the bar itself.
+          // Behind the content rather than around the bar. Wrapped around,
+          // the double-tap recognizer joins the arena of every press the
+          // bar's children take, and holds it for `kDoubleTapTimeout`
+          // before letting a tap through — a third of a second between
+          // clicking a menu and seeing it. Behind, it is only in the path
+          // of the presses that reached the bar itself.
+          //
+          // And *inside* the surface, not behind it: the surface's
+          // decoration absorbs every hit that reaches it, so a detector
+          // on the far side would never hear one.
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -182,11 +188,15 @@ class TitleBar extends StatelessWidget {
               onDoubleTap: _toggleMaximized,
             ),
           ),
-          bar,
+          inner,
         ],
       );
     }
-    return bar;
+
+    return Surface.custom(
+      style: style.surface,
+      child: SizedBox(height: style.height, child: inner),
+    );
   }
 
   static Future<void> _startDragging() async {
