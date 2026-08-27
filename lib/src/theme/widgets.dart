@@ -442,7 +442,10 @@ class NavListResolver {
   /// nothing at all, and the row you're on wears [swatch] softly — the same
   /// treatment a `Dock`'s indicator pill uses, so the rail and the sidebar
   /// agree about what "here" looks like.
-  NavListStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+  NavListStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.primary,
+    NavListSize size = NavListSize.medium,
+  ]) {
     final palette = _theme.palette;
     final opacities = _theme.opacities;
     final text = TextResolver(_theme);
@@ -450,25 +453,47 @@ class NavListResolver {
       _theme,
     ).resolve(swatch, SurfaceVariant.soft).copyWith(radius: _theme.radii.small);
 
+    // Icon, type, and the room around them scale together, so a bigger
+    // icon never leaves its padding behind. Row height leaves the icon a
+    // comfortable margin above and below.
+    final (iconSize, fontSize, rowHeight, gap, hPad) = switch (size) {
+      NavListSize.small => (16.0, 14.0, 34.0, _theme.space.x2, _theme.space.x2),
+      NavListSize.medium => (
+        24.0,
+        16.0,
+        44.0,
+        _theme.space.x3,
+        _theme.space.x3,
+      ),
+      NavListSize.large => (32.0, 18.0, 56.0, _theme.space.x3, _theme.space.x4),
+    };
+
+    // Selected and unselected share one role, so a row's letters don't
+    // change shape when it becomes the one you're on — the difference is
+    // colour and a touch of weight, nothing more.
     return NavListStyle(
       selected: selected,
-      selectedStyle: text.resolve(TextRole.label, on: selected.foreground),
-      textStyle: text.resolve(
-        TextRole.body,
-        emphasis: TextEmphasis.secondary,
-        on: palette.text,
-      ),
+      selectedStyle: text
+          .resolve(TextRole.body, on: selected.foreground)
+          .copyWith(fontSize: fontSize, fontWeight: FontWeight.w600),
+      textStyle: text
+          .resolve(
+            TextRole.body,
+            emphasis: TextEmphasis.secondary,
+            on: palette.text,
+          )
+          .copyWith(fontSize: fontSize),
       headingStyle: text.resolve(
         TextRole.caption,
         emphasis: TextEmphasis.tertiary,
         on: palette.text,
       ),
       separator: palette.divider,
-      rowHeight: _theme.sizes.controlCompact,
-      padding: EdgeInsets.symmetric(horizontal: _theme.space.x2),
-      gap: _theme.space.x2,
-      indent: _theme.space.x5,
-      iconSize: _theme.sizes.iconSmall,
+      rowHeight: rowHeight,
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      gap: gap,
+      indent: iconSize + gap,
+      iconSize: iconSize,
       radius: _theme.radii.small,
       headingPadding: EdgeInsets.fromLTRB(
         _theme.space.x2,
