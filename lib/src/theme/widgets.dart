@@ -1395,7 +1395,7 @@ class SliderResolver {
       height: _theme.sizes.control,
       minWidth: _theme.sizes.contentNarrow / 4,
       tick: inactive.foreground.withValues(alpha: opacities.tertiary),
-      tickSize: _theme.strokes.focus,
+      tickSize: _theme.strokes.focus * 2,
       hover: inactive.foreground.withValues(alpha: opacities.hover),
       pressed: inactive.foreground.withValues(alpha: opacities.pressed),
       disabledOpacity: opacities.disabled,
