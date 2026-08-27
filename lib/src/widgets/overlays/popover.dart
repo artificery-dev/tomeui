@@ -179,7 +179,11 @@ class _PopoverState extends State<Popover> with SingleTickerProviderStateMixin {
       if (_entry == null) {
         _watch();
         _entry = OverlayEntry(builder: _buildOverlay);
-        Overlay.of(context).insert(_entry!);
+        // The root overlay, not the nearest: a nested navigator — a
+        // routing shell, say — brings an overlay that covers only its own
+        // corner of the window, and a panel inserted there is placed in
+        // that corner's coordinates and clipped to it besides.
+        Overlay.of(context, rootOverlay: true).insert(_entry!);
       } else {
         // Anchor, style, or content may have moved under it.
         _entry!.markNeedsBuild();
@@ -196,12 +200,18 @@ class _PopoverState extends State<Popover> with SingleTickerProviderStateMixin {
     }
   }
 
-  /// The anchor's rectangle in global coordinates, or null before layout.
+  /// The anchor's rectangle in the root overlay's coordinates — the space
+  /// the panel is laid out in — or null before layout. Usually those are
+  /// global coordinates too; converting keeps it true when they aren't.
   Rect? get _anchorRect {
     if (widget.anchorRect != null) return widget.anchorRect;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return null;
-    return box.localToGlobal(Offset.zero) & box.size;
+    final overlay =
+        Overlay.of(context, rootOverlay: true).context.findRenderObject()
+            as RenderBox?;
+    final topLeft = box.localToGlobal(Offset.zero, ancestor: overlay);
+    return topLeft & box.size;
   }
 
   Widget _buildOverlay(BuildContext overlayContext) {
