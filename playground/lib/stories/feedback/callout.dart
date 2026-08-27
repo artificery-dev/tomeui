@@ -51,14 +51,14 @@ Story _callout() {
                   if (actions.value) ...[
                     Button(
                       onPressed: () {},
-                      swatch: swatch.value,
-                      center: const Text('Sign'),
-                    ),
-                    Button(
-                      onPressed: () {},
                       variant: SurfaceVariant.ghost,
                       swatch: swatch.value,
                       center: const Text('Read it first'),
+                    ),
+                    Button(
+                      onPressed: () {},
+                      swatch: swatch.value,
+                      center: const Text('Sign'),
                     ),
                   ],
                 ],

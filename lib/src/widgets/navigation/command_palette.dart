@@ -109,9 +109,7 @@ class _CommandPaletteState extends State<CommandPalette> {
       if (name.startsWith(query)) {
         leading.add(command);
       } else if (name.contains(query) ||
-          command.keywords.any(
-            (word) => word.toLowerCase().contains(query),
-          )) {
+          command.keywords.any((word) => word.toLowerCase().contains(query))) {
         rest.add(command);
       }
     }
@@ -349,7 +347,8 @@ class CommandPaletteRoute<T> extends PopupRoute<T> {
     final eased = CurvedAnimation(
       parent: animation,
       curve: _motion.enter,
-      reverseCurve: _motion.exit,
+      // Flipped: see the note on `SheetRoute`.
+      reverseCurve: _motion.exit.flipped,
     );
     return FadeTransition(
       opacity: eased,

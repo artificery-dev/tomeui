@@ -30,29 +30,35 @@ void main() {
     ),
   );
 
-  /// The line under one tab — transparent unless that tab is the chosen one.
-  Color? indicatorUnder(WidgetTester tester, String label) {
-    final indicator = tester
-        .widgetList<AnimatedContainer>(
-          find.descendant(
-            of: find
-                .ancestor(of: find.text(label), matching: find.byType(Column))
-                .last,
-            matching: find.byType(AnimatedContainer),
-          ),
-        )
-        .last;
-    return (indicator.decoration as BoxDecoration?)?.color;
-  }
+  /// What one tab is dressed in.
+  BoxDecoration dressOf(WidgetTester tester, String label) =>
+      tester
+              .widget<AnimatedContainer>(
+                find
+                    .ancestor(
+                      of: find.text(label),
+                      matching: find.byType(AnimatedContainer),
+                    )
+                    .first,
+              )
+              .decoration
+          as BoxDecoration;
 
-  testWidgets('the chosen tab wears the line, and the others do not', (
+  testWidgets('the tab you are on wears the swatch; the rest stay quiet', (
     tester,
   ) async {
     await pump(tester);
 
-    final indicator = const Theme().widgets.tabs.resolve().indicator;
-    expect(indicatorUnder(tester, 'Log'), indicator);
-    expect(indicatorUnder(tester, 'Crew')?.a, 0);
+    final style = const Theme().widgets.tabs.resolve();
+    expect(dressOf(tester, 'Log').color, style.selected.fill);
+    expect(dressOf(tester, 'Crew').color, style.unselected.fill);
+    expect(
+      style.unselected.fill,
+      const Theme().widgets.surface
+          .resolve(SemanticSwatch.neutral, SurfaceVariant.subtle)
+          .fill,
+      reason: 'the quietest surface there is',
+    );
   });
 
   testWidgets('tapping a tab reports it, and tapping the open one does not', (
@@ -70,9 +76,7 @@ void main() {
     expect(chosen, ['Crew'], reason: 'Log is already what is showing');
   });
 
-  testWidgets('the arrows walk the strip and the ends stop it', (
-    tester,
-  ) async {
+  testWidgets('the arrows walk the strip and the ends stop it', (tester) async {
     final chosen = <String>[];
     await pump(tester, onChanged: chosen.add);
 
@@ -167,5 +171,161 @@ void main() {
       ),
     );
     expect(scroll.scrollDirection, Axis.horizontal);
+  });
+
+  testWidgets('tabs sit shoulder to shoulder, square where the pane begins', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    final log = tester.getRect(
+      find
+          .ancestor(
+            of: find.text('Log'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final crew = tester.getRect(
+      find
+          .ancestor(
+            of: find.text('Crew'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    expect(crew.left, moreOrLessEquals(log.right, epsilon: 0.5));
+
+    final radius = dressOf(tester, 'Log').borderRadius! as BorderRadius;
+    expect(radius.topLeft.y, greaterThan(0));
+    expect(radius.bottomLeft, Radius.zero, reason: 'the pane begins here');
+    expect(radius.bottomRight, Radius.zero);
+  });
+
+  testWidgets('a tab that can be shut says so on the one you are on, and '
+      'on the one under the pointer', (tester) async {
+    var shut = 0;
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: Tabs<String>(
+            value: 'Log',
+            onChanged: (_) {},
+            tabs: [
+              TabOption(
+                value: 'Log',
+                label: const Text('Log'),
+                onClose: () => shut++,
+              ),
+              const TabOption(value: 'Crew', label: Text('Crew')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // The tab you're on shows its cross; the one that can't be shut has
+    // none at all.
+    final crosses = find.byIcon(const Icons().close);
+    expect(crosses, findsOneWidget);
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find
+                .ancestor(of: crosses, matching: find.byType(AnimatedOpacity))
+                .first,
+          )
+          .opacity,
+      1,
+    );
+
+    await tester.tap(crosses);
+    await tester.pump();
+    expect(shut, 1);
+  });
+
+  testWidgets('a cross on a tab you are not on keeps its place, unseen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: Tabs<String>(
+            value: 'Log',
+            onChanged: (_) {},
+            tabs: [
+              TabOption(value: 'Log', label: const Text('Log'), onClose: () {}),
+              TabOption(
+                value: 'Crew',
+                label: const Text('Crew'),
+                onClose: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final resting = tester.widgetList<AnimatedOpacity>(
+      find.descendant(
+        of: find
+            .ancestor(
+              of: find.text('Crew'),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
+        matching: find.byType(AnimatedOpacity),
+      ),
+    );
+    expect(resting.map((each) => each.opacity), contains(0));
+
+    // Laid out all the same: a strip that grew as the pointer crossed it
+    // would move the next tab out from under the one going to press it.
+    final cross = find.descendant(
+      of: find
+          .ancestor(
+            of: find.text('Crew'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+      matching: find.byIcon(const Icons().close),
+    );
+    expect(tester.getSize(cross).width, greaterThan(0));
+  });
+
+  testWidgets('the cross sits against the trailing edge, not a padding in '
+      'from it', (tester) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: Tabs<String>(
+            value: 'Log',
+            onChanged: (_) {},
+            tabs: [
+              TabOption(value: 'Log', label: const Text('Log'), onClose: () {}),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final style = const Theme().widgets.tabs.resolve();
+    final pad = style.padding.resolve(TextDirection.ltr).right;
+    final tab = tester.getRect(
+      find
+          .ancestor(
+            of: find.text('Log'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final cross = tester.getRect(find.byIcon(const Icons().close));
+
+    // The cross keeps a box of its own around the glyph, so the tab gives
+    // back half of it: the padding was otherwise counted twice.
+    expect(
+      tab.right - cross.right,
+      moreOrLessEquals(pad - style.closeSize / 2, epsilon: 0.5),
+    );
   });
 }

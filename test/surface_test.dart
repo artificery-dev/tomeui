@@ -13,14 +13,16 @@ void main() {
     ),
   );
 
-  BoxDecoration? decorationOf(WidgetTester tester) => tester
-      .widget<Container>(
-        find.descendant(
-          of: find.byType(Surface),
-          matching: find.byType(Container),
-        ),
-      )
-      .decoration as BoxDecoration?;
+  BoxDecoration? decorationOf(WidgetTester tester) =>
+      tester
+              .widget<Container>(
+                find.descendant(
+                  of: find.byType(Surface),
+                  matching: find.byType(Container),
+                ),
+              )
+              .decoration
+          as BoxDecoration?;
 
   testWidgets('solid wears the swatch: 500 in light, 400 in dark', (
     tester,
@@ -147,10 +149,9 @@ void main() {
     );
     expect(theme.widgets.surface.resolve().fill, Swatch.rose.s400);
     expect(
-      theme.widgets.surface.resolve(
-        SemanticSwatch.primary,
-        SurfaceVariant.soft,
-      ).fill,
+      theme.widgets.surface
+          .resolve(SemanticSwatch.primary, SurfaceVariant.soft)
+          .fill,
       Swatch.rose.s900,
     );
   });
@@ -188,11 +189,76 @@ void main() {
 
     // Only the replaced mapping changed; soft still wears the default.
     expect(
-      theme.widgets.surface.resolve(
-        SemanticSwatch.accent,
-        SurfaceVariant.soft,
-      ).fill,
+      theme.widgets.surface
+          .resolve(SemanticSwatch.accent, SurfaceVariant.soft)
+          .fill,
       Swatch.blue.s900,
+    );
+  });
+
+  test('the greys never paint the page onto the page', () {
+    for (final brightness in Brightness.values) {
+      final theme = Theme(palette: Palette(brightness: brightness));
+      final page = theme.palette.background;
+      for (final variant in [SurfaceVariant.soft, SurfaceVariant.subtle]) {
+        expect(
+          theme.widgets.surface.resolve(SemanticSwatch.neutral, variant).fill,
+          isNot(page),
+          reason: '$variant neutral in $brightness',
+        );
+      }
+    }
+  });
+
+  test('an exception is one swatch\'s business, not the variant\'s', () {
+    const theme = Theme();
+    // The colours keep the variant's own stops...
+    expect(
+      theme.widgets.surface
+          .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
+          .fill,
+      const Palette().primary.s950,
+    );
+    // ...while neutral wears the one named for it.
+    expect(
+      theme.widgets.surface
+          .resolve(SemanticSwatch.neutral, SurfaceVariant.subtle)
+          .fill,
+      const Palette().neutral.s900,
+    );
+  });
+
+  test('an exception is configuration too: a grey primary names its own', () {
+    // A palette whose *primary* is a grey hits the same collision, and
+    // answers it the same way — by naming an exception of its own.
+    const theme = Theme(
+      palette: Palette(primary: Swatch.zinc),
+      styles: WidgetStyles(
+        surface: SurfaceStyles(
+          subtle: SurfaceShades(
+            fill: Shade(light: 50, dark: 950),
+            exceptions: {
+              SemanticSwatch.primary: SurfaceShades(
+                fill: Shade(light: 100, dark: 900),
+              ),
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      theme.widgets.surface
+          .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
+          .fill,
+      Swatch.zinc.s900,
+    );
+    // A swatch the exceptions don't name is untouched by them.
+    expect(
+      theme.widgets.surface
+          .resolve(SemanticSwatch.error, SurfaceVariant.subtle)
+          .fill,
+      const Palette().error.s950,
     );
   });
 
@@ -201,7 +267,10 @@ void main() {
     const theme = Theme(radii: Radii(medium: round));
     expect(theme.widgets.surface.resolve().radius, round);
     // And the default theme still carries the default scale.
-    expect(const Theme().widgets.surface.resolve().radius, const Radii().medium);
+    expect(
+      const Theme().widgets.surface.resolve().radius,
+      const Radii().medium,
+    );
   });
 
   test('shades interpolate off the named stops', () {

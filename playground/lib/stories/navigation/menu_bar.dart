@@ -71,9 +71,21 @@ Story _menuBar() {
       );
 
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (inTitleBar.value)
-            TitleBar(leading: [bar], title: const Text('Endeavour'))
+            // Where a desktop puts it: the app's name at the corner, a rule
+            // that fades at both ends, and then the menus. The name is a
+            // leading widget rather than the bar's `title`, since the title
+            // slot is the *document's* — and the menus have to follow the
+            // name, not the other way about.
+            TitleBar(
+              leading: [
+                const LabelText('Endeavour'),
+                const Divider(axis: Axis.vertical, fade: true),
+                bar,
+              ],
+            )
           else
             Surface(
               variant: SurfaceVariant.subtle,

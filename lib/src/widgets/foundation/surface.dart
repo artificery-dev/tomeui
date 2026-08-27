@@ -82,8 +82,32 @@ class Surface extends StatelessWidget {
         child: box,
       );
     }
-    return box;
+    // What everything inside is being drawn on. Text and icons are told
+    // through [DefaultTextStyle] and [IconTheme]; anything that paints for
+    // itself has to be able to ask.
+    return SurfaceDress(style: style, child: box);
   }
+}
+
+/// What the nearest [Surface] above is wearing.
+///
+/// A widget that paints its own colours can be handed a swatch and still
+/// end up invisible — a primary spinner on a solid primary button is the
+/// button. Asking what it sits on is how it can tell, and [SurfaceStyle]
+/// carries both halves of the answer: the [SurfaceStyle.fill] it would be
+/// drawn against and the [SurfaceStyle.foreground] that surface speaks in.
+class SurfaceDress extends InheritedWidget {
+  const SurfaceDress({required this.style, required super.child, super.key});
+
+  final SurfaceStyle style;
+
+  /// What the nearest surface above [context] wears, or null out on the
+  /// page where there is no surface at all.
+  static SurfaceStyle? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<SurfaceDress>()?.style;
+
+  @override
+  bool updateShouldNotify(SurfaceDress oldWidget) => oldWidget.style != style;
 }
 
 /// Marks the subtree an enclosing striped [Surface] keeps clear: the

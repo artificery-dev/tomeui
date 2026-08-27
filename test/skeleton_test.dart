@@ -40,7 +40,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   });
 
-  testWidgets('the sheen travels: the gradient is not where it was', (
+  testWidgets('the sheen travels: the band is not where it was', (
     tester,
   ) async {
     await pump(tester, const Skeleton.box(width: 120, height: 80));
@@ -50,12 +50,33 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     final later = decorationOf(tester).gradient! as LinearGradient;
 
-    expect(early.stops, isNot(later.stops));
+    // The band moves by its geometry, not by squeezing its stops, so it
+    // slides off each edge whole instead of piling up against it.
+    expect(later.begin, isNot(early.begin));
+    expect(later.end, isNot(early.end));
+    expect(early.stops, later.stops);
+
+    final style = const Theme().widgets.skeleton.resolve();
     expect(
       early.colors[1],
-      const Theme().widgets.skeleton.resolve().sheen,
-      reason: 'the light in the middle of the sweep',
+      Color.alphaBlend(style.sheen, style.fill),
+      reason: 'the light in the middle of the sweep, blended onto the fill',
     );
+  });
+
+  testWidgets('one light, not two: every stop of the sweep is opaque', (
+    tester,
+  ) async {
+    await pump(tester, const Skeleton.box(width: 120, height: 80));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final sweep = decorationOf(tester).gradient! as LinearGradient;
+    // A ramp from an opaque fill to a translucent sheen is *brightest*
+    // halfway along it, which paints two bright shoulders around a dark
+    // core — one pass of the light, arriving as two.
+    for (final colour in sweep.colors) {
+      expect(colour.a, 1, reason: '$colour is translucent');
+    }
   });
 
   testWidgets('asked for less motion, it holds still', (tester) async {
@@ -90,10 +111,13 @@ void main() {
 
     final style = const Theme().widgets.skeleton.resolve();
     final rects = [
-      for (final box in find.descendant(
-        of: find.byType(Skeleton),
-        matching: find.byType(DecoratedBox),
-      ).evaluate())
+      for (final box
+          in find
+              .descendant(
+                of: find.byType(Skeleton),
+                matching: find.byType(DecoratedBox),
+              )
+              .evaluate())
         tester.getRect(find.byWidget(box.widget)),
     ];
     expect(rects.first.width, 200);

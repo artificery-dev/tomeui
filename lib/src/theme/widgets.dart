@@ -96,17 +96,49 @@ class ProgressResolver {
   /// The swatch at full voice on a groove of its own quietest tint: the
   /// same pairing a slider's travelled and untravelled track use, because
   /// they're the same picture — a length, and how much of it has happened.
-  ProgressStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
+  ///
+  /// [on] is the surface the progress is being drawn on, where it sits in
+  /// one — [SurfaceDress] is how a widget finds that out. A voice the
+  /// surface is already speaking says nothing: a primary indicator on a
+  /// solid primary button *is* the button, so the pair swaps to what the
+  /// surface reads in, its own foreground over a groove of the same at the
+  /// weight a divider takes.
+  ///
+  /// The test is [contrastRatio] against [minVoiceContrast] rather than
+  /// equality, because a surface is rarely painting exactly what it
+  /// resolved: a hover wash lifts a button's fill a little, which is
+  /// enough to make two colours unequal and nowhere near enough to make
+  /// one visible on the other.
+  /// How far the indicator has to stand from what it's drawn on before it
+  /// counts as visible. Measured, not chosen at random: every surface a
+  /// progress reads against clears 2.3, and every one it drowns in — the
+  /// same fill, and that fill under a hover or pressed wash — comes in
+  /// under 1.4.
+  static const double minVoiceContrast = 2;
+
+  ProgressStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.primary,
+    SurfaceStyle? on,
+  ]) {
     final palette = _theme.palette;
     final surface = SurfaceResolver(_theme);
     final voice =
         surface.resolve(swatch, SurfaceVariant.solid).fill ?? palette.text;
+    // The surface it's drawn on, where that surface is already wearing the
+    // voice — a fill-less variant has no colour to drown anything in, and
+    // so never matches.
+    final ground = on?.fill;
+    final drowned =
+        ground != null && contrastRatio(voice, ground) < minVoiceContrast
+        ? on!
+        : null;
 
     return ProgressStyle(
-      track:
-          surface.resolve(swatch, SurfaceVariant.subtle).fill ??
-          palette.divider,
-      indicator: voice,
+      track: drowned == null
+          ? surface.resolve(swatch, SurfaceVariant.subtle).fill ??
+                palette.divider
+          : drowned.foreground.withValues(alpha: _theme.opacities.divider),
+      indicator: drowned?.foreground ?? voice,
       thickness: _theme.space.x1,
       spinnerSize: _theme.sizes.icon,
       spinnerThickness: _theme.strokes.focus,
@@ -123,11 +155,13 @@ class ChipResolver {
 
   final Theme _theme;
 
-  /// A chip says what state a thing is in, so it wears the meaning softly
-  /// — a row of solid chips would shout every status at once.
+  /// A chip says what state a thing is in, so it wears the meaning at its
+  /// quietest — a row of solid chips would shout every status at once, and
+  /// a row of soft ones would still be a row of colour before it is a row
+  /// of words.
   ChipStyle resolve([
     SemanticSwatch swatch = SemanticSwatch.neutral,
-    SurfaceVariant variant = SurfaceVariant.soft,
+    SurfaceVariant variant = SurfaceVariant.subtle,
   ]) {
     final surface = SurfaceResolver(
       _theme,
@@ -194,12 +228,17 @@ class CalloutResolver {
 
     return CalloutStyle(
       surface: surface,
-      titleStyle: text.resolve(TextRole.label, on: surface.foreground),
+      // A callout speaks for the whole page or section, so its heading is
+      // a heading — the glyph sized to match, and the message below in the
+      // page's own body voice.
+      titleStyle: text.resolve(TextRole.subtitle, on: surface.foreground),
       messageStyle: text.resolve(TextRole.body, on: surface.foreground),
       padding: EdgeInsets.all(_theme.space.x4),
       gap: _theme.space.x3,
       textGap: _theme.space.x1,
-      iconSize: _theme.sizes.icon,
+      actionGap: _theme.space.x2,
+      iconSize: _theme.sizes.iconLarge,
+      dismissIconSize: _theme.sizes.icon,
     );
   }
 }
@@ -210,21 +249,42 @@ class EmptyStateResolver {
 
   final Theme _theme;
 
+  /// What text has to clear to count as readable on its background — the
+  /// WCAG figure, since these are words rather than marks.
+  static const double _readable = 4.5;
+
   /// Quiet all through: nothing has gone wrong, there is simply nothing
   /// here yet, and the loudest thing on screen should be whatever you can
   /// do about it.
-  EmptyStateStyle resolve() {
+  EmptyStateStyle resolve([
+    SemanticSwatch swatch = SemanticSwatch.neutral,
+    SurfaceVariant variant = SurfaceVariant.subtle,
+  ]) {
     final palette = _theme.palette;
     final text = TextResolver(_theme);
+    final surface = SurfaceResolver(
+      _theme,
+    ).resolve(swatch, variant).copyWith(radius: _theme.radii.large);
+
+    // The words keep the page's own voice wherever it still reads against
+    // the panel — which is most panels, since the quiet variants barely
+    // shift the page. Only a fill loud enough to swallow it hands the job
+    // to the surface's foreground: a heading is a heading, not a tint of
+    // whatever it happens to be sitting on.
+    final fill = surface.fill;
+    final on = fill == null || contrastRatio(palette.text, fill) >= _readable
+        ? palette.text
+        : surface.foreground;
 
     return EmptyStateStyle(
-      titleStyle: text.resolve(TextRole.title, on: palette.text),
+      surface: surface,
+      titleStyle: text.resolve(TextRole.title, on: on),
       messageStyle: text.resolve(
         TextRole.body,
         emphasis: TextEmphasis.secondary,
-        on: palette.text,
+        on: on,
       ),
-      glyph: palette.text.withValues(alpha: _theme.opacities.tertiary),
+      glyph: on.withValues(alpha: _theme.opacities.tertiary),
       iconSize: _theme.sizes.iconExtraLarge,
       gap: _theme.space.x3,
       actionGap: _theme.space.x6,
@@ -547,7 +607,8 @@ class TitleBarResolver {
         on: palette.text,
       ),
       controlSize: _theme.sizes.controlCompact,
-      controlIconSize: _theme.sizes.iconSmall,
+      controlIconSize: _theme.sizes.iconSmall * 0.8,
+      glyphStroke: _theme.strokes.hairline,
       controlRing:
           SurfaceResolver(
             _theme,
@@ -567,38 +628,47 @@ class TabsResolver {
 
   final Theme _theme;
 
-  /// Tabs are text first: the chosen one is the page's own voice with a
-  /// line under it in [swatch], and the rest step back to secondary rather
-  /// than into a box of their own. The strip sits on the palette's divider
-  /// so the unchosen tabs read as being *behind* the page the chosen one
-  /// opens onto.
+  /// Every tab is a surface: the quietest one there is for the ways to a
+  /// page, and the swatch at full voice for the page you're on. The pairing
+  /// a `SegmentedControl` uses, for the same reason — the chosen one is an
+  /// answer, and the rest are offers.
   TabsStyle resolve([SemanticSwatch swatch = SemanticSwatch.primary]) {
     final palette = _theme.palette;
     final opacities = _theme.opacities;
     final text = TextResolver(_theme);
-    final voice =
-        SurfaceResolver(_theme).resolve(swatch, SurfaceVariant.solid).fill ??
-        palette.text;
+    final surfaces = SurfaceResolver(_theme);
+    // Rounded where it meets the air, square where it meets the pane it
+    // opens onto — which is what makes a tab read as a tab rather than as
+    // a button that happens to be selected.
+    final radius = BorderRadius.only(
+      topLeft: _theme.radii.medium.topLeft,
+      topRight: _theme.radii.medium.topRight,
+    );
+    final selected = surfaces
+        .resolve(swatch, SurfaceVariant.solid)
+        .copyWith(radius: radius);
+    final unselected = surfaces
+        .resolve(SemanticSwatch.neutral, SurfaceVariant.subtle)
+        .copyWith(radius: radius);
+    final voice = selected.fill ?? palette.text;
 
     return TabsStyle(
-      selectedStyle: text.resolve(TextRole.label, on: palette.text),
+      selectedStyle: text.resolve(TextRole.label, on: selected.foreground),
       unselectedStyle: text.resolve(
         TextRole.label,
         emphasis: TextEmphasis.secondary,
         on: palette.text,
       ),
-      indicator: voice,
-      indicatorThickness: _theme.strokes.focus,
-      rule: palette.divider,
-      ruleThickness: _theme.strokes.hairline,
+      selected: selected,
+      unselected: unselected,
+      tabGap: 0,
+      closeSize: _theme.sizes.iconLarge,
+      closeIconSize: _theme.sizes.iconSmall * 0.85,
       height: _theme.sizes.control,
       padding: EdgeInsets.symmetric(horizontal: _theme.space.x3),
       gap: _theme.space.x2,
       iconSize: _theme.sizes.iconSmall,
-      radius: BorderRadius.only(
-        topLeft: _theme.radii.small.topLeft,
-        topRight: _theme.radii.small.topRight,
-      ),
+      radius: radius,
       ring: voice,
       hover: palette.text.withValues(alpha: opacities.hover),
       pressed: palette.text.withValues(alpha: opacities.pressed),
@@ -665,21 +735,23 @@ class BreadcrumbsResolver {
   final Theme _theme;
 
   /// A trail is small print: the way back is secondary, where you are is
-  /// the full voice, and the separators are the palette's divider — the
-  /// same line that separates anything else.
+  /// the full voice, and the separators speak in the same breath as the
+  /// crumbs they part — a chevron at the palette's divider weight is a
+  /// line drawn *between* things, and disappears into the page it's on.
   BreadcrumbsStyle resolve() {
     final palette = _theme.palette;
     final opacities = _theme.opacities;
     final text = TextResolver(_theme);
+    final behind = text.resolve(
+      TextRole.caption,
+      emphasis: TextEmphasis.secondary,
+      on: palette.text,
+    );
 
     return BreadcrumbsStyle(
-      textStyle: text.resolve(
-        TextRole.caption,
-        emphasis: TextEmphasis.secondary,
-        on: palette.text,
-      ),
+      textStyle: behind,
       currentStyle: text.resolve(TextRole.caption, on: palette.text),
-      separator: palette.divider,
+      separator: behind.color ?? palette.text,
       separatorSize: _theme.sizes.iconSmall,
       gap: _theme.space.x1,
       iconSize: _theme.sizes.iconSmall,
@@ -714,9 +786,9 @@ class CardResolver {
     SemanticSwatch swatch = SemanticSwatch.neutral,
     SurfaceVariant variant = SurfaceVariant.outline,
   ]) => CardStyle(
-    surface: SurfaceResolver(_theme).resolve(swatch, variant).copyWith(
-      radius: _theme.radii.large,
-    ),
+    surface: SurfaceResolver(
+      _theme,
+    ).resolve(swatch, variant).copyWith(radius: _theme.radii.large),
     spacing: _theme.space.x4,
   );
 }
@@ -1533,7 +1605,7 @@ class SurfaceResolver {
     final palette = _theme.palette;
     final worn = palette.of(swatch);
     final brightness = palette.brightness;
-    final shades = _theme.styles.surface.of(variant);
+    final shades = _theme.styles.surface.of(variant, swatch);
 
     final fill = shades.fill;
     var foreground = shades.foreground?.on(worn, brightness);

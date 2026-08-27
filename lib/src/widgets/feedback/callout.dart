@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:tomeui/tomeui.dart';
 
 /// The page telling you something, in the colour of what kind of something
@@ -65,63 +67,103 @@ class Callout extends StatelessWidget {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     final style = this.style ?? theme.widgets.callout.resolve(swatch, variant);
 
+    // The glyph, the heading and the close button are one line across the
+    // top of the block. A callout with no title heads with its message
+    // instead, so the glyph never sits beside nothing.
+    final head = title ?? message;
+    final headStyle = title != null ? style.titleStyle : style.messageStyle;
+    final rest = title != null ? message : null;
+
+    // What the head's first line measures, which is what the glyph and the
+    // close button are centred in: aligned to the words rather than to the
+    // paragraph, so a title that wraps doesn't drag them down with it.
+    final line = math.max(
+      style.iconSize,
+      (headStyle.fontSize ?? 16) * (headStyle.height ?? 1.4),
+    );
+
+    // The close button is square and flush to the edge — a notice's
+    // quietest affordance shouldn't be its widest.
+    final dismissStyle = theme.widgets.button
+        .resolve(swatch, SurfaceVariant.ghost)
+        .copyWith(
+          height: line,
+          padding: EdgeInsets.symmetric(
+            horizontal: math.max(0, (line - style.dismissIconSize) / 2),
+          ),
+        );
+
     return Semantics(
       container: true,
       liveRegion: true,
       child: Surface.custom(
         style: style.surface,
         padding: style.padding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon ?? glyphFor(swatch, theme.icons),
-              size: style.iconSize,
-              color: style.surface.foreground,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: line,
+                  child: Center(
+                    child: Icon(
+                      icon ?? glyphFor(swatch, theme.icons),
+                      size: style.iconSize,
+                      color: style.surface.foreground,
+                    ),
+                  ),
+                ),
+                SizedBox(width: style.gap),
+                Expanded(
+                  child: head == null
+                      ? const SizedBox.shrink()
+                      : DefaultTextStyle.merge(style: headStyle, child: head),
+                ),
+                if (onDismiss != null) ...[
+                  SizedBox(width: style.gap),
+                  Semantics(
+                    label: theme.labels.dismiss,
+                    child: Button.custom(
+                      onPressed: onDismiss,
+                      style: dismissStyle,
+                      child: Icon(
+                        theme.icons.close,
+                        size: style.dismissIconSize,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            SizedBox(width: style.gap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+            if (rest != null) ...[
+              SizedBox(height: style.textGap),
+              // Hanging off the glyph: the message reads as the title's
+              // own second line rather than as something beside the icon.
+              Padding(
+                padding: EdgeInsetsDirectional.only(
+                  start: style.iconSize + style.gap,
+                ),
+                child: DefaultTextStyle.merge(
+                  style: style.messageStyle,
+                  child: rest,
+                ),
+              ),
+            ],
+            if (actions.isNotEmpty) ...[
+              SizedBox(height: style.gap),
+              // Finishing on the trailing edge, where a block's answers go
+              // — the same row a [Dialog] ends with.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (title != null)
-                    DefaultTextStyle.merge(
-                      style: style.titleStyle,
-                      child: title!,
-                    ),
-                  if (title != null && message != null)
-                    SizedBox(height: style.textGap),
-                  if (message != null)
-                    DefaultTextStyle.merge(
-                      style: style.messageStyle,
-                      child: message!,
-                    ),
-                  if (actions.isNotEmpty) ...[
-                    SizedBox(height: style.gap),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final (index, action) in actions.indexed) ...[
-                          if (index > 0) SizedBox(width: style.textGap),
-                          action,
-                        ],
-                      ],
-                    ),
+                  for (final (index, action) in actions.indexed) ...[
+                    if (index > 0) SizedBox(width: style.actionGap),
+                    action,
                   ],
                 ],
-              ),
-            ),
-            if (onDismiss != null) ...[
-              SizedBox(width: style.gap),
-              Semantics(
-                label: theme.labels.dismiss,
-                child: Button(
-                  onPressed: onDismiss,
-                  variant: SurfaceVariant.ghost,
-                  swatch: swatch,
-                  center: Icon(theme.icons.close, size: style.iconSize),
-                ),
               ),
             ],
           ],

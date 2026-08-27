@@ -29,6 +29,54 @@ void main() {
     );
   });
 
+  testWidgets('the actions finish in the trailing corner', (tester) async {
+    await pump(
+      tester,
+      TitleBar(
+        leading: const [Text('back')],
+        title: const Text('Manifest'),
+        actions: [Button(onPressed: () {}, center: const Text('Sign'))],
+      ),
+    );
+
+    final style = const Theme().widgets.titleBar.resolve();
+    final bar = tester.getRect(find.byType(TitleBar));
+    final action = tester.getRect(
+      find.ancestor(of: find.text('Sign'), matching: find.byType(Button)).first,
+    );
+    expect(
+      action.right,
+      moreOrLessEquals(
+        bar.right - style.padding.resolve(TextDirection.ltr).right,
+        epsilon: 1,
+      ),
+    );
+  });
+
+  testWidgets('a press on the bar\'s own children is not held by the '
+      'window\'s double-tap', (tester) async {
+    // Wrapped around the bar, the double-tap-to-maximise recognizer joins
+    // the arena of every press its children take and holds it for
+    // kDoubleTapTimeout — a third of a second between clicking a menu and
+    // seeing it open.
+    var pressed = 0;
+    await pump(
+      tester,
+      TitleBar(
+        dragToMove: true,
+        windowControls: false,
+        leading: [
+          Button(onPressed: () => pressed++, center: const Text('File')),
+        ],
+        title: const Text('Manifest'),
+      ),
+    );
+
+    await tester.tap(find.text('File'));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(pressed, 1, reason: 'the press lands on the frame after it');
+  });
+
   testWidgets('the bar is the height the style says', (tester) async {
     await pump(tester, const TitleBar(title: Text('Manifest')));
 
@@ -36,9 +84,7 @@ void main() {
     expect(tester.getSize(find.byType(TitleBar)).height, style.height);
   });
 
-  testWidgets('centred, the title sits on the window’s middle', (
-    tester,
-  ) async {
+  testWidgets('centred, the title sits on the window’s middle', (tester) async {
     await pump(
       tester,
       const TitleBar(
@@ -108,5 +154,73 @@ void main() {
       reason: 'the system draws them there',
     );
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('the window buttons bleed into the corner, square', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      TitleBar(
+        windowControls: true,
+        title: const Text('Manifest'),
+        actions: [Button(onPressed: () {}, center: const Text('Sign'))],
+      ),
+    );
+
+    final bar = tester.getRect(find.byType(TitleBar));
+    final controls = tester.getRect(find.byType(WindowControls));
+    expect(controls.right, bar.right, reason: 'no padding holds them in');
+    expect(controls.top, bar.top);
+    expect(controls.bottom, bar.bottom);
+
+    final buttons = find.descendant(
+      of: find.byType(WindowControls),
+      matching: find.byType(AspectRatio),
+    );
+    expect(buttons, findsNWidgets(3));
+    for (final button in buttons.evaluate()) {
+      final box = tester.getRect(find.byWidget(button.widget));
+      expect(box.size, Size.square(bar.height), reason: 'square with the bar');
+    }
+  });
+
+  testWidgets('the close glyph is drawn in the bar\'s voice, not its fill', (
+    tester,
+  ) async {
+    await pump(tester, const TitleBar(windowControls: true));
+
+    final style = const Theme().widgets.titleBar.resolve();
+    final painters = [
+      for (final paint in tester.widgetList<CustomPaint>(
+        find.descendant(
+          of: find.byType(WindowControls),
+          matching: find.byType(CustomPaint),
+        ),
+      ))
+        if (paint.painter != null) paint.painter! as dynamic,
+    ].where((painter) => painter.runtimeType.toString().contains('Glyph'));
+
+    // A wash at rest is the hover colour at zero alpha rather than null, so
+    // asking whether there *is* a wash painted the close cross in the bar's
+    // own fill: a button nobody could see.
+    expect(painters.length, 3);
+    for (final painter in painters) {
+      expect(painter.color, style.surface.foreground);
+      expect(painter.color, isNot(style.surface.fill));
+    }
+  });
+
+  testWidgets('a glyph named in the theme is drawn instead of the shape', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        theme: Theme(icons: Icons(windowClose: const Icons().close)),
+        home: const Column(children: [TitleBar(windowControls: true)]),
+      ),
+    );
+
+    expect(find.byIcon(const Icons().close), findsOneWidget);
   });
 }

@@ -27,7 +27,8 @@ class TomePageRoute<T> extends PageRouteBuilder<T> {
     final eased = CurvedAnimation(
       parent: animation,
       curve: motion.enter,
-      reverseCurve: motion.exit,
+      // Flipped: see the note on `SheetRoute`.
+      reverseCurve: motion.exit.flipped,
     );
     return FadeTransition(
       opacity: eased,

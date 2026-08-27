@@ -103,6 +103,7 @@ class SurfaceShades {
     this.border,
     this.dashed = false,
     this.striped = false,
+    this.exceptions = const {},
   });
 
   final Shade? fill;
@@ -111,18 +112,36 @@ class SurfaceShades {
   final bool dashed;
   final bool striped;
 
+  /// The swatches that take different stops from the rest.
+  ///
+  /// A variant's stops are chosen against a *colour*, and the greys are not
+  /// one: [Palette.background] is the neutral swatch's own 50/950, so a
+  /// subtle neutral surface would otherwise paint the page's colour onto
+  /// the page and read as nothing at all. The exception moves the greys one
+  /// stop off the page, where the colours already sit.
+  ///
+  /// Anything not named here wears the shades above, and an exception's own
+  /// [exceptions] are never consulted — one level deep, so there is always
+  /// a single answer to what a swatch wears.
+  final Map<SemanticSwatch, SurfaceShades> exceptions;
+
+  /// The shades [swatch] actually wears.
+  SurfaceShades of(SemanticSwatch swatch) => exceptions[swatch] ?? this;
+
   SurfaceShades copyWith({
     Shade? fill,
     Shade? foreground,
     Shade? border,
     bool? dashed,
     bool? striped,
+    Map<SemanticSwatch, SurfaceShades>? exceptions,
   }) => SurfaceShades(
     fill: fill ?? this.fill,
     foreground: foreground ?? this.foreground,
     border: border ?? this.border,
     dashed: dashed ?? this.dashed,
     striped: striped ?? this.striped,
+    exceptions: exceptions ?? this.exceptions,
   );
 
   @override
@@ -132,10 +151,28 @@ class SurfaceShades {
       other.foreground == foreground &&
       other.border == border &&
       other.dashed == dashed &&
-      other.striped == striped;
+      other.striped == striped &&
+      _sameExceptions(other.exceptions);
+
+  bool _sameExceptions(Map<SemanticSwatch, SurfaceShades> other) {
+    if (other.length != exceptions.length) return false;
+    for (final entry in exceptions.entries) {
+      if (other[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
 
   @override
-  int get hashCode => Object.hash(fill, foreground, border, dashed, striped);
+  int get hashCode => Object.hash(
+    fill,
+    foreground,
+    border,
+    dashed,
+    striped,
+    Object.hashAllUnordered(
+      exceptions.entries.map((entry) => Object.hash(entry.key, entry.value)),
+    ),
+  );
 }
 
 /// The theme's tone mapping, variant by variant.
@@ -145,6 +182,11 @@ class SurfaceShades {
 /// page's end of the ramp and pull the foreground toward the readable
 /// middle. A theme built from two swatches never touches this; a theme with
 /// opinions replaces exactly the mappings it has opinions about.
+///
+/// Where a swatch needs stops of its own, [SurfaceShades.exceptions] names
+/// them — which is how the greys stay visible against a page made of the
+/// grey swatch. A palette that puts a grey in some *other* role (a zinc
+/// `primary`, say) names its own exception the same way.
 @immutable
 class SurfaceStyles {
   const SurfaceStyles({
@@ -152,12 +194,29 @@ class SurfaceStyles {
     this.soft = const SurfaceShades(
       fill: Shade(light: 100, dark: 900),
       foreground: Shade(light: 700, dark: 300),
+      // The greys, one stop further off the page: neutral's own 100/900 is
+      // the colour of a card, and a soft grey chip on a card would vanish.
+      exceptions: {
+        SemanticSwatch.neutral: SurfaceShades(
+          fill: Shade(light: 200, dark: 800),
+          foreground: Shade(light: 700, dark: 300),
+        ),
+      },
     ),
     this.subtle = const SurfaceShades(
       fill: Shade(light: 50, dark: 950),
       foreground: Shade(light: 600, dark: 400),
       // A ring one whisper above the fill, quieter than outline's.
       border: Shade(light: 200, dark: 800),
+      // Neutral's 50/950 *is* [Palette.background], so the greys take the
+      // next stop in — the quietest wash that is still a wash.
+      exceptions: {
+        SemanticSwatch.neutral: SurfaceShades(
+          fill: Shade(light: 100, dark: 900),
+          foreground: Shade(light: 600, dark: 400),
+          border: Shade(light: 200, dark: 800),
+        ),
+      },
     ),
     this.outline = const SurfaceShades(
       border: Shade(light: 400, dark: 600),
@@ -180,14 +239,19 @@ class SurfaceStyles {
   final SurfaceShades ghost;
   final SurfaceShades placeholder;
 
-  SurfaceShades of(SurfaceVariant variant) => switch (variant) {
-    SurfaceVariant.solid => solid,
-    SurfaceVariant.soft => soft,
-    SurfaceVariant.subtle => subtle,
-    SurfaceVariant.outline => outline,
-    SurfaceVariant.ghost => ghost,
-    SurfaceVariant.placeholder => placeholder,
-  };
+  /// The shades [variant] wears — as [swatch] wears them, where one is
+  /// given and the variant names an exception for it.
+  SurfaceShades of(SurfaceVariant variant, [SemanticSwatch? swatch]) {
+    final shades = switch (variant) {
+      SurfaceVariant.solid => solid,
+      SurfaceVariant.soft => soft,
+      SurfaceVariant.subtle => subtle,
+      SurfaceVariant.outline => outline,
+      SurfaceVariant.ghost => ghost,
+      SurfaceVariant.placeholder => placeholder,
+    };
+    return swatch == null ? shades : shades.of(swatch);
+  }
 
   SurfaceStyles copyWith({
     SurfaceShades? solid,

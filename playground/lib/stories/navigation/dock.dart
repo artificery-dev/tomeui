@@ -67,6 +67,7 @@ Story _dock() {
           height: horizontal ? 320 : run.value,
           child: Flex(
             direction: horizontal ? Axis.vertical : Axis.horizontal,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!horizontal) dock,
               Expanded(

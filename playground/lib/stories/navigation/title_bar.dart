@@ -31,6 +31,7 @@ Story _titleBar() {
     builder: (context) {
       final icons = ThemeProvider.of(context).icons;
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TitleBar(
             title: Text(title.value),

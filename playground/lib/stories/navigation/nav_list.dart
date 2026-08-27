@@ -40,6 +40,7 @@ Story _navList() {
           );
 
       return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // The sidebar it would really live in.
           Surface(

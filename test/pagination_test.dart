@@ -97,14 +97,86 @@ void main() {
   ) async {
     await pump(tester, page: 2, pageCount: 3);
 
-    final current = tester.widget<Button>(
-      find.ancestor(of: find.text('2'), matching: find.byType(Button)).first,
+    ButtonStyle styleOf(String number) => tester
+        .widget<Button>(
+          find
+              .ancestor(of: find.text(number), matching: find.byType(Button))
+              .first,
+        )
+        .style!;
+
+    final buttons = const Theme().widgets.button;
+    expect(
+      styleOf('2').surface,
+      buttons.resolve(SemanticSwatch.primary, SurfaceVariant.solid).surface,
     );
-    final other = tester.widget<Button>(
-      find.ancestor(of: find.text('3'), matching: find.byType(Button)).first,
+    expect(
+      styleOf('3').surface,
+      buttons.resolve(SemanticSwatch.primary, SurfaceVariant.subtle).surface,
+      reason: 'the rest wear the quietest surface there is',
     );
-    expect(current.variant, SurfaceVariant.solid);
-    expect(other.variant, SurfaceVariant.ghost);
+    // Answered, not disabled: the current page keeps its full voice even
+    // though there is nothing to press.
+    expect(styleOf('2').disabledOpacity, 1);
+  });
+
+  testWidgets('the run is the same width whichever page you are on', (
+    tester,
+  ) async {
+    final widths = <double>{};
+    for (final page in [1, 2, 5, 20, 38, 41, 42]) {
+      await pump(tester, page: page, pageCount: 42);
+      widths.add(tester.getSize(find.byType(Pagination)).width);
+    }
+    expect(widths, hasLength(1), reason: 'walked, it does not breathe');
+  });
+
+  testWidgets('every slot is a square, the elision included', (tester) async {
+    await pump(tester, page: 20, pageCount: 42);
+
+    final side = const Theme().widgets.button.resolve().height;
+    final slots = find.descendant(
+      of: find.byType(Pagination),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is SizedBox && widget.width == side && widget.height == side,
+      ),
+    );
+
+    // Two arrows, five numbers, two elisions — and every one of them the
+    // size of a control, in both directions.
+    expect(slots, findsNWidgets(9));
+    for (final slot in slots.evaluate()) {
+      expect(tester.getSize(find.byWidget(slot.widget)), Size.square(side));
+    }
+    // The elision keeps a place of its own rather than a gap of its own.
+    expect(
+      tester.getSize(find.ancestor(of: find.text('…'), matching: slots).first),
+      Size.square(side),
+    );
+  });
+
+  testWidgets('an elision never stands in for a single page', (tester) async {
+    // Whatever the window, what it hides is worth hiding: an ellipsis over
+    // one number is wider than the number.
+    for (var page = 1; page <= 42; page++) {
+      await pump(tester, page: page, pageCount: 42);
+      final shown = [
+        for (final text in tester.widgetList<Text>(
+          find.descendant(
+            of: find.byType(Pagination),
+            matching: find.byType(Text),
+          ),
+        ))
+          text.data!,
+      ];
+      for (final (index, slot) in shown.indexed) {
+        if (slot != '…') continue;
+        final before = int.parse(shown[index - 1]);
+        final after = int.parse(shown[index + 1]);
+        expect(after - before, greaterThan(2), reason: 'page $page');
+      }
+    }
   });
 
   testWidgets('a null onChanged disables every page and both arrows', (
@@ -112,9 +184,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const TomeApp(
-        home: Center(
-          child: Pagination(page: 2, pageCount: 5, onChanged: null),
-        ),
+        home: Center(child: Pagination(page: 2, pageCount: 5, onChanged: null)),
       ),
     );
 

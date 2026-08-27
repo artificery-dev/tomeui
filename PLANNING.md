@@ -36,6 +36,15 @@ Gray-zone rulings, decided once:
   in a constructor quietly makes `const Widget(...)` impossible. Those
   asserts live in `build` instead — `SegmentedControl` still has the old
   form, and should move when it's next touched.
+- A variant's stops are chosen against a *colour*, and the greys are not
+  one: `Palette.background` is the neutral swatch's own 50/950, so a subtle
+  neutral surface painted the page's colour onto the page. The answer is
+  `SurfaceShades.exceptions` — a swatch that needs its own stops names them,
+  one level deep, and everything else wears the variant's. The greys take
+  the next stop in (soft 200/800, subtle 100/900), which also rescues the
+  neutral washes that widgets rest on: a slider's untravelled track, a
+  switch's off state, a segmented control's trough, a skeleton — all of
+  which were the colour of the card they sat on.
 - Styles are the theme→widget bridge: a style class (e.g. `ButtonStyle`)
   holds the resolved values a widget actually paints, and the built-in
   variant + swatch setup is just a mapping that populates those styles —
@@ -247,16 +256,52 @@ Gray-zone rulings, decided once:
     moves the window, a double-click maximises it, and `windowControls`
     draws the buttons. Windows and Linux get them by default; macOS doesn't,
     since the system draws its own over a hidden native bar.
+  - The window buttons are painted, not borrowed: a line, a square, two
+    squares, a cross, all at one weight. No icon set has them — a dash
+    drawn for arithmetic is shorter and rounder than the square beside it,
+    and every set's "restore" is the pair of arrows meaning *leave full
+    screen*. `Icons.windowMinimize` and its neighbours are null by default
+    and name a glyph only where an app wants one instead.
+  - They bleed: each is as tall as the bar and square with it, hard into
+    the corner, outside the padding everything else keeps. A window button
+    belongs to the window, not to the page.
+  - The close cross was painted in the bar's own fill and so was invisible:
+    the code asked whether there *was* a wash, and a wash at rest is the
+    hover colour at zero alpha rather than null. What it meant to ask was
+    whether the red is actually showing — `state.hovered || state.pressed`.
   - `WindowControls` is public in its own right, for a bar built by hand.
     Every window call is guarded: no window to talk to is a bar that simply
     doesn't move, not an exception — which is also what makes it testable.
   - A centred title is centred on the *bar*, over the slots rather than
     between them, so it doesn't shift when a toggle appears beside it.
+  - The window's handle — drag to move, double-click to maximise — sits
+    *behind* the bar rather than around it. Wrapped around, the double-tap
+    recognizer joins the arena of every press the bar's children take and
+    holds it for `kDoubleTapTimeout`: a third of a second between clicking
+    a menu on the bar and seeing it open, which is what made the first
+    `MenuBar` menu feel broken. Behind, it is only in the path of presses
+    that reached the bar itself — and a window you can't drag by its
+    buttons is how native bars behave anyway.
+  - The row has exactly one flexible child, the words. A `Flexible` for
+    them next to a `Spacer` splits the free space between the two, and
+    whatever the loose half doesn't want is left at the end of the row —
+    which held the actions out of the trailing corner.
 - [x] `Tabs` - Scrollable in-page tabs: switching views, not places.
-  - Text first: the chosen tab is the page's full voice with a line under
-    it, the rest step back to secondary. No box, no fill — a tab is a word.
-  - The line is drawn in place rather than slid. Tabs are as wide as their
-    words, so there is no single distance for an indicator to travel; the
+  - Every tab is a surface: `subtle` for the ways to a page, `solid` in the
+    swatch for the page you're on — the pairing `SegmentedControl` uses,
+    for the same reason. The chosen one is an answer; the rest are offers.
+  - Shaped like a tab, not like a button that happens to be chosen: rounded
+    where it meets the air, square where it meets the pane, shoulder to
+    shoulder with its neighbours, and hard against the content it opens
+    onto. Daylight under the strip makes it a row of buttons.
+  - `TabOption.onClose` grows a cross, shown on the tab you're on and on
+    whichever one the pointer is over, the way an editor's are. It keeps
+    its place whether or not it's showing: a strip that grew as the pointer
+    crossed it would move the next tab out from under the press going to
+    reach it. A leading `icon` is the other half of that vocabulary — a
+    name is slower to find than a name with a shape.
+  - The dressing crosses in place rather than sliding. Tabs are as wide as
+    their words, so there is no single distance for a marker to travel; the
     trick `SegmentedControl` plays with equal widths doesn't transfer.
   - One focus stop, like a radio group: arrows move the choice, Home and
     End take the ends, disabled tabs are stepped over. The strip scrolls
@@ -273,6 +318,10 @@ Gray-zone rulings, decided once:
 - [x] `Breadcrumbs` - Allows customizing the sperator, and allows each item to have an optional icon.
   - The last crumb is where you are: full voice, no press, whatever it was
     given. The rest are quiet and light up under the pointer.
+  - The separators wear the same colour as the crumbs behind you, not the
+    palette's divider: a chevron is a word in the trail rather than a line
+    drawn between things, and at a divider's weight it disappears into the
+    page.
   - Crumbs shrink before the trail overflows, so a long name ellipsizes
     instead of pushing the trail off the end.
 - [x] `NavList` — the sidebar's list of places, which `Scaffold`'s leading
@@ -283,11 +332,25 @@ Gray-zone rulings, decided once:
   - A group holding where you are opens whatever it was told to do: a
     selected row nobody can see is worse than an open group nobody asked
     for.
+  - A group folds rather than vanishing: its rows stay laid out and the
+    fold clips them, so the sidebar closes over them instead of dropping
+    them and shutting the gap afterwards. Shut and still it builds nothing
+    — and the rows on their way out aren't walkable, since a row leaving is
+    not a row you can arrive at.
+  - Whatever trails a row — a chevron, a count — sits in a column at least
+    a glyph wide and centres in it. Flush to the same edge, a wide glyph
+    and a narrow number sit on different centres, and a sidebar is read
+    down its trailing edge.
   - Walked with `ListWalk`, but not autofocused — a sidebar that took the
     keyboard as the page opened would be a nuisance.
 - [x] `MenuBar` — the desktop application menu bar, on `Menu`
   - Needs the page to stay reachable while a panel is down, which is what
     `PopoverBarrier.through` was added for.
+  - In a title bar it goes in `leading`, after the app's name and a
+    `Divider(axis: Axis.vertical, fade: true)` — the menus follow the name,
+    and the rule fades at both ends so it parts them without drawing a box.
+    The name is a leading widget rather than the bar's `title`, which
+    belongs to the document.
   - Once a menu is open the bar is awake: the pointer switches menus, the
     arrows walk them, Escape puts it to sleep. It knows a press is its own
     because the pointer hovered its way there — which makes it desktop
@@ -318,9 +381,21 @@ Gray-zone rulings, decided once:
   - Lives here rather than in a data-display category that doesn't exist
     yet; it's a way to somewhere, and it's built out of `Button`s, so it
     brought no style of its own.
-  - The ends are always shown and the middle elides, so the run doesn't
-    change width as you walk it. A gap of exactly one page is drawn as that
-    page — an ellipsis hiding one number is wider than the number.
+  - The ends are always shown and the middle elides, and the run holds the
+    same number of slots however it's walked: near either end the window
+    opens out along that end rather than eliding pages nobody would skip.
+    A pager that reflowed as you walked it would move the next page out
+    from under the pointer going to press it.
+  - Every slot is a square the size of a control, the elision included — a
+    button's padding is what makes a `1` narrower than a `42`. Four digits
+    fit; a fifth scales down rather than spilling out.
+  - The quiet pages wear `subtle` and the current one `solid`, and the
+    current one keeps its full voice: it has nothing to press, but it isn't
+    disabled so much as already chosen, so it doesn't dim. Only a dead run
+    (a null `onChanged`) dims it with the rest.
+  - No elision ever stands in for a single page — the windows are sized so
+    it can't happen, since an ellipsis hiding one number is wider than the
+    number.
 
 ## feedback — the system talks back
 
@@ -331,10 +406,24 @@ Gray-zone rulings, decided once:
     would be saying two things at once.
   - In an unbounded row a bar takes `ProgressStyle.minWidth`, the same rule
     `Slider` follows for the same reason.
+  - A voice the surface is already speaking says nothing: a primary spinner
+    on a solid primary button *is* the button, and reads as emptying rather
+    than filling. So the resolver takes what it's drawn on and swaps the
+    pair for the surface's own foreground over a groove of the same at a
+    divider's weight. `SurfaceDress` is how a widget finds that out —
+    `Surface` publishes what it wears, the way it already tells text and
+    icons through `DefaultTextStyle` and `IconTheme`.
+  - The test is `contrastRatio`, not equality: a surface is rarely painting
+    exactly what it resolved, and a hover wash lifts a button's fill just
+    enough to make two colours unequal and nowhere near enough to make one
+    visible on the other — which is what made the spinner invert under the
+    pointer. Every surface a progress reads against clears 2.3; every one
+    it drowns in, wash included, comes in under 1.4.
 - [x] `StatusChip`
-  - A soft stadium: a row of solid chips would shout every status at once.
-    `dot` gives it the swatch at full voice, which is the loudest thing on
-    a quiet chip.
+  - A *subtle* stadium: a row of solid chips would shout every status at
+    once, and a row of soft ones would still read as a row of colour before
+    a row of words. `dot` gives it the swatch at full voice, which is the
+    loudest thing on a quiet chip.
   - Not pressable. A chip that did something would be a `Button` shaped
     like a chip, and should say so.
 - [x] `Badge`
@@ -354,17 +443,44 @@ Gray-zone rulings, decided once:
     glyph follows the swatch unless told otherwise, which is what makes it
     readable before it's read — `Callout.glyphFor` is that mapping, and
     `Toast` borrows it.
+  - Three bands, not one row: the glyph, the title, and the close button
+    share a line measured from the title's own leading, so they stay
+    aligned however the words below wrap; the message hangs off the glyph;
+    and the actions finish on the trailing edge, the row a `Dialog` ends
+    with. A callout with no title heads with its message, so the glyph
+    never sits beside nothing.
 - [x] `EmptyState`
   - Quiet all through: nothing has gone wrong, so the loudest thing on
     screen is the action. Words wrap at a readable measure rather than
     running the width of the slot.
+  - It draws its own surface and takes a variant like anything else, so
+    `SurfaceVariant.outline` *is* the panel rather than something to wrap
+    in a `Card`. `subtle` by default — the faintest panel the palette has,
+    which is what an empty slot looks like — and `ghost` where none is
+    wanted. Given room it fills it and centres in it; given none it hugs
+    its words.
+  - Its words keep the *page's* voice on every panel that doesn't swallow
+    them, and hand over to the surface's foreground only where the page's
+    text stops clearing 4.5 against the fill. A heading is a heading, not a
+    tint of whatever it happens to be sitting on — which is what a quiet
+    variant's own foreground (a mid-grey stop) would have made of it. A `Card` is only
+    ever as tall as its stack, so an empty state inside one that's been
+    forced taller still sits at the top: that slack is the card's to hand
+    over, and it doesn't.
 - [x] `Skeleton` — loading placeholder
   - A shimmering surface, not the striped one `Placeholder` wears: a still
     grey box reads as a thing that has loaded and is grey, while a light
     passing over it reads as a thing on its way.
   - The sheen travels from off one edge to off the other, so the shape
     rests between passes — a sheen that never leaves is a pattern, not a
-    passing light.
+    passing light. It moves by the gradient's geometry rather than by
+    squeezing its stops against the edges, which is what let it pile up as
+    a hard-edged band at the end of a pass.
+  - Every stop of the sweep is opaque, the sheen blended *onto* the fill
+    rather than interpolated towards: a ramp from an opaque colour to a
+    translucent one is brightest halfway along it, so the light arrived as
+    two bright shoulders around a dark core. Measured, not guessed — the
+    painted profile peaked either side of the band's own centre.
   - Where the reader asked for less motion it holds still and leans on its
     semantics instead. Decoration is the first thing that should stop.
 
@@ -397,6 +513,17 @@ Gray-zone rulings, decided once:
   - `SheetRoute` for the same reasons `DialogRoute` is one. It caps itself
     at `SheetStyle.maxFraction` of the screen: past that it's a page, and
     should be pushed as one.
+  - The slide lives *inside* the alignment, so the panel travels its own
+    height rather than the screen's. Outside it, `Offset(0, 1)` moves a
+    full-screen box a full screen: the sheet is out of sight within a few
+    frames and the rest of the animation plays where nobody can see it,
+    which is what made it look like it left without animating.
+  - A route's `reverseCurve` takes `Motion.exit.flipped`, not `exit` — the
+    raw curve run backwards is the *mirror* of the motion it names, so an
+    ease-in exit leaves more than half its distance behind in the first
+    quarter of the time and then creeps. Flipped, it holds and gathers
+    speed, which is what the token says an exit does. `Dialog`,
+    `CommandPalette`, and the page route all had the same slip.
 - [x] `Popover` — the floating surface menus and selects share
   - Controlled (`open` + `onDismiss`), anchored, with flip-and-slide
     placement. `barrier: false` makes it an annotation that never takes

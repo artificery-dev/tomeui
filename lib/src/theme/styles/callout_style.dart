@@ -11,7 +11,9 @@ class CalloutStyle {
     this.padding = const EdgeInsets.all(16),
     this.gap = 12,
     this.textGap = 4,
+    this.actionGap = 8,
     this.iconSize = 20,
+    this.dismissIconSize = 16,
   });
 
   /// The block itself, tinted in the swatch it was given.
@@ -28,7 +30,15 @@ class CalloutStyle {
   /// Between the title and its message.
   final double textGap;
 
+  /// Between the actions in the row that finishes the block.
+  final double actionGap;
+
+  /// The leading glyph, sized to the title it sits beside.
   final double iconSize;
+
+  /// The close glyph, which is smaller: putting a notice away is the
+  /// quietest thing on it.
+  final double dismissIconSize;
 
   CalloutStyle copyWith({
     SurfaceStyle? surface,
@@ -37,7 +47,9 @@ class CalloutStyle {
     EdgeInsetsGeometry? padding,
     double? gap,
     double? textGap,
+    double? actionGap,
     double? iconSize,
+    double? dismissIconSize,
   }) => CalloutStyle(
     surface: surface ?? this.surface,
     titleStyle: titleStyle ?? this.titleStyle,
@@ -45,7 +57,9 @@ class CalloutStyle {
     padding: padding ?? this.padding,
     gap: gap ?? this.gap,
     textGap: textGap ?? this.textGap,
+    actionGap: actionGap ?? this.actionGap,
     iconSize: iconSize ?? this.iconSize,
+    dismissIconSize: dismissIconSize ?? this.dismissIconSize,
   );
 
   @override
@@ -57,7 +71,9 @@ class CalloutStyle {
       other.padding == padding &&
       other.gap == gap &&
       other.textGap == textGap &&
-      other.iconSize == iconSize;
+      other.actionGap == actionGap &&
+      other.iconSize == iconSize &&
+      other.dismissIconSize == dismissIconSize;
 
   @override
   int get hashCode => Object.hash(
@@ -67,6 +83,8 @@ class CalloutStyle {
     padding,
     gap,
     textGap,
+    actionGap,
     iconSize,
+    dismissIconSize,
   );
 }

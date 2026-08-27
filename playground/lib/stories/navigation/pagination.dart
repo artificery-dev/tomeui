@@ -12,7 +12,7 @@ Story _pagination() {
   final siblings = DoubleKnob('Siblings', 1, min: 0, max: 3);
   final variant = ListKnob<SurfaceVariant>(
     'Variant',
-    SurfaceVariant.ghost,
+    SurfaceVariant.subtle,
     options: SurfaceVariant.values,
     describe: (option) => option.name,
   );

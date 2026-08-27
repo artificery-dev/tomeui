@@ -17,6 +17,7 @@ class TitleBarStyle {
     required this.subtitleStyle,
     this.controlSize = 32,
     this.controlIconSize = 14,
+    this.glyphStroke = 1,
     required this.controlRing,
     this.controlHover,
     this.controlPressed,
@@ -43,6 +44,11 @@ class TitleBarStyle {
   final double controlSize;
   final double controlIconSize;
 
+  /// How heavy the painted window shapes are drawn — a hairline, the way
+  /// every desktop draws them. Ignored where the theme names a glyph
+  /// instead ([Icons.windowMinimize]).
+  final double glyphStroke;
+
   final Color controlRing;
   final Color? controlHover;
   final Color? controlPressed;
@@ -61,6 +67,7 @@ class TitleBarStyle {
     TextStyle? subtitleStyle,
     double? controlSize,
     double? controlIconSize,
+    double? glyphStroke,
     Color? controlRing,
     Color? controlHover,
     Color? controlPressed,
@@ -75,6 +82,7 @@ class TitleBarStyle {
     subtitleStyle: subtitleStyle ?? this.subtitleStyle,
     controlSize: controlSize ?? this.controlSize,
     controlIconSize: controlIconSize ?? this.controlIconSize,
+    glyphStroke: glyphStroke ?? this.glyphStroke,
     controlRing: controlRing ?? this.controlRing,
     controlHover: controlHover ?? this.controlHover,
     controlPressed: controlPressed ?? this.controlPressed,
@@ -93,6 +101,7 @@ class TitleBarStyle {
       other.subtitleStyle == subtitleStyle &&
       other.controlSize == controlSize &&
       other.controlIconSize == controlIconSize &&
+      other.glyphStroke == glyphStroke &&
       other.controlRing == controlRing &&
       other.controlHover == controlHover &&
       other.controlPressed == controlPressed &&
@@ -109,6 +118,7 @@ class TitleBarStyle {
     subtitleStyle,
     controlSize,
     controlIconSize,
+    glyphStroke,
     controlRing,
     controlHover,
     controlPressed,
