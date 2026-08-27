@@ -300,8 +300,12 @@ class ScaffoldState extends State<Scaffold> {
                 ? Alignment.centerRight
                 : Alignment.centerLeft,
             widthFactor: t,
+            // Full height outright: the Align above is for the width
+            // reveal, and without saying so it would also shrink-wrap and
+            // centre the panel vertically — a sidebar floating mid-window.
             child: SizedBox(
               width: style.sidebarWidth,
+              height: double.infinity,
               child: _panel(style, side, inner: true),
             ),
           ),

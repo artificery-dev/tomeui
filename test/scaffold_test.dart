@@ -321,6 +321,25 @@ void main() {
     );
   });
 
+  testWidgets('an inline sidebar panel fills its full height', (tester) async {
+    await pump(
+      tester,
+      const Scaffold(leading: Text('nav'), body: Text('body')),
+    );
+
+    // Shrink-wrapped, the panel would float vertically centred; full
+    // height, its contents start at the top.
+    expect(
+      tester.getTopLeft(find.text('nav')).dy,
+      lessThan(50),
+      reason: 'the nav starts at the top of the window, not mid-air',
+    );
+    final panel = tester.getRect(
+      find.ancestor(of: find.text('nav'), matching: find.byType(Surface)).first,
+    );
+    expect(panel.height, 800, reason: 'the panel spans the window');
+  });
+
   testWidgets('a bar that is not self-dressed keeps the gutter', (
     tester,
   ) async {

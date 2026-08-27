@@ -234,4 +234,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(panelKey), findsNothing);
   });
+
+  testWidgets('inside a nested navigator, the panel still sits on its '
+      'anchor', (tester) async {
+    // A routing shell brings a navigator — and so an overlay — that covers
+    // only the body. Placed in that overlay, the panel would land shifted
+    // by the shell's chrome and be clipped to the body besides.
+    await tester.pumpWidget(
+      TomeApp(
+        home: Column(
+          children: [
+            const SizedBox(height: 120),
+            Expanded(
+              child: Row(
+                children: [
+                  const SizedBox(width: 200),
+                  Expanded(
+                    child: Navigator(
+                      onGenerateRoute: (_) => PageRouteBuilder(
+                        pageBuilder: (_, _, _) => Align(
+                          alignment: Alignment.topLeft,
+                          child: Popover(
+                            open: true,
+                            anchor: const SizedBox(
+                              key: anchorKey,
+                              width: 100,
+                              height: 40,
+                            ),
+                            content: (_, _) => const SizedBox(
+                              key: panelKey,
+                              width: 120,
+                              height: 80,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final style = const Theme().widgets.popover.resolve();
+    final anchor = anchorRect(tester);
+    final panel = panelRect(tester);
+    expect(anchor.topLeft, const Offset(200, 120), reason: 'inside the shell');
+    expect(panel.top, anchor.bottom + style.gap);
+    expect(panel.center.dx, closeTo(anchor.center.dx, 0.01));
+  });
 }
