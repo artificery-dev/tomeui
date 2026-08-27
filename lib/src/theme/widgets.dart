@@ -1370,12 +1370,19 @@ class SliderResolver {
         )
         .copyWith(radius: pill);
     final opacities = _theme.opacities;
+    // A colourful slider's thumb takes the swatch's bright contrast; a
+    // neutral one has no such colour to draw from, so its knob is the
+    // page's own text tone — near-white in the dark — to stay a crisp,
+    // legible control rather than a dull grey lump.
+    final thumbFill = swatch == SemanticSwatch.neutral
+        ? _theme.palette.text
+        : active.foreground;
     return SliderStyle(
       active: active,
       inactive: inactive,
       thumb: SurfaceStyle(
         foreground: active.fill ?? active.foreground,
-        fill: active.foreground,
+        fill: thumbFill,
         radius: pill,
       ),
       ring:
