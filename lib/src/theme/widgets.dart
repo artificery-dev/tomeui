@@ -1368,7 +1368,9 @@ class SliderResolver {
           SemanticSwatch.neutral,
           variant == SurfaceVariant.solid ? SurfaceVariant.soft : variant,
         )
-        .copyWith(radius: pill);
+        // A groove darker than the page it's cut into, so the untravelled
+        // track reads as a recess rather than fading into a dark surface.
+        .copyWith(radius: pill, fill: _theme.palette.background);
     final opacities = _theme.opacities;
     // A colourful slider's thumb takes the swatch's bright contrast; a
     // neutral one has no such colour to draw from, so its knob is the
