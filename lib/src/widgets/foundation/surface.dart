@@ -47,13 +47,23 @@ class Surface extends StatelessWidget {
 
     Widget box = Container(
       padding: padding,
+      // The hairline rides in the foreground, painted over the edge rather
+      // than laid out inside it — a decoration border folds into the
+      // Container's padding, and a row that gained or lost its ring on
+      // hover would shift every sibling below it by a hairline.
+      foregroundDecoration: style.border != null && !style.dashed
+          ? BoxDecoration(
+              borderRadius: style.radius,
+              border: Border.all(
+                color: style.border!,
+                width: theme.strokes.hairline,
+              ),
+            )
+          : null,
       decoration: BoxDecoration(
         // A striped fill is painted, not decorated.
         color: style.striped ? null : style.fill,
         borderRadius: style.radius,
-        border: style.border != null && !style.dashed
-            ? Border.all(color: style.border!, width: theme.strokes.hairline)
-            : null,
       ),
       child: DefaultTextStyle.merge(
         style: TextStyle(color: style.foreground),

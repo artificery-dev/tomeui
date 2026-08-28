@@ -17,6 +17,18 @@ void main() {
               .decoration
           as BoxDecoration?;
 
+  /// The ring rides in the foreground decoration — painted, never laid out.
+  BoxDecoration? ringOf(WidgetTester tester) =>
+      tester
+              .widget<Container>(
+                find.descendant(
+                  of: find.byType(Surface),
+                  matching: find.byType(Container),
+                ),
+              )
+              .foregroundDecoration
+          as BoxDecoration?;
+
   testWidgets('reports the flipped value; paints nothing until told', (
     tester,
   ) async {
@@ -69,7 +81,7 @@ void main() {
     final style = const Theme().widgets.checkbox.resolve();
     final decoration = decorationOf(tester);
     expect(decoration?.color?.a, 0);
-    expect((decoration?.border as Border?)?.top.color, style.unchecked.border);
+    expect((ringOf(tester)?.border as Border?)?.top.color, style.unchecked.border);
   });
 
   testWidgets('the variant dresses the box, like any surface', (tester) async {

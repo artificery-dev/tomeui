@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Surface` paints its hairline ring in the foreground instead of laying it
+  out: a `Container` folds a decoration border into its padding, so a row
+  that gained or lost its ring on hover grew by a hairline and shifted
+  every sibling below it. Hover dressing is visual-only now.
 - `Select` fills a stated width: given a tight width, the trigger spreads —
   answer at the start, chevron at the far end — instead of both drifting
   toward the centre. Left loose it hugs its widest option, as before.

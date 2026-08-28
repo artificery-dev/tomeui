@@ -16,6 +16,18 @@ void main() {
               .decoration
           as BoxDecoration?;
 
+  /// The ring rides in the foreground decoration — painted, never laid out.
+  BoxDecoration? ringOf(WidgetTester tester) =>
+      tester
+              .widget<Container>(
+                find.descendant(
+                  of: find.byType(Surface),
+                  matching: find.byType(Container),
+                ),
+              )
+              .foregroundDecoration
+          as BoxDecoration?;
+
   testWidgets('types, and reports what was typed', (tester) async {
     final seen = <String>[];
     await pump(tester, TextField(onChanged: seen.add));
@@ -116,7 +128,7 @@ void main() {
         .resolve(SemanticSwatch.error)
         .surface
         .border;
-    expect(decorationOf(tester)?.border?.top.color, errored);
+    expect((ringOf(tester)?.border as Border?)?.top.color, errored);
   });
 
   testWidgets('what is typed keeps the page’s text colour', (tester) async {
