@@ -81,6 +81,31 @@ void main() {
     expect(find.text('Morning').hitTestable(), findsOneWidget);
   });
 
+  testWidgets('the chosen option wears its leading on the closed trigger', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: Select<Watch>(
+            value: Watch.dog,
+            onChanged: (_) {},
+            options: [
+              SelectOption(
+                value: Watch.dog,
+                label: const Text('Dog'),
+                leading: Icon(const Icons().clock, size: 14),
+              ),
+              const SelectOption(value: Watch.morning, label: Text('Morning')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(const Icons().clock).hitTestable(), findsOneWidget);
+  });
+
   testWidgets('the trigger is as wide as its widest option, whatever is '
       'chosen', (tester) async {
     await pump(tester, value: Watch.dog);
