@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `NavList` keys a group's fold by its destinations' values instead of the
+  `NavGroup` instance: parents rebuild sidebars constantly with fresh entry
+  objects, and every fold used to snap back open when they did.
 - `Slider` learns an `axis`: `Axis.vertical` stands the line up — the thumb
   travels bottom-to-top, more is up, taps and drags ride the vertical axis,
   and the ticks turn with it.

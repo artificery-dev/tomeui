@@ -318,4 +318,42 @@ void main() {
     final count = tester.getRect(find.text('3'));
     expect(chevron.center.dx, moreOrLessEquals(count.center.dx, epsilon: 1));
   });
+
+  testWidgets('a fold survives the parent rebuilding the entries', (
+    tester,
+  ) async {
+    // Parents rebuild sidebars constantly, constructing fresh NavGroup
+    // instances each time. The fold is keyed by the destinations' values,
+    // not the instances, so it holds.
+    Widget build(int generation) => TomeApp(
+      home: NavList<int>(
+        value: 0,
+        onChanged: (_) {},
+        entries: [
+          NavDestination(value: 0, label: Text('Home $generation')),
+          NavGroup(
+            label: const Text('Cargo'),
+            destinations: const [
+              NavDestination(value: 1, label: Text('Manifest')),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(build(1));
+    expect(find.text('Manifest'), findsOneWidget);
+
+    await tester.tap(find.text('Cargo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Manifest'), findsNothing);
+
+    await tester.pumpWidget(build(2));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Manifest'),
+      findsNothing,
+      reason: 'new instances, same fold',
+    );
+  });
 }
