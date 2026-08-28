@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `EmptyState` hugs its words: a card the caller centres in the empty
+  room, not a wash over all of it — the inner Center that swallowed every
+  slot is gone.
 - `NavList` keys a group's fold by its destinations' values instead of the
   `NavGroup` instance: parents rebuild sidebars constantly with fresh entry
   objects, and every fold used to snap back open when they did.

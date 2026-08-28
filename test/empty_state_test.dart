@@ -2,8 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tomeui/tomeui.dart';
 
 void main() {
+  // Loose constraints, the way callers hold a card: the panel hugs its
+  // words and the Center does the placing.
   Future<void> pump(WidgetTester tester, Widget child) =>
-      tester.pumpWidget(TomeApp(home: child));
+      tester.pumpWidget(TomeApp(home: Center(child: child)));
 
   testWidgets('glyph, title, message, and the one thing to do about it', (
     tester,
@@ -36,35 +38,27 @@ void main() {
     );
   });
 
-  testWidgets('it centres down the slot, not just across it', (tester) async {
+  testWidgets('the panel is a card that hugs its words, not a wash', (
+    tester,
+  ) async {
     await pump(
       tester,
-      Center(
-        child: SizedBox(
-          width: 400,
-          height: 600,
-          child: EmptyState(
-            icon: const Icons().folder,
-            title: const Text('Nothing here'),
-            action: Button(onPressed: () {}, center: const Text('Add one')),
-          ),
-        ),
+      EmptyState(
+        icon: const Icons().folder,
+        title: const Text('Nothing here'),
+        action: Button(onPressed: () {}, center: const Text('Add one')),
       ),
     );
 
-    final slot = tester.getRect(find.byType(EmptyState));
-    // The stack of glyph, words, and action — the whole of what it says.
-    final said = tester.getRect(
-      find
-          .descendant(
-            of: find.byType(EmptyState),
-            matching: find.byType(Column),
-          )
-          .first,
+    final app = tester.getSize(find.byType(TomeApp));
+    final panel = tester.getRect(find.byType(EmptyState));
+    expect(panel.width, lessThan(app.width / 2));
+    expect(panel.height, lessThan(app.height / 2));
+    // And the caller's Center holds it in the middle of the room.
+    expect(
+      panel.center.dx,
+      moreOrLessEquals(app.width / 2, epsilon: 1),
     );
-    expect(said.center.dy, moreOrLessEquals(slot.center.dy, epsilon: 1));
-    expect(said.center.dx, moreOrLessEquals(slot.center.dx, epsilon: 1));
-    expect(said.height, lessThan(slot.height));
   });
 
   testWidgets('the faintest panel by default, and none when asked', (
