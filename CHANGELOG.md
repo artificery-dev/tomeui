@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `TitleBar.claimWindow()`: one call before `runApp` hides the native title
+  bar (holding the window until the first frame), so an app needs no direct
+  `window_manager` dependency to let a `TitleBar` be the window's chrome.
 - Re-export `LucideIcons` from `tomeui.dart`: apps can reach glyphs beyond
   the semantic [Icons] tokens through the single tomeui import, without a
   direct dependency on `lucide_icons_flutter`.
