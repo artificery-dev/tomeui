@@ -24,6 +24,19 @@ void main() {
               .decoration
           as BoxDecoration?;
 
+  /// The hairline lives in the foreground decoration — painted over the
+  /// edge, never laid out, so a surface that gains its ring shifts nothing.
+  BoxDecoration? ringOf(WidgetTester tester) =>
+      tester
+              .widget<Container>(
+                find.descendant(
+                  of: find.byType(Surface),
+                  matching: find.byType(Container),
+                ),
+              )
+              .foregroundDecoration
+          as BoxDecoration?;
+
   testWidgets('solid wears the swatch: 500 in light, 400 in dark', (
     tester,
   ) async {
@@ -72,9 +85,34 @@ void main() {
 
     final decoration = decorationOf(tester);
     expect(decoration?.color, isNull);
-    final side = (decoration?.border as Border?)?.top;
+    final side = (ringOf(tester)?.border as Border?)?.top;
     expect(side?.color, const Palette().success.s600);
     expect(side?.width, const Strokes().hairline);
+  });
+
+  testWidgets('the ring is painted, never laid out: a surface adds nothing '
+      'to its child\u2019s size', (tester) async {
+    // Two identical rows, one bare and one ringed: hovering a list row in
+    // and out of an outlined surface must not shift its siblings.
+    await pump(
+      tester,
+      const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: 120, height: 34, child: Text('bare')),
+          Surface(
+            variant: SurfaceVariant.outline,
+            child: SizedBox(width: 120, height: 34, child: Text('ringed')),
+          ),
+        ],
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byType(Surface)),
+      const Size(120, 34),
+      reason: 'the hairline must not grow the row',
+    );
   });
 
   testWidgets('ghost paints nothing but still has a voice', (tester) async {
@@ -85,7 +123,7 @@ void main() {
 
     final decoration = decorationOf(tester);
     expect(decoration?.color, isNull);
-    expect(decoration?.border, isNull);
+    expect(ringOf(tester), isNull);
     final element = tester.element(find.text('x'));
     expect(
       DefaultTextStyle.of(element).style.color,
@@ -108,6 +146,7 @@ void main() {
     expect(paint.foregroundPainter, isNotNull);
     // Dashed edges are painted, not drawn as a box border.
     expect(decorationOf(tester)?.border, isNull);
+    expect(ringOf(tester), isNull);
   });
 
   testWidgets('custom paints the style exactly as given', (tester) async {

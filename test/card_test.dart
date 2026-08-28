@@ -22,8 +22,8 @@ void main() {
     expect(box.bottom - content.bottom, 16);
     expect(
       box.left - tester.getRect(find.byType(Card)).left,
-      1,
-      reason: 'the outline’s hairline, outside the spacing',
+      0,
+      reason: 'the outline’s hairline is painted over the edge, not laid out',
     );
   });
 
