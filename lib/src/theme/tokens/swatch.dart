@@ -426,7 +426,9 @@ class Swatch {
     s950: Color(0xFF09090B),
   );
 
-  static const neutral = Swatch.custom(
+  // Tailwind calls this set "neutral", but that name is the palette's
+  // semantic role here — the grey wears "ash" instead.
+  static const ash = Swatch.custom(
     s50: Color(0xFFFAFAFA),
     s100: Color(0xFFF5F5F5),
     s200: Color(0xFFE5E5E5),
