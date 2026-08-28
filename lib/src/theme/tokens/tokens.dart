@@ -12,6 +12,7 @@ export 'breakpoints.dart';
 export 'icons.dart';
 export 'labels.dart';
 export 'motion.dart';
+export 'nerd_font_icons.dart';
 export 'opacities.dart';
 export 'palette.dart';
 export 'radii.dart';
