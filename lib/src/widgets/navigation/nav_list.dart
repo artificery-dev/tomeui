@@ -80,14 +80,19 @@ class _Row {
 }
 
 class _NavListState<T> extends State<NavList<T>> {
-  /// Groups the reader has folded shut, by identity — a group has no key
-  /// of its own, and its label is a widget rather than a name.
-  final Set<NavGroup<Object?>> _shut = {};
+  /// Groups the reader has folded shut, keyed by their first destination's
+  /// value — the one stable name a group carries. Object identity would
+  /// forget every fold the moment a parent rebuild handed the list fresh
+  /// entry instances, which parents do constantly.
+  final Set<Object?> _shut = {};
+
+  Object? _keyOf(NavGroup<Object?> group) =>
+      group.destinations.isEmpty ? group : group.destinations.first.value;
 
   bool get _enabled => widget.onChanged != null;
 
   bool _open(NavGroup<Object?> group) {
-    if (_shut.contains(group)) return false;
+    if (_shut.contains(_keyOf(group))) return false;
     // A group holding where you are is open whatever it was told: a
     // selected row nobody can see is worse than an open group nobody asked
     // for.
@@ -120,7 +125,11 @@ class _NavListState<T> extends State<NavList<T>> {
       case NavDestination<T>(:final value, :final enabled):
         if (enabled && value != widget.value) widget.onChanged!(value);
       case final NavGroup<Object?> group:
-        setState(() => _open(group) ? _shut.add(group) : _shut.remove(group));
+        setState(
+          () => _open(group)
+              ? _shut.add(_keyOf(group))
+              : _shut.remove(_keyOf(group)),
+        );
       default:
         break;
     }
