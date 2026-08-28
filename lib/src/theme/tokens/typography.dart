@@ -75,6 +75,96 @@ class Typography {
     ),
   });
 
+  /// The same scale dressed in Recursive, the variable face this package
+  /// bundles: one file serves every style, and [code] becomes Recursive
+  /// Mono through the MONO axis rather than a second family.
+  ///
+  /// The wght axis is pinned per style — Recursive's default instance
+  /// rests at 300, so a style that only *asked* for w600 without setting
+  /// the axis could render light under an engine that doesn't map weight
+  /// onto variable axes.
+  const Typography.recursive()
+    : this(
+        display: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 600)],
+          fontSize: 32,
+          fontWeight: FontWeight.w600,
+          height: 1.2,
+          leadingDistribution: TextLeadingDistribution.even,
+          letterSpacing: -0.4,
+        ),
+        headline: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 600)],
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
+          height: 1.25,
+          leadingDistribution: TextLeadingDistribution.even,
+          letterSpacing: -0.2,
+        ),
+        title: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 600)],
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        subtitle: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 500)],
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          height: 1.35,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        body: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 400)],
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        bodySmall: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 400)],
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          height: 1.45,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        label: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 500)],
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          height: 1.45,
+          leadingDistribution: TextLeadingDistribution.even,
+          letterSpacing: 0.2,
+        ),
+        caption: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('wght', 400)],
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        code: const TextStyle(
+          fontFamily: _recursive,
+          fontVariations: [FontVariation('MONO', 1), FontVariation('wght', 400)],
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+      );
+
+  /// The bundled family, addressed the way package fonts are.
+  static const _recursive = 'packages/tomeui/Recursive';
+
   /// The one large statement on a screen: an empty-state headline, a number
   /// worth a glance from across the room.
   final TextStyle display;

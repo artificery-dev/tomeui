@@ -25,3 +25,18 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+
+flutter:
+  fonts:
+    # Recursive (OFL, licence alongside): one variable file — MONO, CASL,
+    # wght 300–1000, slnt, CRSV — serves the whole scale, sans and mono
+    # both. [Typography.recursive] dresses the type scale in it.
+    - family: Recursive
+      fonts:
+        - asset: fonts/Recursive.ttf
+    # Symbols Nerd Font Mono (MIT, licence alongside): glyphs only, bound
+    # as [NerdFontIcons]. The Mono cut keeps every glyph in one cell, which
+    # is what an Icon wants.
+    - family: SymbolsNerdFontMono
+      fonts:
+        - asset: fonts/SymbolsNerdFontMono.ttf

@@ -5,17 +5,6 @@ void main() {
   Future<void> pump(WidgetTester tester, Widget child) =>
       tester.pumpWidget(TomeApp(home: Center(child: child)));
 
-  BoxDecoration? decorationOf(WidgetTester tester) =>
-      tester
-              .widget<Container>(
-                find.descendant(
-                  of: find.byType(Surface),
-                  matching: find.byType(Container),
-                ),
-              )
-              .decoration
-          as BoxDecoration?;
-
   /// The ring rides in the foreground decoration — painted, never laid out.
   BoxDecoration? ringOf(WidgetTester tester) =>
       tester
