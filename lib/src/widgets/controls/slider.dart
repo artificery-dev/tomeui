@@ -21,13 +21,17 @@ import '../foundation/focus_ring.dart';
 /// Without it the value is continuous and the arrows move a hundredth of
 /// the range.
 ///
-/// The track fills the width it's given — a slider is a measurement, and
+/// The track fills the length it's given — a slider is a measurement, and
 /// how long it is says how finely it can be read. In a slot that doesn't
 /// say, it takes [SliderStyle.minWidth].
+///
+/// [Axis.vertical] stands the line up: the thumb travels bottom to top,
+/// and more is up, the way a fader or a volume rocker reads.
 class Slider extends StatefulWidget {
   const Slider({
     required this.value,
     required this.onChanged,
+    this.axis = Axis.horizontal,
     this.min = 0,
     this.max = 1,
     this.divisions,
@@ -51,6 +55,9 @@ class Slider extends StatefulWidget {
   /// Called as the thumb moves — on every frame of a drag, not only when
   /// it's let go. Null disables the slider.
   final ValueChanged<double>? onChanged;
+
+  /// Which way the line runs. Vertical reads bottom-to-top.
+  final Axis axis;
 
   final double min;
   final double max;
@@ -125,15 +132,19 @@ class _SliderState extends State<Slider> {
       widget.semanticFormatter?.call(value) ??
       value.toStringAsFixed(widget.divisions == null ? 2 : 0);
 
-  /// The value under a point, measured in the track's own coordinates.
+  bool get _vertical => widget.axis == Axis.vertical;
+
+  /// The value under a point, measured along the track's own axis.
   ///
   /// The thumb's *centre* travels a shorter distance than the track is
-  /// wide — half a thumb is parked at each end — so the mapping runs
-  /// between those centres, not between the edges.
-  double _valueAt(double dx, double width, SliderStyle style) {
-    final travel = width - style.thumbSize;
+  /// long — half a thumb is parked at each end — so the mapping runs
+  /// between those centres, not between the edges. Vertical counts from
+  /// the bottom: more is up.
+  double _valueAt(double position, double extent, SliderStyle style) {
+    final travel = extent - style.thumbSize;
     if (travel <= 0) return widget.min;
-    final fraction = ((dx - style.thumbSize / 2) / travel).clamp(0.0, 1.0);
+    final along = _vertical ? extent - position : position;
+    final fraction = ((along - style.thumbSize / 2) / travel).clamp(0.0, 1.0);
     return widget.min + fraction * _range;
   }
 
@@ -180,11 +191,30 @@ class _SliderState extends State<Slider> {
             curve: theme.motion.move,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // A slider in an unbounded row still has to be some
+                // A slider in an unbounded slot still has to be some
                 // length; the style says how long.
-                final width = constraints.maxWidth.isFinite
-                    ? constraints.maxWidth
-                    : style.minWidth;
+                final limit = _vertical
+                    ? constraints.maxHeight
+                    : constraints.maxWidth;
+                final extent = limit.isFinite ? limit : style.minWidth;
+                double along(Offset position) =>
+                    _vertical ? position.dy : position.dx;
+                void dragStart(DragStartDetails details) {
+                  setState(() => _pressed = true);
+                  widget.onChangeStart?.call(widget.value);
+                  _report(
+                    _valueAt(along(details.localPosition), extent, style),
+                  );
+                }
+
+                void dragUpdate(DragUpdateDetails details) => _report(
+                  _valueAt(along(details.localPosition), extent, style),
+                );
+                void dragEnd(DragEndDetails details) {
+                  setState(() => _pressed = false);
+                  widget.onChangeEnd?.call(widget.value);
+                }
+
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapDown: _enabled
@@ -194,7 +224,11 @@ class _SliderState extends State<Slider> {
                           // there — a slider you can only drag is a slider
                           // you have to aim at.
                           _report(
-                            _valueAt(details.localPosition.dx, width, style),
+                            _valueAt(
+                              along(details.localPosition),
+                              extent,
+                              style,
+                            ),
                           );
                         }
                       : null,
@@ -204,30 +238,30 @@ class _SliderState extends State<Slider> {
                   onTapCancel: _enabled
                       ? () => setState(() => _pressed = false)
                       : null,
-                  onHorizontalDragStart: _enabled
-                      ? (details) {
-                          setState(() => _pressed = true);
-                          widget.onChangeStart?.call(widget.value);
-                          _report(
-                            _valueAt(details.localPosition.dx, width, style),
-                          );
-                        }
+                  onHorizontalDragStart: _enabled && !_vertical
+                      ? dragStart
                       : null,
-                  onHorizontalDragUpdate: _enabled
-                      ? (details) => _report(
-                          _valueAt(details.localPosition.dx, width, style),
-                        )
+                  onHorizontalDragUpdate: _enabled && !_vertical
+                      ? dragUpdate
                       : null,
-                  onHorizontalDragEnd: _enabled
-                      ? (_) {
-                          setState(() => _pressed = false);
-                          widget.onChangeEnd?.call(widget.value);
-                        }
+                  onHorizontalDragEnd: _enabled && !_vertical
+                      ? dragEnd
                       : null,
+                  onVerticalDragStart: _enabled && _vertical
+                      ? dragStart
+                      : null,
+                  onVerticalDragUpdate: _enabled && _vertical
+                      ? dragUpdate
+                      : null,
+                  onVerticalDragEnd: _enabled && _vertical ? dragEnd : null,
                   child: SizedBox(
-                    width: constraints.maxWidth.isFinite ? null : width,
-                    height: style.height,
-                    child: _track(theme, style, width),
+                    width: _vertical
+                        ? style.height
+                        : (constraints.maxWidth.isFinite ? null : extent),
+                    height: _vertical
+                        ? (constraints.maxHeight.isFinite ? null : extent)
+                        : style.height,
+                    child: _track(theme, style, extent),
                   ),
                 );
               },
@@ -238,8 +272,8 @@ class _SliderState extends State<Slider> {
     );
   }
 
-  Widget _track(Theme theme, SliderStyle style, double width) {
-    final travel = width - style.thumbSize;
+  Widget _track(Theme theme, SliderStyle style, double extent) {
+    final travel = extent - style.thumbSize;
     final divisions = widget.divisions;
 
     return TweenAnimationBuilder<double>(
@@ -251,23 +285,29 @@ class _SliderState extends State<Slider> {
       builder: (context, fraction, _) {
         final centre = style.thumbSize / 2 + fraction * travel;
         return Stack(
-          alignment: Alignment.centerLeft,
+          // The travelled part grows from the start of the line: the left
+          // end, or the bottom when the line stands up.
+          alignment: _vertical
+              ? Alignment.bottomCenter
+              : Alignment.centerLeft,
           children: [
             // The whole track, then the travelled part over it: two boxes
             // rather than a row, so the join can't show a seam.
             SizedBox(
-              height: style.trackHeight,
+              width: _vertical ? style.trackHeight : null,
+              height: _vertical ? null : style.trackHeight,
               child: Surface.custom(style: style.inactive),
             ),
             SizedBox(
-              width: centre,
-              height: style.trackHeight,
+              width: _vertical ? style.trackHeight : centre,
+              height: _vertical ? centre : style.trackHeight,
               child: Surface.custom(style: style.active),
             ),
             if (divisions != null && style.tick != null)
               Positioned.fill(
                 child: CustomPaint(
                   painter: _TickPainter(
+                    axis: widget.axis,
                     divisions: divisions,
                     inset: style.thumbSize / 2,
                     size: style.tickSize,
@@ -276,7 +316,8 @@ class _SliderState extends State<Slider> {
                 ),
               ),
             Positioned(
-              left: centre - style.thumbSize / 2,
+              left: _vertical ? null : centre - style.thumbSize / 2,
+              bottom: _vertical ? centre - style.thumbSize / 2 : null,
               child: _thumb(theme, style),
             ),
           ],
@@ -329,12 +370,14 @@ class _SliderState extends State<Slider> {
 /// so a mark always sits under the thumb that can reach it.
 class _TickPainter extends CustomPainter {
   const _TickPainter({
+    required this.axis,
     required this.divisions,
     required this.inset,
     required this.size,
     required this.color,
   });
 
+  final Axis axis;
   final int divisions;
   final double inset;
   final double size;
@@ -342,12 +385,17 @@ class _TickPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size canvasSize) {
-    final travel = canvasSize.width - inset * 2;
+    final vertical = axis == Axis.vertical;
+    final length = vertical ? canvasSize.height : canvasSize.width;
+    final travel = length - inset * 2;
     if (travel <= 0) return;
     final paint = Paint()..color = color;
     for (var i = 0; i <= divisions; i++) {
+      final at = inset + travel * i / divisions;
       canvas.drawCircle(
-        Offset(inset + travel * i / divisions, canvasSize.height / 2),
+        vertical
+            ? Offset(canvasSize.width / 2, canvasSize.height - at)
+            : Offset(at, canvasSize.height / 2),
         size / 2,
         paint,
       );
@@ -356,6 +404,7 @@ class _TickPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TickPainter oldDelegate) =>
+      oldDelegate.axis != axis ||
       oldDelegate.divisions != divisions ||
       oldDelegate.inset != inset ||
       oldDelegate.size != size ||

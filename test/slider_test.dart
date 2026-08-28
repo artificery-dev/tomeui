@@ -237,4 +237,58 @@ void main() {
     );
     handle.dispose();
   });
+
+  testWidgets('vertical: the line stands up and more is up', (tester) async {
+    final seen = <double>[];
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: SizedBox(
+            height: 300,
+            child: Slider(
+              axis: Axis.vertical,
+              value: 0.5,
+              onChanged: seen.add,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final box = tester.getSize(find.byType(Slider));
+    expect(box.height, 300);
+    expect(box.width, style.height, reason: 'the cross size is the height');
+
+    // A tap near the top asks for nearly everything; near the bottom,
+    // nearly nothing.
+    final rect = tester.getRect(find.byType(Slider));
+    await tester.tapAt(Offset(rect.center.dx, rect.top + 10));
+    expect(seen.last, greaterThan(0.9));
+    await tester.tapAt(Offset(rect.center.dx, rect.bottom - 10));
+    expect(seen.last, lessThan(0.1));
+  });
+
+  testWidgets('vertical: a drag rides the vertical axis', (tester) async {
+    final seen = <double>[];
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: SizedBox(
+            height: 300,
+            child: Slider(
+              axis: Axis.vertical,
+              value: 0.5,
+              onChanged: seen.add,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rect = tester.getRect(find.byType(Slider));
+    await tester.dragFrom(rect.center, const Offset(0, -80));
+    expect(seen.last, greaterThan(0.5), reason: 'dragging up is more');
+  });
 }
