@@ -24,6 +24,7 @@ class NavListStyle {
     required this.headingStyle,
     required this.separator,
     this.rowHeight = 32,
+    this.rowGap = 4,
     this.padding = const EdgeInsets.symmetric(horizontal: 8),
     this.gap = 8,
     this.indent = 20,
@@ -50,6 +51,11 @@ class NavListStyle {
   final Color separator;
 
   final double rowHeight;
+
+  /// Between one row and the next. Small: enough that the rounded
+  /// selection reads as its own shape rather than a band cut out of a
+  /// solid column, and no more.
+  final double rowGap;
 
   /// Inside a row, around its contents.
   final EdgeInsetsGeometry padding;
@@ -82,6 +88,7 @@ class NavListStyle {
     TextStyle? headingStyle,
     Color? separator,
     double? rowHeight,
+    double? rowGap,
     EdgeInsetsGeometry? padding,
     double? gap,
     double? indent,
@@ -100,6 +107,7 @@ class NavListStyle {
     headingStyle: headingStyle ?? this.headingStyle,
     separator: separator ?? this.separator,
     rowHeight: rowHeight ?? this.rowHeight,
+    rowGap: rowGap ?? this.rowGap,
     padding: padding ?? this.padding,
     gap: gap ?? this.gap,
     indent: indent ?? this.indent,
@@ -122,6 +130,7 @@ class NavListStyle {
       other.headingStyle == headingStyle &&
       other.separator == separator &&
       other.rowHeight == rowHeight &&
+      other.rowGap == rowGap &&
       other.padding == padding &&
       other.gap == gap &&
       other.indent == indent &&
@@ -142,6 +151,7 @@ class NavListStyle {
     headingStyle,
     separator,
     rowHeight,
+    rowGap,
     padding,
     gap,
     indent,

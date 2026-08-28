@@ -490,6 +490,7 @@ class NavListResolver {
       ),
       separator: palette.divider,
       rowHeight: rowHeight,
+      rowGap: _theme.space.x1,
       padding: EdgeInsets.symmetric(horizontal: hPad),
       gap: gap,
       indent: iconSize + gap,

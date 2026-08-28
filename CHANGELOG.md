@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `NavList` stands its rows a small gap apart (`NavListStyle.rowGap`, one
+  space step): the rounded selection reads as its own shape rather than a
+  band cut out of a solid column. A group's fold carries the gap inside
+  itself, so a shut one still takes up nothing at all.
 - A closed `Select` shows the chosen option's `leading` beside its label —
   the face at rest matches the face in the list, and the hidden width
   copies measure it too.
