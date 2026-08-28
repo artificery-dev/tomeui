@@ -119,8 +119,21 @@ class _SelectState<T> extends State<Select<T>> {
         .where((option) => option.value == widget.value)
         .firstOrNull;
 
+    // An option's face is its leading and its label together — what shows
+    // when it's chosen, and what the hidden copies measure.
+    Widget face(SelectOption<T> option) => option.leading == null
+        ? option.label
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              option.leading!,
+              SizedBox(width: style.trigger.gap),
+              Flexible(child: option.label),
+            ],
+          );
+
     final label = chosen != null
-        ? chosen.label
+        ? face(chosen)
         : DefaultTextStyle.merge(
             style: style.placeholder,
             child: widget.placeholder ?? const SizedBox.shrink(),
@@ -170,7 +183,7 @@ class _SelectState<T> extends State<Select<T>> {
                           maintainSize: true,
                           maintainAnimation: true,
                           maintainState: true,
-                          child: option.label,
+                          child: face(option),
                         ),
                       if (widget.placeholder != null)
                         Visibility(

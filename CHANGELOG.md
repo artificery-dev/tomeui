@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A closed `Select` shows the chosen option's `leading` beside its label —
+  the face at rest matches the face in the list, and the hidden width
+  copies measure it too.
 - `EmptyState` hugs its words: a card the caller centres in the empty
   room, not a wash over all of it — the inner Center that swallowed every
   slot is gone.
