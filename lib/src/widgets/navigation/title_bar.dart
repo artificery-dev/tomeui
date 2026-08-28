@@ -4,6 +4,8 @@ import 'package:tomeui/tomeui.dart';
 // bar, which an app hides to draw this one. Ours is the style [TitleBar]
 // paints, and it wins here.
 import 'package:window_manager/window_manager.dart' hide TitleBarStyle;
+// The one name the hide above drops, wanted once in [TitleBar.claimWindow].
+import 'package:window_manager/window_manager.dart' as wm show TitleBarStyle;
 
 import '../foundation/interactive.dart';
 
@@ -78,6 +80,30 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
 
   /// The style to paint, bypassing the theme.
   final TitleBarStyle? style;
+
+  /// Claim the window: hide the native title bar so the [TitleBar] in the
+  /// app's chrome is the window's own. Call before [runApp]:
+  ///
+  /// ```dart
+  /// Future<void> main() async {
+  ///   await TitleBar.claimWindow();
+  ///   runApp(const App());
+  /// }
+  /// ```
+  ///
+  /// The window stays hidden until the first frame is ready, so it never
+  /// flashes native chrome on the way up. A no-op off desktop, so one
+  /// `main` serves every platform.
+  static Future<void> claimWindow() async {
+    if (!_desktop) return;
+    WidgetsFlutterBinding.ensureInitialized();
+    await windowManager.ensureInitialized();
+    const options = WindowOptions(titleBarStyle: wm.TitleBarStyle.hidden);
+    await windowManager.waitUntilReadyToShow(options, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
 
   /// Whether this build is running on a desktop, where a window is
   /// something a bar can move.
