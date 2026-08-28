@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `Button` holds its centre in a loose `Flexible`: squeezed for width, the
+  label yields (and can ellipsize) instead of overflowing. Fixes `Select`
+  overflowing its own trigger in a narrow field.
 - `TitleBar.claimWindow()`: one call before `runApp` hides the native title
   bar (holding the window until the first frame), so an app needs no direct
   `window_manager` dependency to let a `TitleBar` be the window's chrome.

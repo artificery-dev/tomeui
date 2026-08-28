@@ -80,7 +80,11 @@ class Button extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (leading != null) ...[leading!, SizedBox(width: style.gap)],
-            center,
+            // Loose, so a squeezed button squeezes its centre rather than
+            // overflowing: the glyphs keep their size and the label yields.
+            // A plain child here would take unbounded width from the row,
+            // and anything inside that wanted to shrink couldn't.
+            Flexible(child: center),
             if (trailing != null) ...[SizedBox(width: style.gap), trailing!],
           ],
         ),
