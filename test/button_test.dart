@@ -52,6 +52,31 @@ void main() {
     expect(tester.getSize(find.byType(Button)).height, const Sizes().control);
   });
 
+  testWidgets('squeezed, the centre yields rather than overflowing', (
+    tester,
+  ) async {
+    // The centre rides in a loose Flexible: a room too small for the label
+    // squeezes the label, while the leading glyph keeps its size. A plain
+    // child would take unbounded width from the row and overflow the
+    // button — a Select's trigger in a narrow field was the first casualty.
+    await pump(
+      tester,
+      SizedBox(
+        width: 90,
+        child: Button(
+          onPressed: () {},
+          leading: const Icon(LucideIcons.check, size: 14),
+          center: const Text(
+            'A label far too long for the room',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('hover washes the fill; release lets it go', (tester) async {
     // Hover highlights only show in traditional (pointer) highlight mode;
     // the test platform defaults to touch.
