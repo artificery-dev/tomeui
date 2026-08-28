@@ -61,7 +61,7 @@ const namedSwatches = <String, Swatch>{
   'slate': Swatch.slate,
   'gray': Swatch.gray,
   'zinc': Swatch.zinc,
-  'neutral': Swatch.neutral,
+  'ash': Swatch.ash,
   'stone': Swatch.stone,
   'mauve': Swatch.mauve,
   'olive': Swatch.olive,
