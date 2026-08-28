@@ -184,8 +184,16 @@ class _NavListState<T> extends State<NavList<T>> {
     final children = <Widget>[];
     var index = 0;
 
+    // The gap goes before each row, never before a group's fold: the fold
+    // carries its own inside, so a shut one takes up nothing at all rather
+    // than leaving a gap where its rows were.
+    void space() {
+      if (children.isNotEmpty) children.add(SizedBox(height: style.rowGap));
+    }
+
     for (final entry in widget.entries) {
       final at = index++;
+      space();
       children.add(
         _line(
           theme: theme,
@@ -211,13 +219,16 @@ class _NavListState<T> extends State<NavList<T>> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final (offset, destination) in entry.destinations.indexed)
-                _line(
-                  theme: theme,
-                  style: style,
-                  row: _Row(destination, depth: 1),
-                  highlighted: open && first + offset == highlight,
-                  onHover: open ? () => highlightTo(first + offset) : () {},
-                ),
+                ...[
+                  SizedBox(height: style.rowGap),
+                  _line(
+                    theme: theme,
+                    style: style,
+                    row: _Row(destination, depth: 1),
+                    highlighted: open && first + offset == highlight,
+                    onHover: open ? () => highlightTo(first + offset) : () {},
+                  ),
+                ],
             ],
           ),
         ),

@@ -242,6 +242,48 @@ void main() {
     );
   });
 
+  testWidgets('rows stand a small gap apart, folds included', (tester) async {
+    const gap = 4.0;
+
+    Rect rowOf(String label) => tester.getRect(
+      find
+          .ancestor(
+            of: find.text(label),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+
+    await pump(
+      tester,
+      entries: [
+        NavDestination(value: 'Log', label: const Text('Log')),
+        NavGroup<String>(
+          label: const Text('Cargo'),
+          destinations: const [
+            NavDestination(value: 'Manifest', label: Text('Manifest')),
+            NavDestination(value: 'Soundings', label: Text('Soundings')),
+          ],
+        ),
+        NavDestination(value: 'Charts', label: const Text('Charts')),
+      ],
+    );
+
+    // Between two plain rows, between a group and its first destination,
+    // and between two of those: the one gap everywhere.
+    expect(rowOf('Cargo').top - rowOf('Log').bottom, gap);
+    expect(rowOf('Manifest').top - rowOf('Cargo').bottom, gap);
+    expect(rowOf('Soundings').top - rowOf('Manifest').bottom, gap);
+    expect(rowOf('Charts').top - rowOf('Soundings').bottom, gap);
+
+    // Shut, the fold takes up nothing — including its gap, or the rows
+    // either side of it would drift apart.
+    await tester.tap(find.text('Cargo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Manifest'), findsNothing);
+    expect(rowOf('Charts').top - rowOf('Cargo').bottom, gap);
+  });
+
   testWidgets('a group folds rather than vanishing', (tester) async {
     await tester.pumpWidget(
       TomeApp(
