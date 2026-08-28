@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `Slider` learns an `axis`: `Axis.vertical` stands the line up — the thumb
+  travels bottom-to-top, more is up, taps and drags ride the vertical axis,
+  and the ticks turn with it.
 - Bundle two fonts (licences alongside): **Recursive**, one variable file
   (MONO, CASL, wght 300-1000, slnt, CRSV) offered to the type scale as
   `Typography.recursive()` — `code` becomes Recursive Mono through the
