@@ -94,6 +94,34 @@ void main() {
     );
   });
 
+  testWidgets('given a wide field, the answer holds the start and the '
+      'chevron the far end', (tester) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: SizedBox(
+            width: 300,
+            child: Select<Watch>(
+              value: Watch.dog,
+              options: options,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final field = tester.getRect(find.byType(Button));
+    final chevron = tester.getRect(
+      find.byIcon(const Icons().chevronDown),
+    );
+    final label = tester.getRect(find.text('Dog').hitTestable());
+    // The spare width opens in the middle, not around the content: both
+    // ends sit within the trigger's own padding of their edges.
+    expect(field.right - chevron.right, lessThan(24));
+    expect(label.left - field.left, lessThan(24));
+  });
+
   testWidgets('the open list hugs its widest row, not the allowance', (
     tester,
   ) async {

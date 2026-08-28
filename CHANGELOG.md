@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Select` fills a stated width: given a tight width, the trigger spreads —
+  answer at the start, chevron at the far end — instead of both drifting
+  toward the centre. Left loose it hugs its widest option, as before.
+
 - Rename the `Swatch.neutral` colour set to `Swatch.ash`: Tailwind's name
   for the grey collided with the palette's semantic `neutral` role, and
   `Palette(neutral: Swatch.neutral)` read like a tautology.

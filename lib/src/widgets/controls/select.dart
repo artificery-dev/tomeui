@@ -126,56 +126,71 @@ class _SelectState<T> extends State<Select<T>> {
             child: widget.placeholder ?? const SizedBox.shrink(),
           );
 
-    return Popover(
-      open: _open,
-      side: widget.side,
-      align: widget.align,
-      onDismiss: _close,
-      // The list walks itself with the arrow keys, so it holds the
-      // keyboard; Escape still carries up to the popover.
-      takeFocus: false,
-      // The list is never narrower than the control it drops from.
-      style: theme.widgets.popover.resolve().copyWith(
-        maxWidth: double.infinity,
-      ),
-      anchor: Button.custom(
-        onPressed: enabled ? () => _open ? _close() : _openList() : null,
-        style: style.trigger,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Every answer rides along invisibly, so the trigger is as
-            // wide as its widest option and choosing never resizes it.
-            Flexible(
-              child: Stack(
-                alignment: AlignmentDirectional.centerStart,
-                children: [
-                  for (final option in widget.options)
-                    Visibility(
-                      visible: false,
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: option.label,
-                    ),
-                  if (widget.placeholder != null)
-                    Visibility(
-                      visible: false,
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: widget.placeholder!,
-                    ),
-                  label,
-                ],
-              ),
-            ),
-            SizedBox(width: style.trigger.gap),
-            Icon(theme.icons.chevronDown, size: theme.sizes.iconSmall),
-          ],
+    // Sized from outside — a tight width from a SizedBox or a stretch —
+    // the trigger fills it, the answer holding the start and the chevron
+    // the far end. Left loose, it hugs its widest option. The distinction
+    // is only legible here at the field's own doorstep: inside the button
+    // everything arrives loose, whatever the field was told.
+    return LayoutBuilder(
+      builder: (context, constraints) => Popover(
+        open: _open,
+        side: widget.side,
+        align: widget.align,
+        onDismiss: _close,
+        // The list walks itself with the arrow keys, so it holds the
+        // keyboard; Escape still carries up to the popover.
+        takeFocus: false,
+        // The list is never narrower than the control it drops from.
+        style: theme.widgets.popover.resolve().copyWith(
+          maxWidth: double.infinity,
         ),
+        anchor: Button.custom(
+          onPressed: enabled ? () => _open ? _close() : _openList() : null,
+          style: style.trigger,
+          child: Row(
+            mainAxisSize: constraints.hasTightWidth
+                ? MainAxisSize.max
+                : MainAxisSize.min,
+            // Spare width opens between the halves; hugging, there is none.
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Every answer rides along invisibly, so the trigger is as
+              // wide as its widest option and choosing never resizes it.
+              // The gap rides inside this half — two children means the
+              // spare width opens in exactly one place.
+              Flexible(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(end: style.trigger.gap),
+                  child: Stack(
+                    alignment: AlignmentDirectional.centerStart,
+                    children: [
+                      for (final option in widget.options)
+                        Visibility(
+                          visible: false,
+                          maintainSize: true,
+                          maintainAnimation: true,
+                          maintainState: true,
+                          child: option.label,
+                        ),
+                      if (widget.placeholder != null)
+                        Visibility(
+                          visible: false,
+                          maintainSize: true,
+                          maintainAnimation: true,
+                          maintainState: true,
+                          child: widget.placeholder!,
+                        ),
+                      label,
+                    ],
+                  ),
+                ),
+              ),
+              Icon(theme.icons.chevronDown, size: theme.sizes.iconSmall),
+            ],
+          ),
+        ),
+        content: (context, anchor) => _list(context, theme, style, anchor),
       ),
-      content: (context, anchor) => _list(context, theme, style, anchor),
     );
   }
 
