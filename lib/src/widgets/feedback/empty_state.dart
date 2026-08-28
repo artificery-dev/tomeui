@@ -76,43 +76,40 @@ class EmptyState extends StatelessWidget {
       child: Surface.custom(
         style: style.surface,
         padding: style.padding,
-        // No factors: given room, the panel takes it and centres its words
-        // in it; given none — an unbounded column, a scroll view — Align
-        // shrinks to the words anyway, so it never forces a slot open.
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: style.maxWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (illustration != null) ...[
-                  illustration!,
-                  SizedBox(height: style.gap),
-                ] else if (icon != null) ...[
-                  Icon(icon, size: style.iconSize, color: style.glyph),
-                  SizedBox(height: style.gap),
-                ],
-                if (title != null) ...[
-                  DefaultTextStyle.merge(
-                    style: style.titleStyle,
-                    textAlign: TextAlign.center,
-                    child: title!,
-                  ),
-                  if (message != null) SizedBox(height: style.gap),
-                ],
-                if (message != null)
-                  DefaultTextStyle.merge(
-                    style: style.messageStyle,
-                    textAlign: TextAlign.center,
-                    child: message!,
-                  ),
-                if (action != null) ...[
-                  SizedBox(height: style.actionGap),
-                  action!,
-                ],
+        // The panel hugs its words: an empty state is a card the caller
+        // centres in the empty room, not a wash over all of it.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: style.maxWidth),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (illustration != null) ...[
+                illustration!,
+                SizedBox(height: style.gap),
+              ] else if (icon != null) ...[
+                Icon(icon, size: style.iconSize, color: style.glyph),
+                SizedBox(height: style.gap),
               ],
-            ),
+              if (title != null) ...[
+                DefaultTextStyle.merge(
+                  style: style.titleStyle,
+                  textAlign: TextAlign.center,
+                  child: title!,
+                ),
+                if (message != null) SizedBox(height: style.gap),
+              ],
+              if (message != null)
+                DefaultTextStyle.merge(
+                  style: style.messageStyle,
+                  textAlign: TextAlign.center,
+                  child: message!,
+                ),
+              if (action != null) ...[
+                SizedBox(height: style.actionGap),
+                action!,
+              ],
+            ],
           ),
         ),
       ),
