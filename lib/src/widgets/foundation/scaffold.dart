@@ -262,9 +262,14 @@ class ScaffoldState extends State<Scaffold> {
       width: style.dividerThickness,
     );
     bool beside(ScaffoldSide side) => has(side) && !isDrawer(side);
+    // A self-dressed bar owns the seam it meets the body at — it may
+    // want to straddle it — so the frame yields that edge to it.
+    final bottomBar = widget.statusbars.firstOrNull;
     return BorderDirectional(
       top: widget.toolbars.isEmpty ? BorderSide.none : line,
-      bottom: widget.statusbars.isEmpty ? BorderSide.none : line,
+      bottom: bottomBar == null || bottomBar is SelfDressedBar
+          ? BorderSide.none
+          : line,
       start: beside(ScaffoldSide.leading) ? line : BorderSide.none,
       end: beside(ScaffoldSide.trailing) ? line : BorderSide.none,
     );
