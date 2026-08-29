@@ -266,6 +266,10 @@ class ScaffoldState extends State<Scaffold> {
         Expanded(
           child: DecoratedBox(
             decoration: BoxDecoration(border: _frame(style)),
+            // Over the page, not under it: a body that paints its own
+            // ground (a pinned header, an opaque pane) must not erase
+            // the frame it sits in.
+            position: DecorationPosition.foreground,
             child: widget.body ?? const SizedBox.shrink(),
           ),
         ),
