@@ -428,13 +428,33 @@ class ScaffoldState extends State<Scaffold> {
     );
   }
 
-  /// The panel a sidebar's contents sit on. No hairline of its own — the
-  /// line between sidebar and body is the body's frame.
-  Widget _panel(ScaffoldStyle style, ScaffoldSide side) => Surface.custom(
-    style: style.sidebar,
-    padding: style.sidebarPadding,
-    child: _slot(side)!,
-  );
+  /// The panel a sidebar's contents sit on. The line between sidebar and
+  /// body is the body's frame, not the panel's — its one hairline is the
+  /// bottom edge it shares with a statusbar, drawn on the same row as the
+  /// body's own bottom line so the seam above the status band runs the
+  /// window whole.
+  Widget _panel(ScaffoldStyle style, ScaffoldSide side) {
+    final panel = Surface.custom(
+      style: style.sidebar,
+      padding: style.sidebarPadding,
+      child: _slot(side)!,
+    );
+    if (widget.statusbars.isEmpty || style.dividerThickness <= 0) {
+      return panel;
+    }
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: style.divider,
+            width: style.dividerThickness,
+          ),
+        ),
+      ),
+      child: panel,
+    );
+  }
 }
 
 /// What one of a [Scaffold]'s sidebars is doing, the instant it's read.
@@ -557,6 +577,8 @@ class ScaffoldSidebarToggle extends StatelessWidget {
   const ScaffoldSidebarToggle(
     this.side, {
     this.icon,
+    this.showLabel,
+    this.hideLabel,
     this.variant = SurfaceVariant.ghost,
     this.swatch = SemanticSwatch.neutral,
     super.key,
@@ -567,6 +589,12 @@ class ScaffoldSidebarToggle extends StatelessWidget {
   /// The glyph, when the theme's [Icons.sidebarLeading] and
   /// [Icons.sidebarTrailing] aren't what this shell calls its panels.
   final IconData? icon;
+
+  /// What the tooltip and screen reader call revealing and hiding this
+  /// panel, when the theme's "Show sidebar" / "Hide sidebar" aren't its
+  /// name — a queue, an inspector.
+  final String? showLabel;
+  final String? hideLabel;
 
   final SurfaceVariant variant;
   final SemanticSwatch swatch;
@@ -585,14 +613,20 @@ class ScaffoldSidebarToggle extends StatelessWidget {
           ScaffoldSide.trailing => theme.icons.sidebarTrailing,
         };
 
+    final label = sidebar.open
+        ? hideLabel ?? theme.labels.hideSidebar
+        : showLabel ?? theme.labels.showSidebar;
     return Semantics(
       toggled: sidebar.open,
-      label: sidebar.open ? theme.labels.hideSidebar : theme.labels.showSidebar,
-      child: Button(
-        onPressed: () => scaffold.toggle(side),
-        variant: variant,
-        swatch: swatch,
-        center: Icon(glyph),
+      label: label,
+      child: Tooltip(
+        message: Text(label),
+        child: Button(
+          onPressed: () => scaffold.toggle(side),
+          variant: variant,
+          swatch: swatch,
+          center: Icon(glyph),
+        ),
       ),
     );
   }
