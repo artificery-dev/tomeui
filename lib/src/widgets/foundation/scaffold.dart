@@ -219,13 +219,26 @@ class ScaffoldState extends State<Scaffold> {
           state: this,
           leading: _snapshot(ScaffoldSide.leading),
           trailing: _snapshot(ScaffoldSide.trailing),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final bar in widget.toolbars) _band(style, bar),
-              Expanded(child: _body(theme, style, constraints.maxWidth)),
-              for (final bar in widget.statusbars) _band(style, bar),
-            ],
+          // The window wears the same hairline on its very outside
+          // pixels — foreground, so no chrome or page erases it.
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: style.dividerThickness <= 0
+                  ? null
+                  : Border.all(
+                      color: style.divider,
+                      width: style.dividerThickness,
+                    ),
+            ),
+            position: DecorationPosition.foreground,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final bar in widget.toolbars) _band(style, bar),
+                Expanded(child: _body(theme, style, constraints.maxWidth)),
+                for (final bar in widget.statusbars) _band(style, bar),
+              ],
+            ),
           ),
         );
       },
