@@ -1,11 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:tomeui/tomeui.dart';
-// The plugin has a `TitleBarStyle` of its own — an enum for the *native*
-// bar, which an app hides to draw this one. Ours is the style [TitleBar]
-// paints, and it wins here.
-import 'package:window_manager/window_manager.dart' hide TitleBarStyle;
-// The one name the hide above drops, wanted once in [TitleBar.claimWindow].
-import 'package:window_manager/window_manager.dart' as wm show TitleBarStyle;
 
 import '../foundation/interactive.dart';
 
@@ -82,28 +76,22 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
   final TitleBarStyle? style;
 
   /// Claim the window: hide the native title bar so the [TitleBar] in the
-  /// app's chrome is the window's own. Call before [runApp]:
+  /// app's chrome is the window's own. Call before [runApp], after
+  /// installing a [WindowShell] — the `window_manager`-backed one comes
+  /// from `package:tomeui_desktop`:
   ///
   /// ```dart
   /// Future<void> main() async {
+  ///   installWindowShell();          // from package:tomeui_desktop
   ///   await TitleBar.claimWindow();
   ///   runApp(const App());
   /// }
   /// ```
   ///
   /// The window stays hidden until the first frame is ready, so it never
-  /// flashes native chrome on the way up. A no-op off desktop, so one
-  /// `main` serves every platform.
-  static Future<void> claimWindow() async {
-    if (!_desktop) return;
-    WidgetsFlutterBinding.ensureInitialized();
-    await windowManager.ensureInitialized();
-    const options = WindowOptions(titleBarStyle: wm.TitleBarStyle.hidden);
-    await windowManager.waitUntilReadyToShow(options, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
-  }
+  /// flashes native chrome on the way up. Against the default [NoWindow]
+  /// shell this is a no-op, so one `main` serves every platform.
+  static Future<void> claimWindow() => WindowShell.instance.claim();
 
   /// Whether this build is running on a desktop, where a window is
   /// something a bar can move.
@@ -227,19 +215,20 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
 
   static Future<void> _startDragging() async {
     try {
-      await windowManager.startDragging();
+      await WindowShell.instance.startDragging();
     } on Object {
-      // No window to drag — a desktop build without the plugin wired up,
-      // or a test. A bar that can't move the window is still a bar.
+      // No window to drag — a shell that overpromised, or a test. A bar
+      // that can't move the window is still a bar.
     }
   }
 
   static Future<void> _toggleMaximized() async {
     try {
-      if (await windowManager.isMaximized()) {
-        await windowManager.unmaximize();
+      final shell = WindowShell.instance;
+      if (await shell.isMaximized()) {
+        await shell.unmaximize();
       } else {
-        await windowManager.maximize();
+        await shell.maximize();
       }
     } on Object {
       // As above.
@@ -262,31 +251,31 @@ class WindowControls extends StatefulWidget {
   State<WindowControls> createState() => _WindowControlsState();
 }
 
-class _WindowControlsState extends State<WindowControls> with WindowListener {
+class _WindowControlsState extends State<WindowControls> {
   bool _maximized = false;
 
   @override
   void initState() {
     super.initState();
-    windowManager.addListener(this);
+    WindowShell.instance.addMaximizedListener(_onMaximized);
     _readMaximized();
   }
 
   @override
   void dispose() {
-    windowManager.removeListener(this);
+    WindowShell.instance.removeMaximizedListener(_onMaximized);
     super.dispose();
   }
 
-  @override
-  void onWindowMaximize() => setState(() => _maximized = true);
-
-  @override
-  void onWindowUnmaximize() => setState(() => _maximized = false);
+  void _onMaximized(bool maximized) {
+    if (mounted && maximized != _maximized) {
+      setState(() => _maximized = maximized);
+    }
+  }
 
   Future<void> _readMaximized() async {
     try {
-      final maximized = await windowManager.isMaximized();
+      final maximized = await WindowShell.instance.isMaximized();
       if (mounted && maximized != _maximized) {
         setState(() => _maximized = maximized);
       }
@@ -322,7 +311,7 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
             glyph: WindowGlyph.minimize,
             icon: theme.icons.windowMinimize,
             label: theme.labels.minimizeWindow,
-            onPressed: () => _act(windowManager.minimize),
+            onPressed: () => _act(WindowShell.instance.minimize),
           ),
           _WindowButton(
             style: style,
@@ -334,7 +323,9 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
                 ? theme.labels.restoreWindow
                 : theme.labels.maximizeWindow,
             onPressed: () => _act(
-              _maximized ? windowManager.unmaximize : windowManager.maximize,
+              _maximized
+                  ? WindowShell.instance.unmaximize
+                  : WindowShell.instance.maximize,
             ),
           ),
           _WindowButton(
@@ -343,7 +334,7 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
             icon: theme.icons.windowClose,
             label: theme.labels.closeWindow,
             danger: true,
-            onPressed: () => _act(windowManager.close),
+            onPressed: () => _act(WindowShell.instance.close),
           ),
         ],
       ),

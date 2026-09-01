@@ -38,6 +38,7 @@ export 'navigation/nav_list.dart';
 export 'navigation/pagination.dart';
 export 'navigation/tabs.dart';
 export 'navigation/title_bar.dart';
+export 'navigation/window_shell.dart';
 export 'overlays/dialog.dart';
 export 'overlays/menu.dart';
 export 'overlays/popover.dart';

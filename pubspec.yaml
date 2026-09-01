@@ -14,8 +14,6 @@ dependencies:
   # Default glyphs for the semantic icon tokens ([Icons.lucide]). Pure
   # icon-font data — it drags in neither material nor cupertino.
   lucide_icons_flutter: ^3.0.0
-  # Desktop out of the box: TitleBar doubles as the window control container.
-  window_manager: ^0.5.2
   # The tokenizer behind CodeText.block's highlighting — a pure-Dart port of
   # highlight.js that touches only flutter/painting and flutter/rendering.
   # It brings grammars, not colours: the palette does the dressing.
