@@ -5,7 +5,8 @@ import 'package:tomeui/tomeui.dart';
 ///
 /// `package:window_manager` exports a `TitleBarStyle` too — an enum for the
 /// *native* bar, which an app hides in order to draw this one. An app that
-/// imports both hides one of the names; nothing in Tome needs the plugin's.
+/// imports both hides one of the names; nothing in Tome touches the plugin
+/// (that lives behind [WindowShell], in `package:tomeui_desktop`).
 @immutable
 class TitleBarStyle {
   const TitleBarStyle({

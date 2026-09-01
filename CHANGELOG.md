@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- **Tome no longer depends on `window_manager`.** The window behind
+  [TitleBar] now speaks through a seam — `WindowShell`, with a `NoWindow`
+  default whose every action is a quiet no-op — and the plugin-backed shell
+  moved to a new package, `tomeui_desktop` (in `desktop/` beside this one).
+  Embedded targets (flutter-pi and friends) take tomeui alone and never
+  ship a desktop plugin.
+
+  **What a desktop app must change:** add `tomeui_desktop` to its
+  dependencies and call `installWindowShell()` (from
+  `package:tomeui_desktop`) in `main`, *before* `TitleBar.claimWindow()`.
+  That's the whole migration — `claimWindow()`, the drag-to-move, the
+  double-click maximise, and the window buttons then behave exactly as
+  before. An app that skips the install keeps working, but as if off
+  desktop: the bar is a bar, the window buttons act on nothing, and
+  `claimWindow()` no longer hides the native chrome. Custom shells
+  (a test double, another windowing plugin) go the same way: extend
+  `WindowShell` and assign `WindowShell.instance`.
+
 - `NavList` stands its rows a small gap apart (`NavListStyle.rowGap`, one
   space step): the rounded selection reads as its own shape rather than a
   band cut out of a solid column. A group's fold carries the gap inside
