@@ -18,5 +18,6 @@ library;
 
 export 'src/click_wheel_input.dart';
 export 'src/intents.dart';
+export 'src/wheel_grid.dart';
 export 'src/wheel_list.dart';
 export 'src/wheel_rail.dart';
