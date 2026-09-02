@@ -9,9 +9,9 @@ import 'intents.dart';
 /// wheel moving it and the centre button activating it - laid out in
 /// [columns]. A detent moves one cell along; the fast-spin tier
 /// ([JogIntent.page]) moves a whole row. The selected cell wears the
-/// primary as a rounded plate under it, its glyph and words answering in
-/// the primary's contrast colour, the way the list's selected row wears
-/// the bar. Rows share one [cellExtent]; the width is the grid's share.
+/// primary as a rounded outline, its glyph and words in the same colour -
+/// the cursor as a frame rather than the bar a list's row wears. Rows
+/// share one [cellExtent]; the width is the grid's share.
 ///
 /// ```dart
 /// WheelGrid(
