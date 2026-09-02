@@ -338,13 +338,19 @@ void holdTests() {
     expect(heard.length, whileHeld, reason: 'let go, it stops');
     expect(heard.every((i) => i is VolumeIntent && i.direction == 1), isTrue);
 
-    // The real key: down, repeats from the hardware, up - every one heard.
+    // The real key: down speaks at once, the hardware's repeats (if any)
+    // are the key still down, and the hold repeats on the input's own
+    // clock - not every host repeats a held key.
     heard.clear();
     await tester.sendKeyDownEvent(LogicalKeyboardKey.audioVolumeDown);
     await tester.sendKeyRepeatEvent(LogicalKeyboardKey.audioVolumeDown);
-    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.audioVolumeDown);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.audioVolumeDown);
     await tester.pump();
-    expect(heard.length, 3);
+    expect(heard.length, 1);
+    await tester.pump(const Duration(milliseconds: 1000));
+    expect(heard.length, greaterThan(2));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.audioVolumeDown);
+    final released = heard.length;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(heard.length, released);
   });
 }
