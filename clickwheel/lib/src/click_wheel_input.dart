@@ -482,7 +482,11 @@ class _WheelBackAction extends ContextAction<WheelBackIntent> {
 
 /// Every scrollable under the wheel rides cupertino physics: detents land
 /// exactly, edges answer with a spring, and no platform ever swaps the
-/// feel out from under the hardware.
+/// feel out from under the hardware - nor dresses it. On a desktop
+/// platform (which is what flutter-pi says it is) Flutter would add its own
+/// scrollbar to every scrollable, one that appears while scrolling; the
+/// wheel's lists draw a persistent bar of their own, and two bars is one
+/// too many.
 class WheelScrollBehavior extends ScrollBehavior {
   const WheelScrollBehavior();
 
@@ -492,6 +496,13 @@ class WheelScrollBehavior extends ScrollBehavior {
 
   @override
   Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
+
+  @override
+  Widget buildScrollbar(
     BuildContext context,
     Widget child,
     ScrollableDetails details,

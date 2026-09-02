@@ -78,4 +78,38 @@ void main() {
     expect(bar.trackVisibility, isTrue);
     expect(bar.minThumbLength, 40);
   });
+
+  platformScrollbarTests();
+}
+
+/// The platform adds no scrollbar of its own under the wheel: the list's
+/// persistent bar is the only one.
+void platformScrollbarTests() {
+  testWidgets(
+    'a scrolling list wears one bar, the list\'s own',
+    (tester) async {
+      final wheel = ClickWheelController();
+      await tester.pumpWidget(
+        TomeApp(
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              ClickWheelInput(controller: wheel, child: child!),
+          home: SizedBox(
+            height: 120,
+            child: WheelList(
+              itemExtent: 40,
+              autofocus: true,
+              children: [for (var i = 0; i < 20; i++) Text('Row $i')],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      wheel.jog(3);
+      await tester.pump();
+      // The platform's would be a second RawScrollbar around the viewport.
+      expect(find.byType(RawScrollbar), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
 }

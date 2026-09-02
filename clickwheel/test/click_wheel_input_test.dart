@@ -57,7 +57,9 @@ void main() {
           .ancestor(
             of: find.text(label),
             matching: find.byWidgetPredicate(
-              (widget) => widget is ColoredBox && widget.color == wash,
+              (widget) =>
+                  widget is DecoratedBox &&
+                  (widget.decoration as BoxDecoration).color == wash,
             ),
           )
           .evaluate()
