@@ -101,6 +101,7 @@ void main() {
   });
 
   mutedTests();
+  holdTests();
 }
 
 /// Muted, the wheel is claimed but silent - and the power chord is not.
@@ -200,5 +201,150 @@ void mutedTests() {
     wheel.powerUp();
     await tester.pump(const Duration(milliseconds: 400));
     expect(presses, [isA<PowerTaps>().having((p) => p.taps, 'taps', 1)]);
+  });
+}
+
+/// Every button of the ring has two words: the short one on a release in
+/// time, the long one at the threshold - and never both. The volume keys
+/// have one word that repeats while held.
+void holdTests() {
+  Future<ClickWheelController> pumpRing(
+    WidgetTester tester, {
+    required void Function(Intent) heard,
+    void Function(MediaCommand)? onMedia,
+    void Function(MediaCommand)? onMediaHold,
+  }) async {
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => ClickWheelInput(
+          controller: wheel,
+          onMedia: onMedia,
+          onMediaHold: onMediaHold,
+          onVolume: (d) => heard(VolumeIntent(d)),
+          child: Actions(
+            actions: {
+              ActivateIntent: CallbackAction<ActivateIntent>(
+                onInvoke: (i) => heard(i),
+              ),
+              ActivateHoldIntent: CallbackAction<ActivateHoldIntent>(
+                onInvoke: (i) => heard(i),
+              ),
+              // Only when no ear is given: an action here would sit
+              // nearer the focus than the input's own and take the word.
+              if (onMedia == null && onMediaHold == null)
+                MediaIntent: CallbackAction<MediaIntent>(
+                  onInvoke: (i) => heard(i),
+                ),
+            },
+            child: child!,
+          ),
+        ),
+        home: const Focus(autofocus: true, child: SizedBox.expand()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return wheel;
+  }
+
+  testWidgets('the centre: a press on release, a hold at the threshold', (
+    tester,
+  ) async {
+    final heard = <Intent>[];
+    final wheel = await pumpRing(tester, heard: heard.add);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(heard, isEmpty, reason: 'nothing on the way down');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(heard, [isA<ActivateIntent>()]);
+
+    heard.clear();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(heard, [isA<ActivateHoldIntent>()], reason: 'the hold speaks');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(heard.length, 1, reason: 'and the release says nothing more');
+
+    // The controller's hands: the words without the wait, and with it.
+    heard.clear();
+    wheel.press(WheelButton.select);
+    wheel.hold(WheelButton.select);
+    await tester.pump();
+    expect(heard, [isA<ActivateIntent>(), isA<ActivateHoldIntent>()]);
+    heard.clear();
+    wheel.buttonDown(WheelButton.select);
+    await tester.pump(const Duration(milliseconds: 700));
+    wheel.buttonUp(WheelButton.select);
+    await tester.pump();
+    expect(heard, [isA<ActivateHoldIntent>()]);
+  });
+
+  testWidgets('media buttons carry the hold, and the ears tell them apart', (
+    tester,
+  ) async {
+    final pressed = <MediaCommand>[];
+    final held = <MediaCommand>[];
+    final wheel = await pumpRing(
+      tester,
+      heard: (_) {},
+      onMedia: pressed.add,
+      onMediaHold: held.add,
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPlayPause);
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPlayPause);
+    await tester.pump();
+    expect(held, [MediaCommand.toggle]);
+    expect(pressed, isEmpty);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(pressed, [MediaCommand.next]);
+
+    // A repeat while down is the key still down, not a second press.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(pressed, [MediaCommand.next, MediaCommand.previous]);
+
+    wheel.hold(WheelButton.next);
+    await tester.pump();
+    expect(held, [MediaCommand.toggle, MediaCommand.next]);
+  });
+
+  testWidgets('a volume key speaks on the way down and repeats while held', (
+    tester,
+  ) async {
+    final heard = <Intent>[];
+    final wheel = await pumpRing(tester, heard: heard.add);
+
+    wheel.buttonDown(WheelButton.volumeUp);
+    await tester.pump();
+    expect(heard.length, 1, reason: 'at once');
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(heard.length, 1, reason: 'not yet held');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(heard.length, greaterThan(1), reason: 'held, it repeats');
+    final whileHeld = heard.length;
+    wheel.buttonUp(WheelButton.volumeUp);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(heard.length, whileHeld, reason: 'let go, it stops');
+    expect(heard.every((i) => i is VolumeIntent && i.direction == 1), isTrue);
+
+    // The real key: down, repeats from the hardware, up - every one heard.
+    heard.clear();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.audioVolumeDown);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.audioVolumeDown);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.audioVolumeDown);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.audioVolumeDown);
+    await tester.pump();
+    expect(heard.length, 3);
   });
 }
