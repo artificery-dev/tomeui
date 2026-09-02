@@ -159,8 +159,9 @@ class ClickWheelInput extends StatefulWidget {
 
   /// Whether the wheel is to say nothing. Its keys are still claimed -
   /// nothing above or below hears them either - but no intent is
-  /// dispatched and the media and volume ears stay quiet. The power chord
-  /// still speaks, because it is how a muted player wakes. For a screen
+  /// dispatched and the media ear stays quiet. Two things still speak: the
+  /// power chord, because it is how a muted player wakes, and the volume
+  /// rocker, because a press on it in a pocket means what it says. For a screen
   /// that is dark: a thumb on the wheel in a pocket must not walk the
   /// menus blind.
   final bool muted;
@@ -309,8 +310,9 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   // -- key translation -----------------------------------------------------
 
   /// One table from the hardware's keys to the grammar. Repeats count for
-  /// the wheel (a held direction keeps jogging) and are dropped for
-  /// everything that means a press.
+  /// the wheel (a held direction keeps jogging) and for the volume rocker
+  /// (a held key keeps climbing), and are dropped for everything that
+  /// means a press.
   bool _onKey(KeyEvent event) {
     final key = event.physicalKey;
 
@@ -319,7 +321,10 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       return true;
     }
 
-    if (widget.muted) return _handles(key); // claimed, and that is all
+    // Muted, the wheel is claimed and says nothing - but the volume
+    // rocker still speaks: a press in a pocket means what it says, and
+    // the screen need not wake for it.
+    if (widget.muted && !_isVolume(key)) return _handles(key);
 
     if (key == PhysicalKeyboardKey.escape ||
         key == PhysicalKeyboardKey.browserBack) {
@@ -357,7 +362,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     };
     if (intent == null) return false;
 
-    if (event is KeyRepeatEvent && intent is! JogIntent) {
+    if (event is KeyRepeatEvent && intent is! JogIntent && intent is! VolumeIntent) {
       return true; // a held button is one press
     }
 
@@ -371,7 +376,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// The scope's own idea of what is focused, not the platform's - see
   /// [_scope]. On the device the two are the same node.
   void _dispatch(Intent intent) {
-    if (widget.muted) return;
+    if (widget.muted && intent is! VolumeIntent) return;
     Actions.maybeInvoke(_focused() ?? _actionsContext ?? context, intent);
   }
 
@@ -391,6 +396,10 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// Where intents land when nothing holds focus: just inside our own
   /// [Actions], so the defaults still answer.
   BuildContext? _actionsContext;
+
+  bool _isVolume(PhysicalKeyboardKey key) =>
+      key == PhysicalKeyboardKey.audioVolumeUp ||
+      key == PhysicalKeyboardKey.audioVolumeDown;
 
   bool _handles(PhysicalKeyboardKey key) =>
       key == PhysicalKeyboardKey.arrowUp ||
