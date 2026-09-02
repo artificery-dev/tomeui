@@ -101,6 +101,66 @@ void main() {
 
 /// Muted, the wheel is claimed but silent - and the power chord is not.
 void mutedTests() {
+  testWidgets('menu is back on release, and a hold is its own word', (
+    tester,
+  ) async {
+    var backs = 0;
+    var holds = 0;
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => ClickWheelInput(
+          controller: wheel,
+          onMenuHold: () => holds++,
+          child: Actions(
+            actions: {
+              WheelBackIntent: CallbackAction<WheelBackIntent>(
+                onInvoke: (_) => backs++,
+              ),
+            },
+            child: child!,
+          ),
+        ),
+        home: const Focus(autofocus: true, child: SizedBox.expand()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // A press: nothing on the way down, back on the way up.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(backs, 0);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(backs, 1);
+
+    // A hold: the hold at the threshold, and no back on release.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump(const Duration(milliseconds: 1600));
+    expect(holds, 1);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(backs, 1);
+
+    // The controller's hand does the same.
+    wheel.menuDown();
+    await tester.pump();
+    wheel.menuUp();
+    await tester.pump();
+    expect(backs, 2);
+    wheel.menuDown();
+    await tester.pump(const Duration(milliseconds: 1600));
+    wheel.menuUp();
+    await tester.pump();
+    expect(holds, 2);
+    expect(backs, 2);
+    // And the short form is still the short form.
+    wheel.press(WheelButton.menu);
+    await tester.pump();
+    expect(backs, 3);
+  });
+
   testWidgets('a muted wheel says nothing but power', (tester) async {
     var activations = 0;
     final presses = <PowerPress>[];
