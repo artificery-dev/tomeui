@@ -95,4 +95,46 @@ void main() {
     await tester.pumpAndSettle();
     expect(activations, 1);
   });
+
+  mutedTests();
+}
+
+/// Muted, the wheel is claimed but silent - and the power chord is not.
+void mutedTests() {
+  testWidgets('a muted wheel says nothing but power', (tester) async {
+    var activations = 0;
+    final presses = <PowerPress>[];
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => ClickWheelInput(
+          controller: wheel,
+          muted: true,
+          onPower: presses.add,
+          child: child!,
+        ),
+        home: WheelList(
+          itemExtent: 40,
+          autofocus: true,
+          onActivate: (_) => activations++,
+          children: const [Text('one'), Text('two')],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Both mouths: the real key and the controller.
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    wheel.press(WheelButton.select);
+    wheel.jog(1);
+    await tester.pumpAndSettle();
+    expect(activations, 0);
+
+    wheel.powerDown();
+    await tester.pump(const Duration(milliseconds: 50));
+    wheel.powerUp();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(presses, [isA<PowerTaps>().having((p) => p.taps, 'taps', 1)]);
+  });
 }

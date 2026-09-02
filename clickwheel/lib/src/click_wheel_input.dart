@@ -122,6 +122,7 @@ class ClickWheelInput extends StatefulWidget {
     this.onMedia,
     this.onVolume,
     this.onPower,
+    this.muted = false,
     this.holdThreshold = const Duration(milliseconds: 1500),
     this.tapWindow = const Duration(milliseconds: 350),
     super.key,
@@ -142,6 +143,14 @@ class ClickWheelInput extends StatefulWidget {
 
   /// The power button's grammar, already parsed.
   final ValueChanged<PowerPress>? onPower;
+
+  /// Whether the wheel is to say nothing. Its keys are still claimed -
+  /// nothing above or below hears them either - but no intent is
+  /// dispatched and the media and volume ears stay quiet. The power chord
+  /// still speaks, because it is how a muted player wakes. For a screen
+  /// that is dark: a thumb on the wheel in a pocket must not walk the
+  /// menus blind.
+  final bool muted;
 
   /// How long a press becomes a hold.
   final Duration holdThreshold;
@@ -264,6 +273,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       return true;
     }
 
+    if (widget.muted) return _handles(key); // claimed, and that is all
+
     if (event is KeyUpEvent) {
       // Everything below acts on press (and repeat); releases are only the
       // power chord's business.
@@ -306,6 +317,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// The scope's own idea of what is focused, not the platform's - see
   /// [_scope]. On the device the two are the same node.
   void _dispatch(Intent intent) {
+    if (widget.muted) return;
     Actions.maybeInvoke(_focused() ?? _actionsContext ?? context, intent);
   }
 
