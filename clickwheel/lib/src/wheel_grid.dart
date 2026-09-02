@@ -163,17 +163,18 @@ class _DressedCell extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!selected) return child;
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
+    final colour = theme.palette.primary.s500;
     return Padding(
       padding: EdgeInsets.all(theme.space.x1),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: theme.palette.primary.s500,
+          border: Border.all(color: colour, width: theme.strokes.focus),
           borderRadius: theme.radii.medium,
         ),
         child: IconTheme.merge(
-          data: IconThemeData(color: theme.palette.onPrimary),
+          data: IconThemeData(color: colour),
           child: DefaultTextStyle.merge(
-            style: TextStyle(color: theme.palette.onPrimary),
+            style: TextStyle(color: colour),
             child: child,
           ),
         ),
