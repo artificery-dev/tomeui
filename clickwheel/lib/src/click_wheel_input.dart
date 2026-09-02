@@ -312,8 +312,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   final _held = <WheelButton>{};
   final _timers = <WheelButton, Timer>{};
 
-  /// How often a held volume key repeats, driven from a controller; the
-  /// hardware's own repeat rate applies to the real keys.
+  /// How often a held volume key repeats, once held past [ClickWheelInput.longPress].
   static const _repeat = Duration(milliseconds: 150);
 
   /// A button of the ring, or a volume key, going down or coming up.
@@ -361,6 +360,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     PhysicalKeyboardKey.arrowRight ||
     PhysicalKeyboardKey.mediaTrackNext => WheelButton.next,
     PhysicalKeyboardKey.mediaPlayPause => WheelButton.playPause,
+    PhysicalKeyboardKey.audioVolumeUp => WheelButton.volumeUp,
+    PhysicalKeyboardKey.audioVolumeDown => WheelButton.volumeDown,
     _ => null,
   };
 
@@ -429,9 +430,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   // -- key translation -----------------------------------------------------
 
   /// One table from the hardware's keys to the grammar. Repeats count for
-  /// the wheel (a held direction keeps jogging) and for the volume rocker
-  /// (a held key keeps climbing), and are dropped for everything that
-  /// means a press.
+  /// the wheel (a held direction keeps jogging); every button, the volume
+  /// keys included, is timed from its own down and up.
   bool _onKey(KeyEvent event) {
     final key = event.physicalKey;
 
@@ -467,6 +467,9 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
 
     // The ring's buttons have two words each, told apart by how long the
     // key stays down: the machine counts them from the key's own edges.
+    // The volume keys go the same way for their repeat - the machine's
+    // own clock, since not every host repeats a held key (flutter-pi
+    // over libinput does not).
     final button = _buttonOf(key);
     if (button != null) {
       if (event is KeyDownEvent) {
@@ -488,14 +491,11 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       PhysicalKeyboardKey.arrowDown => const JogIntent(1),
       PhysicalKeyboardKey.pageUp => const JogIntent(-1, page: true),
       PhysicalKeyboardKey.pageDown => const JogIntent(1, page: true),
-      PhysicalKeyboardKey.audioVolumeUp => const VolumeIntent(1),
-      PhysicalKeyboardKey.audioVolumeDown => const VolumeIntent(-1),
       _ => null,
     };
     if (intent == null) return false;
 
-    // Repeats count for the wheel (a held direction keeps jogging) and for
-    // the volume rocker (a held key keeps climbing).
+    // Repeats count for the wheel: a held direction keeps jogging.
     _dispatch(intent);
     return true;
   }
