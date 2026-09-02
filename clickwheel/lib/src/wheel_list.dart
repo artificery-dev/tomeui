@@ -54,6 +54,7 @@ class WheelList extends StatefulWidget {
     this.onActivate,
     this.onSelectionChanged,
     this.initialIndex = 0,
+    this.initialTopRow = 0,
     this.autofocus = false,
     super.key,
   }) : itemCount = children.length,
@@ -68,6 +69,7 @@ class WheelList extends StatefulWidget {
     this.onActivate,
     this.onSelectionChanged,
     this.initialIndex = 0,
+    this.initialTopRow = 0,
     this.autofocus = false,
     super.key,
   });
@@ -86,6 +88,12 @@ class WheelList extends StatefulWidget {
   final ValueChanged<int>? onSelectionChanged;
 
   final int initialIndex;
+
+  /// The row at the top of the viewport to begin with. Rows above it start
+  /// scrolled off, and a jog up onto one brings it down into view - a way
+  /// to keep a column's Back and its options a detent away without their
+  /// taking the first screen. Clamped to what the list can scroll.
+  final int initialTopRow;
 
   /// Take focus on appearing - on a device that is only a wheel, the list
   /// a screen exists for should.
@@ -139,7 +147,9 @@ class _DressedRow extends StatelessWidget {
 class _WheelListState extends State<WheelList>
     with SingleTickerProviderStateMixin {
   late int _index = widget.initialIndex.clamp(0, widget.itemCount - 1);
-  final _controller = ScrollController();
+  late final _controller = ScrollController(
+    initialScrollOffset: widget.initialTopRow * widget.itemExtent,
+  );
 
   /// The overscroll rubber band, owned outright: [_band]'s value is how far
   /// the list is pulled past its edge, in logical pixels and signed the way a
@@ -344,6 +354,19 @@ class _WheelListState extends State<WheelList>
                     context,
                     ListView.builder(
                       controller: _controller,
+                      // Room under the last row, when rows start scrolled
+                      // off: the rows from [initialTopRow] must be able
+                      // to fill the box on their own, or a short list
+                      // could not scroll its top rows away at all.
+                      padding: EdgeInsets.only(
+                        bottom: widget.initialTopRow == 0
+                            ? 0
+                            : (constraints.maxHeight -
+                                      (widget.itemCount -
+                                              widget.initialTopRow) *
+                                          widget.itemExtent)
+                                  .clamp(0.0, double.infinity),
+                      ),
                       // The cupertino feel, unconditionally, for whatever
                       // the viewport itself scrolls: detent jogs land
                       // exactly (jumps), a fling would ride a spring. The
@@ -359,7 +382,11 @@ class _WheelListState extends State<WheelList>
                         return widget.itemBuilder(context, index, selected);
                       },
                     ),
-                    widget.itemCount * widget.itemExtent >
+                    // The rows past the top row: a list whose only give
+                    // is its scrolled-off head has nothing to show a bar
+                    // for.
+                    (widget.itemCount - widget.initialTopRow) *
+                            widget.itemExtent >
                         constraints.maxHeight + 0.5,
                   ),
                 ),
