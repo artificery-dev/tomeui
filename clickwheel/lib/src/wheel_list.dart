@@ -194,6 +194,38 @@ class _WheelListState extends State<WheelList>
 
   bool get _stretched => _band.value.abs() > 0.5;
 
+  /// Whether the list has anywhere to scroll: only a list longer than its
+  /// viewport gets the rubber band. A list that fits is simply at its end
+  /// - the last row is right there - and stretching it would say there is
+  /// more when there is not.
+  bool get _scrolls =>
+      _controller.hasClients && _controller.position.maxScrollExtent > 0;
+
+  /// The bar's width, in logical pixels: thin, a stroke beside the rows.
+  static const double barThickness = 2;
+
+  /// The scrollbar: a track the height of the list and a thumb as long as
+  /// the share of the list that is on screen - and never shorter than a
+  /// row, so a library of ten thousand songs still has a thumb to see.
+  /// Always there on a list that scrolls, and not there at all on one
+  /// that does not: a bar on a list that fits would say there is more.
+  Widget _scrollbar(BuildContext context, Widget list, bool scrolls) {
+    if (!scrolls) return list;
+    final theme = ThemeProvider.maybeOf(context) ?? const Theme();
+    return RawScrollbar(
+      controller: _controller,
+      thumbVisibility: true,
+      trackVisibility: true,
+      thickness: barThickness,
+      radius: const Radius.circular(barThickness / 2),
+      minThumbLength: widget.itemExtent,
+      thumbColor: theme.palette.text.withValues(alpha: 0.55),
+      trackColor: theme.palette.divider.withValues(alpha: 0.4),
+      trackBorderColor: const Color(0x00000000),
+      child: list,
+    );
+  }
+
   void _jog(JogIntent intent) {
     if (widget.itemCount == 0) return;
     final step = intent.page ? intent.amount * _rowsPerPage : intent.amount;
@@ -215,7 +247,7 @@ class _WheelListState extends State<WheelList>
   /// detent landing mid-spring was the jitter. Nothing springs here; the band
   /// only grows, and only until the wheel goes still.
   void _stretch(int direction) {
-    if (direction == 0) return;
+    if (direction == 0 || !_scrolls) return;
     _band.stop();
     _restTimer?.cancel();
     final room = (_overscrollLimit - _band.value.abs()) / _overscrollLimit;
@@ -287,21 +319,31 @@ class _WheelListState extends State<WheelList>
                   offset: Offset(0, -_band.value),
                   child: child,
                 ),
-                child: ListView.builder(
-                  controller: _controller,
-                  // The cupertino feel, unconditionally, for whatever the
-                  // viewport itself scrolls: detent jogs land exactly (jumps),
-                  // a fling would ride a spring. The overscroll past an edge is
-                  // the band's, above - nothing here springs against it.
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
+                child: LayoutBuilder(
+                  // Whether the rows outrun the box is known from the
+                  // box, before the list has ever been laid out.
+                  builder: (context, constraints) => _scrollbar(
+                    context,
+                    ListView.builder(
+                      controller: _controller,
+                      // The cupertino feel, unconditionally, for whatever
+                      // the viewport itself scrolls: detent jogs land
+                      // exactly (jumps), a fling would ride a spring. The
+                      // overscroll past an edge is the band's, above -
+                      // nothing here springs against it.
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      itemExtent: widget.itemExtent,
+                      itemCount: widget.itemCount,
+                      itemBuilder: (context, index) {
+                        final selected = focused && index == _index;
+                        return widget.itemBuilder(context, index, selected);
+                      },
+                    ),
+                    widget.itemCount * widget.itemExtent >
+                        constraints.maxHeight + 0.5,
                   ),
-                  itemExtent: widget.itemExtent,
-                  itemCount: widget.itemCount,
-                  itemBuilder: (context, index) {
-                    final selected = focused && index == _index;
-                    return widget.itemBuilder(context, index, selected);
-                  },
                 ),
               ),
             );
