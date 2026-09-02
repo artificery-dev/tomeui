@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`tomeui_clickwheel` joins the repository** (in `clickwheel/` beside
+  `desktop/`): the click-wheel grammar for devices that are a wheel, five
+  buttons, and a small screen. `ClickWheelInput` turns the hardware's keys
+  into intents and parses the power button's taps and holds; `WheelList` is
+  the wheel-native list, one selection model in a fixed shape for menus and
+  a lazy shape for libraries. Its changelog carries the details.
 - **Tome no longer depends on `window_manager`.** The window behind
   [TitleBar] now speaks through a seam — `WindowShell`, with a `NoWindow`
   default whose every action is a quiet no-op — and the plugin-backed shell

@@ -1,0 +1,22 @@
+name: tomeui_clickwheel
+description: >-
+  The click wheel behind Tome UI: an iPod-style input grammar - jog moves
+  real widget focus, the ring's buttons speak media, and long lists get a
+  wheel-native selection model - for devices whose whole interface is a
+  wheel, five buttons, and a small screen.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  tomeui:
+    path: ..
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
