@@ -67,16 +67,23 @@ class ClickWheelController {
   void jog(int detents, {bool page = false}) =>
       _input?._dispatch(JogIntent(detents, page: page));
 
-  /// Press and release one of the buttons.
-  void press(WheelButton button) => _input?._dispatch(switch (button) {
-    WheelButton.menu => const WheelBackIntent(),
-    WheelButton.select => const ActivateIntent(),
-    WheelButton.previous => const MediaIntent(MediaCommand.previous),
-    WheelButton.next => const MediaIntent(MediaCommand.next),
-    WheelButton.playPause => const MediaIntent(MediaCommand.toggle),
-    WheelButton.volumeUp => const VolumeIntent(1),
-    WheelButton.volumeDown => const VolumeIntent(-1),
-  });
+  /// Press and release one of the buttons: its short word, said at once.
+  void press(WheelButton button) =>
+      _input?._dispatch(_ClickWheelInputState._short(button));
+
+  /// Hold one of the buttons past its threshold: its long word, said at
+  /// once. The volume keys have no long word - held, they repeat - so a
+  /// hold of those is one press.
+  void hold(WheelButton button) =>
+      _input?._dispatch(_ClickWheelInputState._long(button));
+
+  /// A button going down and coming back up, for a hand that wants the
+  /// timing to be real: the short word comes on a release in time, the
+  /// long word at the threshold, a volume key repeats while down. [press]
+  /// and [hold] are the same two words said without the wait.
+  void buttonDown(WheelButton button) => _input?._button(button, down: true);
+
+  void buttonUp(WheelButton button) => _input?._button(button, down: false);
 
   /// The power button, going down and coming back up. Taps and holds are
   /// counted from these two exactly as they are from the real key, so a
@@ -114,11 +121,17 @@ class ClickWheelController {
 ///  * wheel detents -> [JogIntent] (fast-spin tier -> page jogs). The
 ///    default action walks widget focus; a [WheelList] in focus overrides
 ///    it and moves its own selection instead.
-///  * centre -> [ActivateIntent], to whatever holds focus.
-///  * menu -> [WheelBackIntent]; the default action pops the [Navigator].
-///  * prev / next / play-pause -> [MediaIntent], focus-independent.
-///  * volume -> [VolumeIntent], likewise.
+///  * centre -> [ActivateIntent] on a press, [ActivateHoldIntent] on a
+///    hold past [longPress], to whatever holds focus.
+///  * menu -> [WheelBackIntent] on a press; a hold is [onMenuHold].
+///  * prev / next / play-pause -> [MediaIntent], focus-independent, with
+///    `held` for the long press.
+///  * volume -> [VolumeIntent], likewise; held, it repeats.
 ///  * power -> tap-counting and hold detection, delivered as [PowerPress].
+///
+/// Every button has two words, and a press speaks on release so that a
+/// hold is never also a press - except the volume keys, which speak on the
+/// way down and keep speaking while held.
 ///
 /// The widget also dresses every scrollable below it in bouncing physics -
 /// the cupertino feel, which is the right one for a wheel.
@@ -127,11 +140,13 @@ class ClickWheelInput extends StatefulWidget {
     required this.child,
     this.controller,
     this.onMedia,
+    this.onMediaHold,
     this.onVolume,
     this.onPower,
     this.onMenuHold,
     this.muted = false,
     this.holdThreshold = const Duration(milliseconds: 1500),
+    this.longPress = const Duration(milliseconds: 600),
     this.tapWindow = const Duration(milliseconds: 350),
     super.key,
   });
@@ -145,6 +160,11 @@ class ClickWheelInput extends StatefulWidget {
   /// The player's ear. Null lets the intents fall through to any screen
   /// that wants them.
   final ValueChanged<MediaCommand>? onMedia;
+
+  /// The player's ear for the long words: a media button held past
+  /// [longPress] - seek rather than skip, stop rather than pause. Null
+  /// lets a held [MediaIntent] fall through like a pressed one.
+  final ValueChanged<MediaCommand>? onMediaHold;
 
   /// The mixer's ear: +1 up, -1 down.
   final ValueChanged<int>? onVolume;
@@ -166,8 +186,15 @@ class ClickWheelInput extends StatefulWidget {
   /// menus blind.
   final bool muted;
 
-  /// How long a press becomes a hold.
+  /// How long a press becomes a hold, for the power chord and the menu
+  /// key: the two whose holds reach past the screen.
   final Duration holdThreshold;
+
+  /// How long a press of the ring's other buttons - centre, previous,
+  /// next, play - becomes their long word: [ActivateHoldIntent], or a
+  /// [MediaIntent] with `held`. Shorter than [holdThreshold]: these holds
+  /// are gestures in a screen, not chords on the player.
+  final Duration longPress;
 
   /// How long after a release another tap still joins the count.
   final Duration tapWindow;
@@ -242,8 +269,100 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     HardwareKeyboard.instance.removeHandler(_onKey);
     _powerTimer?.cancel();
     _menuTimer?.cancel();
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
     super.dispose();
   }
+
+  // -- the ring's buttons, pressed and held ---------------------------------
+
+  /// The short word of a button: what a press says.
+  static Intent _short(WheelButton button) => switch (button) {
+    WheelButton.menu => const WheelBackIntent(),
+    WheelButton.select => const ActivateIntent(),
+    WheelButton.previous => const MediaIntent(MediaCommand.previous),
+    WheelButton.next => const MediaIntent(MediaCommand.next),
+    WheelButton.playPause => const MediaIntent(MediaCommand.toggle),
+    WheelButton.volumeUp => const VolumeIntent(1),
+    WheelButton.volumeDown => const VolumeIntent(-1),
+  };
+
+  /// The long word of a button: what a hold says. Menu's is not an
+  /// intent but [ClickWheelInput.onMenuHold]; the volume keys' is a
+  /// repeat of the short one.
+  static Intent _long(WheelButton button) => switch (button) {
+    WheelButton.select => const ActivateHoldIntent(),
+    WheelButton.previous => const MediaIntent(
+      MediaCommand.previous,
+      held: true,
+    ),
+    WheelButton.next => const MediaIntent(MediaCommand.next, held: true),
+    WheelButton.playPause => const MediaIntent(
+      MediaCommand.toggle,
+      held: true,
+    ),
+    WheelButton.menu ||
+    WheelButton.volumeUp ||
+    WheelButton.volumeDown => _short(button),
+  };
+
+  /// Which buttons are down, and whether their hold has spoken.
+  final _down = <WheelButton>{};
+  final _held = <WheelButton>{};
+  final _timers = <WheelButton, Timer>{};
+
+  /// How often a held volume key repeats, driven from a controller; the
+  /// hardware's own repeat rate applies to the real keys.
+  static const _repeat = Duration(milliseconds: 150);
+
+  /// A button of the ring, or a volume key, going down or coming up.
+  ///
+  /// Down starts the clock; a release in time says the short word, the
+  /// clock running out says the long one and a release after that says
+  /// nothing more. The volume keys speak on the way down and again on
+  /// every tick while held.
+  void _button(WheelButton button, {required bool down}) {
+    if (button == WheelButton.menu) return _menu(down: down);
+    final volume =
+        button == WheelButton.volumeUp || button == WheelButton.volumeDown;
+    if (down) {
+      if (!_down.add(button)) return; // a repeat of a key already down
+      _held.remove(button);
+      _timers.remove(button)?.cancel();
+      if (volume) {
+        _dispatch(_short(button));
+        _timers[button] = Timer(widget.longPress, () {
+          _timers[button] = Timer.periodic(_repeat, (_) {
+            if (!_down.contains(button)) return;
+            _dispatch(_short(button));
+          });
+        });
+        return;
+      }
+      _timers[button] = Timer(widget.longPress, () {
+        if (!_down.contains(button) || widget.muted) return;
+        _held.add(button);
+        _dispatch(_long(button));
+      });
+    } else {
+      if (!_down.remove(button)) return;
+      _timers.remove(button)?.cancel();
+      if (volume || _held.remove(button)) return; // already spoken
+      _dispatch(_short(button));
+    }
+  }
+
+  static WheelButton? _buttonOf(PhysicalKeyboardKey key) => switch (key) {
+    PhysicalKeyboardKey.enter || PhysicalKeyboardKey.select =>
+      WheelButton.select,
+    PhysicalKeyboardKey.arrowLeft ||
+    PhysicalKeyboardKey.mediaTrackPrevious => WheelButton.previous,
+    PhysicalKeyboardKey.arrowRight ||
+    PhysicalKeyboardKey.mediaTrackNext => WheelButton.next,
+    PhysicalKeyboardKey.mediaPlayPause => WheelButton.playPause,
+    _ => null,
+  };
 
   // -- menu hold -----------------------------------------------------------
 
@@ -324,7 +443,17 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     // Muted, the wheel is claimed and says nothing - but the volume
     // rocker still speaks: a press in a pocket means what it says, and
     // the screen need not wake for it.
-    if (widget.muted && !_isVolume(key)) return _handles(key);
+    if (widget.muted && !_isVolume(key)) {
+      // Claimed, and that is all - but a button that went down before the
+      // mute is let go of, so it cannot speak its short word at a wake.
+      final button = _buttonOf(key);
+      if (button != null && event is KeyUpEvent) {
+        _timers.remove(button)?.cancel();
+        _down.remove(button);
+        _held.remove(button);
+      }
+      return _handles(key);
+    }
 
     if (key == PhysicalKeyboardKey.escape ||
         key == PhysicalKeyboardKey.browserBack) {
@@ -336,9 +465,21 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       return true;
     }
 
+    // The ring's buttons have two words each, told apart by how long the
+    // key stays down: the machine counts them from the key's own edges.
+    final button = _buttonOf(key);
+    if (button != null) {
+      if (event is KeyDownEvent) {
+        _button(button, down: true);
+      } else if (event is KeyUpEvent) {
+        _button(button, down: false);
+      }
+      return true; // a repeat is a key still down
+    }
+
     if (event is KeyUpEvent) {
       // Everything below acts on press (and repeat); releases are only the
-      // power chord's business.
+      // chords' business.
       return _handles(key);
     }
 
@@ -347,25 +488,14 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       PhysicalKeyboardKey.arrowDown => const JogIntent(1),
       PhysicalKeyboardKey.pageUp => const JogIntent(-1, page: true),
       PhysicalKeyboardKey.pageDown => const JogIntent(1, page: true),
-      PhysicalKeyboardKey.enter ||
-      PhysicalKeyboardKey.select => const ActivateIntent(),
-      PhysicalKeyboardKey.mediaPlayPause => const MediaIntent(
-        MediaCommand.toggle,
-      ),
-      PhysicalKeyboardKey.arrowLeft || PhysicalKeyboardKey.mediaTrackPrevious =>
-        const MediaIntent(MediaCommand.previous),
-      PhysicalKeyboardKey.arrowRight || PhysicalKeyboardKey.mediaTrackNext =>
-        const MediaIntent(MediaCommand.next),
       PhysicalKeyboardKey.audioVolumeUp => const VolumeIntent(1),
       PhysicalKeyboardKey.audioVolumeDown => const VolumeIntent(-1),
       _ => null,
     };
     if (intent == null) return false;
 
-    if (event is KeyRepeatEvent && intent is! JogIntent && intent is! VolumeIntent) {
-      return true; // a held button is one press
-    }
-
+    // Repeats count for the wheel (a held direction keeps jogging) and for
+    // the volume rocker (a held key keeps climbing).
     _dispatch(intent);
     return true;
   }
@@ -453,10 +583,14 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
             // the intent was dispatched (the focused screen, inside the
             // navigator) - this widget itself stands above it.
             WheelBackIntent: _WheelBackAction(),
-            if (widget.onMedia != null)
+            if (widget.onMedia != null || widget.onMediaHold != null)
               MediaIntent: CallbackAction<MediaIntent>(
                 onInvoke: (intent) {
-                  widget.onMedia!(intent.command);
+                  if (intent.held) {
+                    widget.onMediaHold?.call(intent.command);
+                  } else {
+                    widget.onMedia?.call(intent.command);
+                  }
                   return null;
                 },
               ),
