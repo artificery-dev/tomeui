@@ -45,8 +45,9 @@ typedef WheelRowBuilder =
 /// they make jump-to-index exact arithmetic at any length.
 class WheelList extends StatefulWidget {
   /// The fixed shape: [children] given whole and unaware of the wheel. The
-  /// list dresses the selected row itself - the primary bar an iPod puts
-  /// under the cursor - so a main menu is just its rows.
+  /// list dresses the selected row itself - a subtle wash of the primary
+  /// under the cursor, the words in the primary's voice - so a main menu
+  /// is just its rows.
   WheelList({
     required List<Widget> children,
     required this.itemExtent,
@@ -94,10 +95,12 @@ class WheelList extends StatefulWidget {
   State<WheelList> createState() => _WheelListState();
 }
 
-/// The default selection dress for the fixed shape: the primary bar under
-/// the cursor row, its text answering in the primary's contrast colour.
-/// Builder rows skip this and dress themselves - a song row knows whether
-/// its subtitle should dim.
+/// The default selection dress for the fixed shape: the primary at its
+/// subtlest under the cursor row - Tome's [SurfaceVariant.subtle] in the
+/// primary swatch, a faint wash with the primary as the voice - so the
+/// row's words and glyphs answer in the primary's colour rather than the
+/// row turning into a bar of it. Builder rows skip this and dress
+/// themselves - a song row knows whether its subtitle should dim.
 class _DressedRow extends StatelessWidget {
   const _DressedRow({required this.selected, required this.child});
 
@@ -108,11 +111,18 @@ class _DressedRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     if (!selected) return child;
+    final dress = theme.widgets.surface.resolve(
+      SemanticSwatch.primary,
+      SurfaceVariant.subtle,
+    );
     return ColoredBox(
-      color: theme.palette.primary.s500,
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: theme.palette.onPrimary),
-        child: child,
+      color: dress.fill ?? const Color(0x00000000),
+      child: IconTheme.merge(
+        data: IconThemeData(color: dress.foreground),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: dress.foreground),
+          child: child,
+        ),
       ),
     );
   }

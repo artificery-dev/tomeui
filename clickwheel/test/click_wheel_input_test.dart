@@ -45,17 +45,19 @@ void main() {
   ) async {
     await pumpMenu(tester);
 
-    // The fixed shape dresses the selected row in the primary bar; an
-    // unselected row sits on the page.
+    // The fixed shape dresses the selected row in the primary's subtle
+    // wash; an unselected row sits on the page.
     bool selected(String label) {
-      final bar = ThemeProvider.of(
-        tester.element(find.text(label)),
-      ).palette.primary.s500;
+      final wash = ThemeProvider.of(tester.element(find.text(label)))
+          .widgets
+          .surface
+          .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
+          .fill;
       return find
           .ancestor(
             of: find.text(label),
             matching: find.byWidgetPredicate(
-              (widget) => widget is ColoredBox && widget.color == bar,
+              (widget) => widget is ColoredBox && widget.color == wash,
             ),
           )
           .evaluate()
