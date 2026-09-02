@@ -97,9 +97,9 @@ class WheelList extends StatefulWidget {
 
 /// The default selection dress for the fixed shape: the primary at its
 /// subtlest under the cursor row - Tome's [SurfaceVariant.subtle] in the
-/// primary swatch, a faint wash with the primary as the voice - so the
-/// row's words and glyphs answer in the primary's colour rather than the
-/// row turning into a bar of it. Builder rows skip this and dress
+/// primary swatch, a faint wash inside its quiet ring, with the primary as
+/// the voice - so the row's words and glyphs answer in the primary's
+/// colour rather than the row turning into a bar of it. Builder rows skip this and dress
 /// themselves - a song row knows whether its subtitle should dim.
 class _DressedRow extends StatelessWidget {
   const _DressedRow({required this.selected, required this.child});
@@ -115,8 +115,16 @@ class _DressedRow extends StatelessWidget {
       SemanticSwatch.primary,
       SurfaceVariant.subtle,
     );
-    return ColoredBox(
-      color: dress.fill ?? const Color(0x00000000),
+    // The whole surface: its wash, and the quiet ring subtle keeps around
+    // itself, at the surface's own radius.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: dress.fill,
+        border: dress.border == null
+            ? null
+            : Border.all(color: dress.border!, width: theme.strokes.hairline),
+        borderRadius: dress.radius,
+      ),
       child: IconTheme.merge(
         data: IconThemeData(color: dress.foreground),
         child: DefaultTextStyle.merge(
