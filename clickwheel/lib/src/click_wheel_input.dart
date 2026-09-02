@@ -84,6 +84,13 @@ class ClickWheelController {
   void powerDown() => _input?._power(down: true);
 
   void powerUp() => _input?._power(down: false);
+
+  /// The menu button as a key going down and coming up, for the hold: a
+  /// short press is back on release, a hold is [ClickWheelInput.onMenuHold].
+  /// [press] with [WheelButton.menu] is the short press said at once.
+  void menuDown() => _input?._menu(down: true);
+
+  void menuUp() => _input?._menu(down: false);
 }
 
 /// The whole device, spoken into Flutter: install once around the app's
@@ -122,6 +129,7 @@ class ClickWheelInput extends StatefulWidget {
     this.onMedia,
     this.onVolume,
     this.onPower,
+    this.onMenuHold,
     this.muted = false,
     this.holdThreshold = const Duration(milliseconds: 1500),
     this.tapWindow = const Duration(milliseconds: 350),
@@ -143,6 +151,11 @@ class ClickWheelInput extends StatefulWidget {
 
   /// The power button's grammar, already parsed.
   final ValueChanged<PowerPress>? onPower;
+
+  /// The menu button held for [holdThreshold]. With a listener the button
+  /// speaks on release - back, if it was let go in time - so a hold is
+  /// never also a press; without one it speaks on press, as it always did.
+  final VoidCallback? onMenuHold;
 
   /// Whether the wheel is to say nothing. Its keys are still claimed -
   /// nothing above or below hears them either - but no intent is
@@ -196,6 +209,10 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   bool _powerDown = false;
   bool _powerHeld = false;
 
+  Timer? _menuTimer;
+  bool _menuDown = false;
+  bool _menuHeld = false;
+
   @override
   void initState() {
     super.initState();
@@ -223,7 +240,36 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     _scope.dispose();
     HardwareKeyboard.instance.removeHandler(_onKey);
     _powerTimer?.cancel();
+    _menuTimer?.cancel();
     super.dispose();
+  }
+
+  // -- menu hold -----------------------------------------------------------
+
+  /// The menu key, when a hold means something: back on a release that
+  /// comes in time, the hold at the threshold, and nothing twice.
+  void _menu({required bool down}) {
+    if (widget.onMenuHold == null) {
+      if (down) _dispatch(const WheelBackIntent());
+      return;
+    }
+    if (down) {
+      if (_menuDown) return; // a repeat of a key already down
+      _menuDown = true;
+      _menuHeld = false;
+      _menuTimer?.cancel();
+      _menuTimer = Timer(widget.holdThreshold, () {
+        if (!_menuDown || widget.muted) return;
+        _menuHeld = true;
+        widget.onMenuHold!();
+      });
+    } else {
+      if (!_menuDown) return;
+      _menuDown = false;
+      _menuTimer?.cancel();
+      if (_menuHeld) return; // the hold already spoke
+      _dispatch(const WheelBackIntent());
+    }
   }
 
   // -- power chord ---------------------------------------------------------
@@ -275,6 +321,16 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
 
     if (widget.muted) return _handles(key); // claimed, and that is all
 
+    if (key == PhysicalKeyboardKey.escape ||
+        key == PhysicalKeyboardKey.browserBack) {
+      if (event is KeyDownEvent) {
+        _menu(down: true);
+      } else if (event is KeyUpEvent) {
+        _menu(down: false);
+      }
+      return true;
+    }
+
     if (event is KeyUpEvent) {
       // Everything below acts on press (and repeat); releases are only the
       // power chord's business.
@@ -288,8 +344,6 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       PhysicalKeyboardKey.pageDown => const JogIntent(1, page: true),
       PhysicalKeyboardKey.enter ||
       PhysicalKeyboardKey.select => const ActivateIntent(),
-      PhysicalKeyboardKey.browserBack ||
-      PhysicalKeyboardKey.escape => const WheelBackIntent(),
       PhysicalKeyboardKey.mediaPlayPause => const MediaIntent(
         MediaCommand.toggle,
       ),
