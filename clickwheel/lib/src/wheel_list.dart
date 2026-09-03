@@ -11,6 +11,10 @@ import 'intents.dart';
 typedef WheelRowBuilder =
     Widget Function(BuildContext context, int index, bool selected);
 
+/// How tall the row at [index] is, for the lists whose rows are not all
+/// the same height. See [WheelList.extentOf].
+typedef WheelExtentBuilder = double Function(int index);
+
 /// A list the wheel drives.
 ///
 /// Focus traversal walks *widgets*, which serves a screenful of controls
@@ -42,7 +46,10 @@ typedef WheelRowBuilder =
 /// ```
 ///
 /// Rows share one [itemExtent]: uniform rows are the wheel's rhythm, and
-/// they make jump-to-index exact arithmetic at any length.
+/// they make jump-to-index exact arithmetic at any length. A list whose
+/// rows genuinely differ - a settings list where a slider tile carries a
+/// track and a switch tile does not - gives [extentOf] instead, and pays
+/// for it with a prefix sum over the rows rather than a multiplication.
 class WheelList extends StatefulWidget {
   /// The fixed shape: [children] given whole and unaware of the wheel. The
   /// list dresses the selected row itself - a subtle wash of the primary
@@ -53,6 +60,7 @@ class WheelList extends StatefulWidget {
     required this.itemExtent,
     this.onActivate,
     this.onSelectionChanged,
+    this.extentOf,
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
@@ -68,6 +76,7 @@ class WheelList extends StatefulWidget {
     required this.itemExtent,
     this.onActivate,
     this.onSelectionChanged,
+    this.extentOf,
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
@@ -77,8 +86,19 @@ class WheelList extends StatefulWidget {
   final int itemCount;
   final WheelRowBuilder itemBuilder;
 
-  /// One height for every row.
+  /// One height for every row - and, where [extentOf] is given, the
+  /// nominal one: the scrollbar's shortest thumb, and the fallback before
+  /// the rows are known.
   final double itemExtent;
+
+  /// A height per row, for a list whose rows differ. Null means every row
+  /// is [itemExtent], which is the common case and the cheaper one.
+  ///
+  /// It is called for every row on the way to any offset, so it must be
+  /// cheap and it must not change its answer without the list being told:
+  /// give a new function (or a new [itemCount]) and the offsets are
+  /// recomputed, and nothing else invalidates them.
+  final WheelExtentBuilder? extentOf;
 
   /// The center button, spoken to the selected index.
   final ValueChanged<int>? onActivate;
@@ -147,9 +167,55 @@ class _DressedRow extends StatelessWidget {
 class _WheelListState extends State<WheelList>
     with SingleTickerProviderStateMixin {
   late int _index = widget.initialIndex.clamp(0, widget.itemCount - 1);
+
+  /// Where every row starts, and where the last one ends: `_offsets[i]` is
+  /// the top of row `i` and `_offsets[itemCount]` is the whole list's
+  /// height. Null while the rows are uniform, where the same answers are a
+  /// multiplication away and an array would be a waste.
+  List<double>? _offsets;
+
   late final _controller = ScrollController(
-    initialScrollOffset: widget.initialTopRow * widget.itemExtent,
+    initialScrollOffset: _offsetOf(widget.initialTopRow),
   );
+
+  /// The height of row [index].
+  double _extentOf(int index) =>
+      widget.extentOf?.call(index) ?? widget.itemExtent;
+
+  /// The top of row [index], and - at `itemCount` - the bottom of the last.
+  double _offsetOf(int index) {
+    final offsets = _offsets;
+    if (offsets == null) return index * widget.itemExtent;
+    return offsets[index.clamp(0, offsets.length - 1)];
+  }
+
+  /// Every row's height, from the top down. Cheap enough to do outright:
+  /// these are the lists short enough to have rows of their own shapes.
+  void _measure() {
+    if (widget.extentOf == null) {
+      _offsets = null;
+      return;
+    }
+    final offsets = List<double>.filled(widget.itemCount + 1, 0);
+    for (var i = 0; i < widget.itemCount; i++) {
+      offsets[i + 1] = offsets[i] + widget.extentOf!(i);
+    }
+    _offsets = offsets;
+  }
+
+  /// The whole list's height.
+  double get _totalExtent => _offsetOf(widget.itemCount);
+
+  /// The height of the rows from [WheelList.initialTopRow] down: what the
+  /// list can fill without scrolling its head away.
+  double get _extentBelowTopRow =>
+      _totalExtent - _offsetOf(widget.initialTopRow);
+
+  @override
+  void initState() {
+    super.initState();
+    _measure();
+  }
 
   /// The overscroll rubber band, owned outright: [_band]'s value is how far
   /// the list is pulled past its edge, in logical pixels and signed the way a
@@ -183,6 +249,11 @@ class _WheelListState extends State<WheelList>
     if (widget.itemCount != oldWidget.itemCount && widget.itemCount > 0) {
       _index = _index.clamp(0, widget.itemCount - 1);
     }
+    if (widget.itemCount != oldWidget.itemCount ||
+        widget.extentOf != oldWidget.extentOf ||
+        widget.itemExtent != oldWidget.itemExtent) {
+      _measure();
+    }
   }
 
   @override
@@ -194,11 +265,23 @@ class _WheelListState extends State<WheelList>
   }
 
   /// One visible page of rows, floored to a whole row so a page leap lands
-  /// square.
+  /// square. Where the rows differ it is counted from the selected one -
+  /// a page down from a tall row is fewer rows than a page down from a
+  /// short one, which is what "a page" means on screen.
   int get _rowsPerPage {
     if (!_controller.hasClients) return 1;
     final pixels = _controller.position.viewportDimension;
-    return (pixels / widget.itemExtent).floor().clamp(1, widget.itemCount);
+    if (_offsets == null) {
+      return (pixels / widget.itemExtent).floor().clamp(1, widget.itemCount);
+    }
+    var rows = 0;
+    var filled = 0.0;
+    for (var i = _index; i < widget.itemCount; i++) {
+      filled += _extentOf(i);
+      if (filled > pixels) break;
+      rows++;
+    }
+    return rows.clamp(1, widget.itemCount);
   }
 
   /// The scroll axis's visible extent - the panel height a screen is laid out
@@ -300,8 +383,8 @@ class _WheelListState extends State<WheelList>
   void _reveal() {
     if (!_controller.hasClients) return;
     final position = _controller.position;
-    final top = _index * widget.itemExtent;
-    final bottom = top + widget.itemExtent;
+    final top = _offsetOf(_index);
+    final bottom = top + _extentOf(_index);
     double? target;
     if (top < position.pixels) {
       target = top;
@@ -361,10 +444,7 @@ class _WheelListState extends State<WheelList>
                       padding: EdgeInsets.only(
                         bottom: widget.initialTopRow == 0
                             ? 0
-                            : (constraints.maxHeight -
-                                      (widget.itemCount -
-                                              widget.initialTopRow) *
-                                          widget.itemExtent)
+                            : (constraints.maxHeight - _extentBelowTopRow)
                                   .clamp(0.0, double.infinity),
                       ),
                       // The cupertino feel, unconditionally, for whatever
@@ -375,7 +455,14 @@ class _WheelListState extends State<WheelList>
                       physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics(),
                       ),
-                      itemExtent: widget.itemExtent,
+                      // One or the other: the framework takes a fixed
+                      // extent or a builder for it, never both.
+                      itemExtent: widget.extentOf == null
+                          ? widget.itemExtent
+                          : null,
+                      itemExtentBuilder: widget.extentOf == null
+                          ? null
+                          : (index, _) => _extentOf(index),
                       itemCount: widget.itemCount,
                       itemBuilder: (context, index) {
                         final selected = focused && index == _index;
@@ -385,9 +472,7 @@ class _WheelListState extends State<WheelList>
                     // The rows past the top row: a list whose only give
                     // is its scrolled-off head has nothing to show a bar
                     // for.
-                    (widget.itemCount - widget.initialTopRow) *
-                            widget.itemExtent >
-                        constraints.maxHeight + 0.5,
+                    _extentBelowTopRow > constraints.maxHeight + 0.5,
                   ),
                 ),
               ),
