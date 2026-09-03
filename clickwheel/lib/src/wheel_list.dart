@@ -138,30 +138,66 @@ class _DressedRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    if (!selected) return child;
+    if (!selected) return WheelRowSelection(selected: false, child: child);
     final dress = theme.widgets.surface.resolve(
       SemanticSwatch.primary,
       SurfaceVariant.subtle,
     );
     // The whole surface: its wash, and the quiet ring subtle keeps around
     // itself, at the surface's own radius.
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: dress.fill,
-        border: dress.border == null
-            ? null
-            : Border.all(color: dress.border!, width: theme.strokes.hairline),
-        borderRadius: dress.radius,
-      ),
-      child: IconTheme.merge(
-        data: IconThemeData(color: dress.foreground),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: dress.foreground),
-          child: child,
+    return WheelRowSelection(
+      selected: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: dress.fill,
+          border: dress.border == null
+              ? null
+              : Border.all(color: dress.border!, width: theme.strokes.hairline),
+          borderRadius: dress.radius,
+        ),
+        child: IconTheme.merge(
+          data: IconThemeData(color: dress.foreground),
+          child: DefaultTextStyle.merge(
+            style: TextStyle(color: dress.foreground),
+            child: child,
+          ),
         ),
       ),
     );
   }
+}
+
+/// Whether the row around this widget is the one the wheel is on.
+///
+/// The list dresses the selected row itself, so most rows never need to
+/// ask. The ones that do are the rows that *behave* differently under the
+/// cursor rather than only looking different - a name too long for its
+/// line that scrolls while it is being read, a preview that only plays
+/// where the wheel is.
+///
+/// Present around every row of the fixed shape. A row built by
+/// [WheelList.builder] is told its selection outright, and can put one of
+/// these around whatever needs to know.
+class WheelRowSelection extends InheritedWidget {
+  const WheelRowSelection({
+    required this.selected,
+    required super.child,
+    super.key,
+  });
+
+  final bool selected;
+
+  /// Whether the enclosing row is selected. False where there is no row -
+  /// a tile on a page of its own is not under a cursor.
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<WheelRowSelection>()
+          ?.selected ??
+      false;
+
+  @override
+  bool updateShouldNotify(WheelRowSelection oldWidget) =>
+      oldWidget.selected != selected;
 }
 
 class _WheelListState extends State<WheelList>
