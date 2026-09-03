@@ -80,36 +80,134 @@ void main() {
   });
 
   platformScrollbarTests();
+  variedExtentTests();
+}
+
+/// A list whose rows are not all the same height: a settings list, where a
+/// slider tile carries a track and a switch tile does not. The offsets stop
+/// being a multiplication and become a sum, and everything that reads them -
+/// revealing the selection, a page leap, whether there is a bar at all - has
+/// to follow.
+void variedExtentTests() {
+  /// Three rows of 20 and then three of 60, in a viewport of 100.
+  Future<ClickWheelController> pumpVaried(
+    WidgetTester tester, {
+    int rows = 6,
+    double height = 100,
+  }) async {
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) =>
+            ClickWheelInput(controller: wheel, child: child!),
+        home: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            height: height,
+            width: 200,
+            child: WheelList(
+              itemExtent: 20,
+              extentOf: (index) => index < 3 ? 20 : 60,
+              autofocus: true,
+              children: [
+                for (var i = 0; i < rows; i++)
+                  Text('Row $i', key: ValueKey('row.$i')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return wheel;
+  }
+
+  double offset(WidgetTester tester) =>
+      tester.widget<Scrollable>(find.byType(Scrollable)).controller!.offset;
+
+  testWidgets('every row is drawn its own height', (tester) async {
+    final wheel = await pumpVaried(tester);
+    // Row 3 is the first tall one and shows from 60 down, so both kinds
+    // are on screen at once; the rows past it are not built yet.
+    expect(tester.getSize(find.byKey(const ValueKey('row.0'))).height, 20);
+    expect(tester.getSize(find.byKey(const ValueKey('row.3'))).height, 60);
+    expect(find.byKey(const ValueKey('row.5')), findsNothing);
+
+    wheel.jog(5);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byKey(const ValueKey('row.5'))).height, 60);
+  });
+
+  testWidgets('the selection is revealed by the sum of the rows above it', (
+    tester,
+  ) async {
+    final wheel = await pumpVaried(tester);
+    expect(offset(tester), 0, reason: 'the short rows are all on screen');
+
+    // Row 3 is the first tall one: it runs 60..120, so the least scroll
+    // that shows all of it in a 100 viewport is 20.
+    wheel.jog(3);
+    await tester.pumpAndSettle();
+    expect(offset(tester), 20);
+
+    // Row 5 ends at 240.
+    wheel.jog(2);
+    await tester.pumpAndSettle();
+    expect(offset(tester), 140);
+  });
+
+  testWidgets('a page leap counts the rows that fit from where it starts', (
+    tester,
+  ) async {
+    final wheel = await pumpVaried(tester);
+    // From row 0, a 100-tall page holds the three short rows and no more.
+    wheel.jog(1, page: true);
+    await tester.pumpAndSettle();
+    expect(offset(tester), 20, reason: 'landed on the first tall row');
+
+    // From a 60-tall row, a page is one row.
+    wheel.jog(1, page: true);
+    await tester.pumpAndSettle();
+    expect(offset(tester), 80);
+  });
+
+  testWidgets('a varied list that fits wears no scrollbar, and one that '
+      'does not, does', (tester) async {
+    await pumpVaried(tester, rows: 3, height: 100);
+    expect(find.byType(RawScrollbar), findsNothing);
+
+    await pumpVaried(tester, rows: 6, height: 100);
+    expect(find.byType(RawScrollbar), findsOneWidget);
+  });
 }
 
 /// The platform adds no scrollbar of its own under the wheel: the list's
 /// persistent bar is the only one.
 void platformScrollbarTests() {
-  testWidgets(
-    'a scrolling list wears one bar, the list\'s own',
-    (tester) async {
-      final wheel = ClickWheelController();
-      await tester.pumpWidget(
-        TomeApp(
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) =>
-              ClickWheelInput(controller: wheel, child: child!),
-          home: SizedBox(
-            height: 120,
-            child: WheelList(
-              itemExtent: 40,
-              autofocus: true,
-              children: [for (var i = 0; i < 20; i++) Text('Row $i')],
-            ),
+  testWidgets('a scrolling list wears one bar, the list\'s own', (
+    tester,
+  ) async {
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) =>
+            ClickWheelInput(controller: wheel, child: child!),
+        home: SizedBox(
+          height: 120,
+          child: WheelList(
+            itemExtent: 40,
+            autofocus: true,
+            children: [for (var i = 0; i < 20; i++) Text('Row $i')],
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-      wheel.jog(3);
-      await tester.pump();
-      // The platform's would be a second RawScrollbar around the viewport.
-      expect(find.byType(RawScrollbar), findsOneWidget);
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.linux),
-  );
+      ),
+    );
+    await tester.pumpAndSettle();
+    wheel.jog(3);
+    await tester.pump();
+    // The platform's would be a second RawScrollbar around the viewport.
+    expect(find.byType(RawScrollbar), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 }
