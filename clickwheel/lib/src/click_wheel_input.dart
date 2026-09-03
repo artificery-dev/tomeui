@@ -143,6 +143,7 @@ class ClickWheelInput extends StatefulWidget {
     this.onMediaHold,
     this.onVolume,
     this.onPower,
+    this.onWord,
     this.onMenuHold,
     this.muted = false,
     this.holdThreshold = const Duration(milliseconds: 1500),
@@ -171,6 +172,13 @@ class ClickWheelInput extends StatefulWidget {
 
   /// The power button's grammar, already parsed.
   final ValueChanged<PowerPress>? onPower;
+
+  /// Every word the wheel says, as it says it - a detent, a press, a
+  /// hold - for the feedback that goes with it: a tick, a click, a
+  /// thump. Called before the intent is dispatched, whether or not
+  /// anything answers it. Muted, only the words that still speak (the
+  /// volume rocker's) are reported.
+  final ValueChanged<WheelWord>? onWord;
 
   /// The menu button held for [holdThreshold]. With a listener the button
   /// speaks on release - back, if it was let go in time - so a hold is
@@ -382,6 +390,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       _menuTimer = Timer(widget.holdThreshold, () {
         if (!_menuDown || widget.muted) return;
         _menuHeld = true;
+        widget.onWord?.call(WheelWord.hold);
         widget.onMenuHold!();
       });
     } else {
@@ -412,6 +421,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
         if (!_powerDown) return;
         _powerHeld = true;
         _powerTaps = 0;
+        widget.onWord?.call(WheelWord.hold);
         widget.onPower?.call(const PowerHold());
       });
     } else {
@@ -419,6 +429,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       _powerTimer?.cancel();
       if (_powerHeld) return; // the hold already spoke
       _powerTaps += 1;
+      widget.onWord?.call(WheelWord.press);
       _powerTimer = Timer(widget.tapWindow, () {
         final taps = _powerTaps;
         _powerTaps = 0;
@@ -507,6 +518,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// [_scope]. On the device the two are the same node.
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
+    widget.onWord?.call(WheelWord.of(intent));
     Actions.maybeInvoke(_focused() ?? _actionsContext ?? context, intent);
   }
 
