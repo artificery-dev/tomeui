@@ -53,3 +53,18 @@ class VolumeIntent extends Intent {
 
   final int direction;
 }
+
+/// The kinds of thing the wheel says, for whatever answers each with a
+/// sound or a shake: a detent of the wheel, a press of a button, a hold.
+enum WheelWord {
+  detent,
+  press,
+  hold;
+
+  static WheelWord of(Intent intent) => switch (intent) {
+    JogIntent() => WheelWord.detent,
+    ActivateHoldIntent() => WheelWord.hold,
+    MediaIntent(held: true) => WheelWord.hold,
+    _ => WheelWord.press,
+  };
+}
