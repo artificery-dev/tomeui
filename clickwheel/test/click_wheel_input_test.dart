@@ -101,7 +101,78 @@ void main() {
   });
 
   mutedTests();
+  asleepTests();
   holdTests();
+}
+
+/// Asleep, the wheel is silent, the centre and menu only wake, and the
+/// media buttons still speak.
+void asleepTests() {
+  testWidgets('asleep: jog says nothing, select and menu wake, media and '
+      'volume speak', (tester) async {
+    var activations = 0;
+    var wakes = 0;
+    var backs = 0;
+    var holds = 0;
+    final media = <MediaCommand>[];
+    final volume = <int>[];
+    final words = <WheelWord>[];
+    final wheel = ClickWheelController();
+    await tester.pumpWidget(
+      TomeApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => ClickWheelInput(
+          controller: wheel,
+          asleep: true,
+          onWake: () => wakes++,
+          onMedia: media.add,
+          onVolume: volume.add,
+          onWord: words.add,
+          onMenuHold: () => holds++,
+          child: Actions(
+            actions: {
+              WheelBackIntent: CallbackAction<WheelBackIntent>(
+                onInvoke: (_) => backs++,
+              ),
+            },
+            child: child!,
+          ),
+        ),
+        home: WheelList(
+          itemExtent: 40,
+          autofocus: true,
+          onActivate: (_) => activations++,
+          children: const [Text('one'), Text('two')],
+        ),
+      ),
+    );
+
+    wheel.jog(1);
+    await tester.pump();
+    wheel.press(WheelButton.select);
+    wheel.hold(WheelButton.select);
+    wheel.press(WheelButton.menu);
+    await tester.pump();
+    expect(activations, 0);
+    expect(backs, 0);
+    expect(wakes, 3, reason: 'centre, its hold, and menu each wake');
+    expect(words, everyElement(WheelWord.press));
+
+    wheel.menuDown();
+    await tester.pump(const Duration(milliseconds: 1600));
+    wheel.menuUp();
+    await tester.pump();
+    expect(holds, 0, reason: 'no dock over a dark screen');
+    expect(wakes, 4, reason: 'the release said menu\'s short word: a wake');
+
+    wheel.press(WheelButton.playPause);
+    wheel.press(WheelButton.next);
+    wheel.press(WheelButton.volumeUp);
+    await tester.pump();
+    expect(media, [MediaCommand.toggle, MediaCommand.next]);
+    expect(volume, [1]);
+    expect(wakes, 4, reason: 'none of those woke it');
+  });
 }
 
 /// Muted, the wheel is claimed but silent - and the power chord is not.

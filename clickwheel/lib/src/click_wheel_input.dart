@@ -146,6 +146,8 @@ class ClickWheelInput extends StatefulWidget {
     this.onWord,
     this.onMenuHold,
     this.muted = false,
+    this.asleep = false,
+    this.onWake,
     this.holdThreshold = const Duration(milliseconds: 1500),
     this.longPress = const Duration(milliseconds: 600),
     this.tapWindow = const Duration(milliseconds: 350),
@@ -193,6 +195,18 @@ class ClickWheelInput extends StatefulWidget {
   /// that is dark: a thumb on the wheel in a pocket must not walk the
   /// menus blind.
   final bool muted;
+
+  /// The screen is dark, but the buttons are not: the wheel itself says
+  /// nothing (a thumb on it in a pocket), the centre and menu buttons say
+  /// only [onWake] - a press of either is how the dark player wakes, and
+  /// what it would have activated is not activated - while the media
+  /// buttons, the volume rocker and the power chord speak as they do
+  /// awake. Holding menu, which would bring up chrome nobody can see,
+  /// says nothing. [muted] wins when both are set.
+  final bool asleep;
+
+  /// Asleep, what the centre and menu buttons say instead of their words.
+  final VoidCallback? onWake;
 
   /// How long a press becomes a hold, for the power chord and the menu
   /// key: the two whose holds reach past the screen.
@@ -306,10 +320,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       held: true,
     ),
     WheelButton.next => const MediaIntent(MediaCommand.next, held: true),
-    WheelButton.playPause => const MediaIntent(
-      MediaCommand.toggle,
-      held: true,
-    ),
+    WheelButton.playPause => const MediaIntent(MediaCommand.toggle, held: true),
     WheelButton.menu ||
     WheelButton.volumeUp ||
     WheelButton.volumeDown => _short(button),
@@ -361,8 +372,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   }
 
   static WheelButton? _buttonOf(PhysicalKeyboardKey key) => switch (key) {
-    PhysicalKeyboardKey.enter || PhysicalKeyboardKey.select =>
-      WheelButton.select,
+    PhysicalKeyboardKey.enter ||
+    PhysicalKeyboardKey.select => WheelButton.select,
     PhysicalKeyboardKey.arrowLeft ||
     PhysicalKeyboardKey.mediaTrackPrevious => WheelButton.previous,
     PhysicalKeyboardKey.arrowRight ||
@@ -388,7 +399,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       _menuHeld = false;
       _menuTimer?.cancel();
       _menuTimer = Timer(widget.holdThreshold, () {
-        if (!_menuDown || widget.muted) return;
+        if (!_menuDown || widget.muted || widget.asleep) return;
         _menuHeld = true;
         widget.onWord?.call(WheelWord.hold);
         widget.onMenuHold!();
@@ -518,6 +529,18 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// [_scope]. On the device the two are the same node.
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
+    if (widget.asleep) {
+      // The wheel is silent; the centre and menu wake and do no more;
+      // everything else - media, volume - goes through.
+      if (intent is JogIntent) return;
+      if (intent is ActivateIntent ||
+          intent is ActivateHoldIntent ||
+          intent is WheelBackIntent) {
+        widget.onWord?.call(WheelWord.press);
+        widget.onWake?.call();
+        return;
+      }
+    }
     widget.onWord?.call(WheelWord.of(intent));
     Actions.maybeInvoke(_focused() ?? _actionsContext ?? context, intent);
   }
