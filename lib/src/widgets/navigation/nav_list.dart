@@ -218,17 +218,17 @@ class _NavListState<T> extends State<NavList<T>> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final (offset, destination) in entry.destinations.indexed)
-                ...[
-                  SizedBox(height: style.rowGap),
-                  _line(
-                    theme: theme,
-                    style: style,
-                    row: _Row(destination, depth: 1),
-                    highlighted: open && first + offset == highlight,
-                    onHover: open ? () => highlightTo(first + offset) : () {},
-                  ),
-                ],
+              for (final (offset, destination)
+                  in entry.destinations.indexed) ...[
+                SizedBox(height: style.rowGap),
+                _line(
+                  theme: theme,
+                  style: style,
+                  row: _Row(destination, depth: 1),
+                  highlighted: open && first + offset == highlight,
+                  onHover: open ? () => highlightTo(first + offset) : () {},
+                ),
+              ],
             ],
           ),
         ),
@@ -339,7 +339,7 @@ class _NavRow extends StatelessWidget {
             padding: style.padding,
             margin: EdgeInsetsDirectional.only(start: depth * style.indent),
             decoration: BoxDecoration(
-              // The selection is the row's own colour; the highlight and
+              // The selection is the row's own color; the highlight and
               // the wash are what's happening to it this instant.
               color: selected
                   ? style.selected.fill
@@ -364,7 +364,7 @@ class _NavRow extends StatelessWidget {
                   SizedBox(width: style.gap),
                   // A column of its own, at least a glyph wide: a chevron
                   // and a count flush to the same edge still sit on
-                  // different centres, and a sidebar reads down its
+                  // different centers, and a sidebar reads down its
                   // trailing edge.
                   ConstrainedBox(
                     constraints: BoxConstraints(minWidth: style.iconSize),

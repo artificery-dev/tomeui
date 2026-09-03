@@ -356,7 +356,7 @@ void main() {
       const Scaffold(leading: Text('nav'), body: Text('body')),
     );
 
-    // Shrink-wrapped, the panel would float vertically centred; full
+    // Shrink-wrapped, the panel would float vertically centerd; full
     // height, its contents start at the top.
     expect(
       tester.getTopLeft(find.text('nav')).dy,

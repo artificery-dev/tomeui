@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// Three levels, each a key light plus an ambient wash, in black at low alpha
 /// so they read on any surface and disappear politely on dark ones — a dark
-/// theme that wants elevation should say it with surface colour, and a design
+/// theme that wants elevation should say it with surface color, and a design
 /// built on hairline borders can pass empty lists and ignore these entirely.
 @immutable
 class Shadows {
@@ -16,18 +16,10 @@ class Shadows {
     ],
     this.medium = const [
       BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 2)),
-      BoxShadow(
-        color: Color(0x1A000000),
-        blurRadius: 14,
-        offset: Offset(0, 6),
-      ),
+      BoxShadow(color: Color(0x1A000000), blurRadius: 14, offset: Offset(0, 6)),
     ],
     this.high = const [
-      BoxShadow(
-        color: Color(0x1A000000),
-        blurRadius: 10,
-        offset: Offset(0, 4),
-      ),
+      BoxShadow(color: Color(0x1A000000), blurRadius: 10, offset: Offset(0, 4)),
       BoxShadow(
         color: Color(0x24000000),
         blurRadius: 28,
@@ -66,6 +58,9 @@ class Shadows {
       listEquals(other.high, high);
 
   @override
-  int get hashCode =>
-      Object.hash(Object.hashAll(low), Object.hashAll(medium), Object.hashAll(high));
+  int get hashCode => Object.hash(
+    Object.hashAll(low),
+    Object.hashAll(medium),
+    Object.hashAll(high),
+  );
 }

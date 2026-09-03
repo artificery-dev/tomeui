@@ -27,7 +27,7 @@ void main() {
     );
   });
 
-  testWidgets('the stack keeps one gap between neighbours, not two', (
+  testWidgets('the stack keeps one gap between neighbors, not two', (
     tester,
   ) async {
     await pump(
@@ -35,11 +35,19 @@ void main() {
       const Card(header: Text('h'), content: Text('c'), footer: Text('f')),
     );
 
-    expect(tester.getTopLeft(find.text('c')).dy - tester.getBottomLeft(find.text('h')).dy, 16);
-    expect(tester.getTopLeft(find.text('f')).dy - tester.getBottomLeft(find.text('c')).dy, 16);
+    expect(
+      tester.getTopLeft(find.text('c')).dy -
+          tester.getBottomLeft(find.text('h')).dy,
+      16,
+    );
+    expect(
+      tester.getTopLeft(find.text('f')).dy -
+          tester.getBottomLeft(find.text('c')).dy,
+      16,
+    );
   });
 
-  testWidgets('zero on a slot is full bleed, and its neighbour still keeps '
+  testWidgets('zero on a slot is full bleed, and its neighbor still keeps '
       'its own daylight', (tester) async {
     await pump(
       tester,
@@ -76,7 +84,8 @@ void main() {
     expect(tester.getRect(find.text('c')).top - box.top, 8);
     expect(box.bottom - tester.getRect(find.text('f')).bottom, 32);
     expect(
-      tester.getTopLeft(find.text('f')).dy - tester.getBottomLeft(find.text('c')).dy,
+      tester.getTopLeft(find.text('f')).dy -
+          tester.getBottomLeft(find.text('c')).dy,
       32,
     );
   });

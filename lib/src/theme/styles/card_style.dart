@@ -11,7 +11,7 @@ class CardStyle {
   final SurfaceStyle surface;
 
   /// The daylight a slot keeps around itself — between it and its
-  /// neighbours, and between it and the card's edge. A slot overrides it
+  /// neighbors, and between it and the card's edge. A slot overrides it
   /// with a step of its own, zero meaning full bleed.
   final double spacing;
 

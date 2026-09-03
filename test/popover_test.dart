@@ -59,7 +59,7 @@ void main() {
     final anchor = anchorRect(tester);
     final panel = panelRect(tester);
     expect(panel.top, anchor.bottom + style.gap);
-    // Centred on the anchor.
+    // Centerd on the anchor.
     expect(panel.center.dx, closeTo(anchor.center.dx, 0.01));
   });
 

@@ -84,7 +84,7 @@ void main() {
     expect(tester.getSize(find.byType(TitleBar)).height, style.height);
   });
 
-  testWidgets('centred, the title sits on the window’s middle', (tester) async {
+  testWidgets('centerd, the title sits on the window’s middle', (tester) async {
     await pump(
       tester,
       const TitleBar(
@@ -201,7 +201,7 @@ void main() {
         if (paint.painter != null) paint.painter! as dynamic,
     ].where((painter) => painter.runtimeType.toString().contains('Glyph'));
 
-    // A wash at rest is the hover colour at zero alpha rather than null, so
+    // A wash at rest is the hover color at zero alpha rather than null, so
     // asking whether there *is* a wash painted the close cross in the bar's
     // own fill: a button nobody could see.
     expect(painters.length, 3);

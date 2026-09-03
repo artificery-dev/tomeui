@@ -27,7 +27,7 @@ class ChipStyle {
 
   final double iconSize;
 
-  /// A plain round mark, for a chip whose meaning is the colour rather
+  /// A plain round mark, for a chip whose meaning is the color rather
   /// than a glyph.
   final double dotSize;
 
@@ -61,13 +61,6 @@ class ChipStyle {
       other.dotSize == dotSize;
 
   @override
-  int get hashCode => Object.hash(
-    surface,
-    textStyle,
-    height,
-    padding,
-    gap,
-    iconSize,
-    dotSize,
-  );
+  int get hashCode =>
+      Object.hash(surface, textStyle, height, padding, gap, iconSize, dotSize);
 }

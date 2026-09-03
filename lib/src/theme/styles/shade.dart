@@ -1,6 +1,6 @@
 import 'package:tomeui/tomeui.dart';
 
-/// One colour choice in a style: a stop per brightness, on the swatch the
+/// One color choice in a style: a stop per brightness, on the swatch the
 /// surface wears — or on [swatch], when a role should ignore what's worn
 /// (a foreground pinned to the neutral ramp, say).
 ///
@@ -25,7 +25,7 @@ class Shade {
   num stopFor(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
 
-  /// The colour this shade names when the surface wears [worn].
+  /// The color this shade names when the surface wears [worn].
   Color on(Swatch worn, Brightness brightness) =>
       (swatch ?? worn)[stopFor(brightness)];
 

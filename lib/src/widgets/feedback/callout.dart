@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:tomeui/tomeui.dart';
 
-/// The page telling you something, in the colour of what kind of something
+/// The page telling you something, in the color of what kind of something
 /// it is.
 ///
 /// A tinted block with a glyph, a title, and a message — the notice above a
@@ -75,7 +75,7 @@ class Callout extends StatelessWidget {
     final rest = title != null ? message : null;
 
     // What the head's first line measures, which is what the glyph and the
-    // close button are centred in: aligned to the words rather than to the
+    // close button are centerd in: aligned to the words rather than to the
     // paragraph, so a title that wraps doesn't drag them down with it.
     final line = math.max(
       style.iconSize,

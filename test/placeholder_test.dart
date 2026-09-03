@@ -5,7 +5,7 @@ void main() {
   Future<void> pump(WidgetTester tester, Widget child) =>
       tester.pumpWidget(TomeApp(home: child));
 
-  testWidgets('fills the size its parent dictates, child centred', (
+  testWidgets('fills the size its parent dictates, child centerd', (
     tester,
   ) async {
     await pump(tester, const Placeholder(child: Text('x')));

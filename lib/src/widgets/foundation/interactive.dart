@@ -36,7 +36,7 @@ class Interactive extends StatefulWidget {
   /// plus the raw flags, for controls whose dressing is more than a tint.
   final Widget Function(BuildContext context, Interaction state) builder;
 
-  /// The focus ring's colour, and the corners it runs concentric to.
+  /// The focus ring's color, and the corners it runs concentric to.
   final Color ring;
   final BorderRadius ringRadius;
 

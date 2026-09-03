@@ -4,7 +4,7 @@ import 'package:tomeui/tomeui.dart';
 /// sit in, the indicator that slides between them, and what a segment's
 /// words wear on either side of the change.
 ///
-/// Colours, not choices — the choosing happened in [SegmentedResolver], at
+/// Colors, not choices — the choosing happened in [SegmentedResolver], at
 /// `theme.widgets.segmented`.
 @immutable
 class SegmentedControlStyle {

@@ -19,7 +19,7 @@ import 'package:tomeui/tomeui.dart';
 /// ## Spacing
 ///
 /// One [spacing] governs the whole card: it's the daylight a slot keeps
-/// between itself and its neighbours, *and* between itself and the card's
+/// between itself and its neighbors, *and* between itself and the card's
 /// edge — a card has no separate padding, because the two are the same
 /// measurement seen from either side.
 ///
@@ -97,8 +97,7 @@ class Card extends StatelessWidget {
     final base = spacing == null
         ? style.spacing
         : theme.space.resolve(spacing!);
-    double gap(SpaceStep? own) =>
-        own == null ? base : theme.space.resolve(own);
+    double gap(SpaceStep? own) => own == null ? base : theme.space.resolve(own);
 
     final start = leading == null ? null : gap(leadingSpacing);
     final end = trailing == null ? null : gap(trailingSpacing);
@@ -114,7 +113,7 @@ class Card extends StatelessWidget {
       for (final (index, (child, own)) in rows.indexed)
         Padding(
           padding: EdgeInsetsDirectional.only(
-            // Against a neighbour the roomier of the two wins; against the
+            // Against a neighbor the roomier of the two wins; against the
             // card's edge a slot answers for itself.
             top: index == 0 ? own : _wider(own, rows[index - 1].$2),
             bottom: index == rows.length - 1 ? own : 0,

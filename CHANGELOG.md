@@ -33,7 +33,7 @@
 - A closed `Select` shows the chosen option's `leading` beside its label —
   the face at rest matches the face in the list, and the hidden width
   copies measure it too.
-- `EmptyState` hugs its words: a card the caller centres in the empty
+- `EmptyState` hugs its words: a card the caller centers in the empty
   room, not a wash over all of it — the inner Center that swallowed every
   slot is gone.
 - `NavList` keys a group's fold by its destinations' values instead of the
@@ -42,7 +42,7 @@
 - `Slider` learns an `axis`: `Axis.vertical` stands the line up — the thumb
   travels bottom-to-top, more is up, taps and drags ride the vertical axis,
   and the ticks turn with it.
-- Bundle two fonts (licences alongside): **Recursive**, one variable file
+- Bundle two fonts (licenses alongside): **Recursive**, one variable file
   (MONO, CASL, wght 300-1000, slnt, CRSV) offered to the type scale as
   `Typography.recursive()` — `code` becomes Recursive Mono through the
   MONO axis rather than a second family; and **Symbols Nerd Font Mono**,
@@ -54,12 +54,12 @@
   every sibling below it. Hover dressing is visual-only now.
 - `Select` fills a stated width: given a tight width, the trigger spreads —
   answer at the start, chevron at the far end — instead of both drifting
-  toward the centre. Left loose it hugs its widest option, as before.
+  toward the center. Left loose it hugs its widest option, as before.
 
-- Rename the `Swatch.neutral` colour set to `Swatch.ash`: Tailwind's name
-  for the grey collided with the palette's semantic `neutral` role, and
+- Rename the `Swatch.neutral` color set to `Swatch.ash`: Tailwind's name
+  for the gray collided with the palette's semantic `neutral` role, and
   `Palette(neutral: Swatch.neutral)` read like a tautology.
-- `Button` holds its centre in a loose `Flexible`: squeezed for width, the
+- `Button` holds its center in a loose `Flexible`: squeezed for width, the
   label yields (and can ellipsize) instead of overflowing. Fixes `Select`
   overflowing its own trigger in a narrow field.
 - `TitleBar.claimWindow()`: one call before `runApp` hides the native title

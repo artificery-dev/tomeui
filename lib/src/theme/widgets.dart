@@ -107,7 +107,7 @@ class ProgressResolver {
   /// The test is [contrastRatio] against [minVoiceContrast] rather than
   /// equality, because a surface is rarely painting exactly what it
   /// resolved: a hover wash lifts a button's fill a little, which is
-  /// enough to make two colours unequal and nowhere near enough to make
+  /// enough to make two colors unequal and nowhere near enough to make
   /// one visible on the other.
   /// How far the indicator has to stand from what it's drawn on before it
   /// counts as visible. Measured, not chosen at random: every surface a
@@ -125,7 +125,7 @@ class ProgressResolver {
     final voice =
         surface.resolve(swatch, SurfaceVariant.solid).fill ?? palette.text;
     // The surface it's drawn on, where that surface is already wearing the
-    // voice — a fill-less variant has no colour to drown anything in, and
+    // voice — a fill-less variant has no color to drown anything in, and
     // so never matches.
     final ground = on?.fill;
     final drowned =
@@ -157,7 +157,7 @@ class ChipResolver {
 
   /// A chip says what state a thing is in, so it wears the meaning at its
   /// quietest — a row of solid chips would shout every status at once, and
-  /// a row of soft ones would still be a row of colour before it is a row
+  /// a row of soft ones would still be a row of color before it is a row
   /// of words.
   ChipStyle resolve([
     SemanticSwatch swatch = SemanticSwatch.neutral,
@@ -216,7 +216,7 @@ class CalloutResolver {
   final Theme _theme;
 
   /// A tinted block in the swatch's own voice — the page telling you
-  /// something, in the colour of what kind of something it is.
+  /// something, in the color of what kind of something it is.
   CalloutStyle resolve([
     SemanticSwatch swatch = SemanticSwatch.info,
     SurfaceVariant variant = SurfaceVariant.soft,
@@ -330,7 +330,7 @@ class ToastResolver {
   final Theme _theme;
 
   /// The dialog's surface at toast size, under the same high shadow: a
-  /// toast floats over everything, and the swatch it's given colours its
+  /// toast floats over everything, and the swatch it's given colors its
   /// glyph rather than the whole card — a wall of red is an emergency, and
   /// most toasts aren't.
   ToastStyle resolve() {
@@ -470,7 +470,7 @@ class NavListResolver {
 
     // Selected and unselected share one role, so a row's letters don't
     // change shape when it becomes the one you're on — the difference is
-    // colour and a touch of weight, nothing more.
+    // color and a touch of weight, nothing more.
     return NavListStyle(
       selected: selected,
       selectedStyle: text
@@ -841,7 +841,7 @@ class ScaffoldResolver {
   final Theme _theme;
 
   /// The shell's chrome: bars and sidebars on the palette's
-  /// [Palette.surface] — the colour cards, fields, and menus share — one
+  /// [Palette.surface] — the color cards, fields, and menus share — one
   /// step off the page the body keeps, with a hairline where two regions
   /// meet.
   ///
@@ -886,9 +886,9 @@ class TextFieldResolver {
   /// space to fill in rather than a surface to read.
   ///
   /// The swatch dresses the *chrome*: border, caret, ring, selection. What's
-  /// typed stays the palette's text colour, because the content of a field
+  /// typed stays the palette's text color, because the content of a field
   /// is content — a blue-tinted email address would be a lie about what the
-  /// colour means. A field showing an error resolves against
+  /// color means. A field showing an error resolves against
   /// [SemanticSwatch.error] instead, which is how the whole box turns at
   /// once.
   TextFieldStyle resolve([
@@ -920,7 +920,7 @@ class TextFieldResolver {
       errorStyle: text.resolve(TextRole.caption, swatch: SemanticSwatch.error),
       ring: voice,
       cursor: voice,
-      // Selected text keeps its own colour, so the wash behind it has to be
+      // Selected text keeps its own color, so the wash behind it has to be
       // light enough to read through.
       selection: voice.withValues(alpha: opacities.focus * 2),
       height: _theme.sizes.control,
@@ -944,10 +944,10 @@ class TextFieldResolver {
 
 /// Resolves the theme into the [TextStyle] a semantic text widget paints.
 ///
-/// The one resolver that may return a style with no colour at all: text
+/// The one resolver that may return a style with no color at all: text
 /// without a swatch of its own inherits whatever the enclosing [Surface]
 /// speaks, which is how a label reads correctly on a solid button and in a
-/// paragraph without either one being told a colour.
+/// paragraph without either one being told a color.
 class TextResolver {
   const TextResolver(this._theme);
 
@@ -955,9 +955,9 @@ class TextResolver {
 
   /// The type for [role], tinted by [swatch] and graded by [emphasis].
   ///
-  /// [on] is the colour the text would otherwise inherit — the enclosing
+  /// [on] is the color the text would otherwise inherit — the enclosing
   /// surface's foreground. It exists so emphasis grades against *that*
-  /// rather than against the page's text colour, which is the difference
+  /// rather than against the page's text color, which is the difference
   /// between a secondary caption on a solid primary button reading as dimmed
   /// white and reading as dimmed black.
   TextStyle resolve(
@@ -985,24 +985,24 @@ class TextResolver {
             (type.label.letterSpacing ?? 0) + _theme.styles.text.kickerTracking,
       ),
     };
-    final colour = tint(swatch: swatch, emphasis: emphasis, on: on);
-    return colour == null ? base : base.copyWith(color: colour);
+    final color = tint(swatch: swatch, emphasis: emphasis, on: on);
+    return color == null ? base : base.copyWith(color: color);
   }
 
-  /// The colour text wears, or null for "inherit what the surface says".
+  /// The color text wears, or null for "inherit what the surface says".
   ///
   /// A swatch tints; emphasis then grades whatever came out — the tint, or
-  /// [on], or the palette's text colour when there is neither.
+  /// [on], or the palette's text color when there is neither.
   Color? tint({
     SemanticSwatch? swatch,
     TextEmphasis emphasis = TextEmphasis.full,
     Color? on,
   }) {
     final palette = _theme.palette;
-    var colour = swatch != null
+    var color = swatch != null
         ? _theme.styles.text.tinted.on(palette.of(swatch), palette.brightness)
         : on;
-    if (emphasis == TextEmphasis.full) return colour;
+    if (emphasis == TextEmphasis.full) return color;
 
     final opacities = _theme.opacities;
     final step = switch (emphasis) {
@@ -1011,10 +1011,10 @@ class TextResolver {
       TextEmphasis.tertiary => opacities.tertiary,
       TextEmphasis.disabled => opacities.disabled,
     };
-    colour ??= palette.text;
+    color ??= palette.text;
     // Scales the alpha already there rather than replacing it, so grading
     // an already-translucent foreground keeps getting quieter.
-    return colour.withValues(alpha: colour.a * step);
+    return color.withValues(alpha: color.a * step);
   }
 }
 
@@ -1066,7 +1066,7 @@ class CodeTextResolver {
   /// button's washes are the chip's own foreground, the way every other
   /// control's are.
   ///
-  /// A block gets the same colours on a larger footing: the medium radius
+  /// A block gets the same colors on a larger footing: the medium radius
   /// and a hairline, because a block is a card rather than a chip, and a
   /// gutter dimmed to the tertiary step so the numbers stay countable
   /// without competing with the code.
@@ -1118,7 +1118,7 @@ class CodeTextResolver {
   /// brand, strings read as something that went right, comments are text
   /// stepped down to tertiary, and a diff's deletions wear the error
   /// swatch — so a theme that swaps its palette gets a coherent code
-  /// colouring for free instead of a scheme borrowed from somewhere else.
+  /// coloring for free instead of a scheme borrowed from somewhere else.
   ///
   /// Keys are highlight.js v11 scope names. Scopes with no entry keep the
   /// plain monospace, which is what makes an unregistered language degrade
@@ -1187,7 +1187,7 @@ class CodeTextResolver {
       'meta string': literal,
       'doctag': aside,
       'deletion': wear(SemanticSwatch.error),
-      // Markup, where the scope is a shape rather than a colour.
+      // Markup, where the scope is a shape rather than a color.
       'strong': mono.copyWith(fontWeight: FontWeight.w700),
       'emphasis': mono.copyWith(fontStyle: FontStyle.italic),
       'formula': quiet,
@@ -1290,7 +1290,7 @@ class PopoverResolver {
 
   final Theme _theme;
 
-  /// The floating panel: the palette's [Palette.surface] — the colour
+  /// The floating panel: the palette's [Palette.surface] — the color
   /// cards, fields, and menus share — over a hairline, at the elevation
   /// things floating over content sit at.
   PopoverStyle resolve() {
@@ -1317,7 +1317,7 @@ class TooltipResolver {
 
   final Theme _theme;
 
-  /// A tooltip inverts the page — the text colour becomes the fill and the
+  /// A tooltip inverts the page — the text color becomes the fill and the
   /// background becomes the ink — so it reads as an annotation over the
   /// interface rather than another piece of it, and stays legible in both
   /// brightnesses without a palette of its own.
@@ -1373,10 +1373,10 @@ class SliderResolver {
         // track reads as a recess rather than fading into a dark surface.
         .copyWith(radius: pill, fill: _theme.palette.background);
     final opacities = _theme.opacities;
-    // A colourful slider's thumb takes the swatch's bright contrast; a
-    // neutral one has no such colour to draw from, so its knob is the
+    // A colorful slider's thumb takes the swatch's bright contrast; a
+    // neutral one has no such color to draw from, so its knob is the
     // page's own text tone — near-white in the dark — to stay a crisp,
-    // legible control rather than a dull grey lump.
+    // legible control rather than a dull gray lump.
     final thumbFill = swatch == SemanticSwatch.neutral
         ? _theme.palette.text
         : active.foreground;
@@ -1584,7 +1584,7 @@ class CheckboxResolver {
 
 /// Resolves the theme into the [ButtonStyle] a `Button` paints: the surface
 /// dress for the swatch and variant, control geometry from the tokens, and
-/// the state colours interaction wears.
+/// the state colors interaction wears.
 class ButtonResolver {
   const ButtonResolver(this._theme);
 
@@ -1628,11 +1628,11 @@ class SurfaceResolver {
 
   /// The concrete paint for a surface wearing [swatch] in [variant]'s
   /// treatment. The semantic name becomes a real [Swatch] through the
-  /// palette ([Palette.of]) — widgets never hold colours, only meanings.
+  /// palette ([Palette.of]) — widgets never hold colors, only meanings.
   ///
   /// Roles resolve through the variant's [SurfaceShades]; a mapping with no
   /// foreground gets what reads: the contrast pick over the fill when there
-  /// is one, the palette's text colour when there isn't.
+  /// is one, the palette's text color when there isn't.
   SurfaceStyle resolve([
     SemanticSwatch swatch = SemanticSwatch.primary,
     SurfaceVariant variant = SurfaceVariant.solid,

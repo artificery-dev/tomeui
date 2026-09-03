@@ -235,7 +235,7 @@ void main() {
     );
   });
 
-  test('the greys never paint the page onto the page', () {
+  test('the grays never paint the page onto the page', () {
     for (final brightness in Brightness.values) {
       final theme = Theme(palette: Palette(brightness: brightness));
       final page = theme.palette.background;
@@ -251,7 +251,7 @@ void main() {
 
   test('an exception is one swatch\'s business, not the variant\'s', () {
     const theme = Theme();
-    // The colours keep the variant's own stops...
+    // The colors keep the variant's own stops...
     expect(
       theme.widgets.surface
           .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
@@ -267,8 +267,8 @@ void main() {
     );
   });
 
-  test('an exception is configuration too: a grey primary names its own', () {
-    // A palette whose *primary* is a grey hits the same collision, and
+  test('an exception is configuration too: a gray primary names its own', () {
+    // A palette whose *primary* is a gray hits the same collision, and
     // answers it the same way — by naming an exception of its own.
     const theme = Theme(
       palette: Palette(primary: Swatch.zinc),

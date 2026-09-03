@@ -58,8 +58,8 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
   /// After it, at the trailing end.
   final List<Widget> actions;
 
-  /// Centre the title in the bar rather than letting it follow [leading].
-  /// The bar keeps it centred on the *window*, so a title doesn't shift
+  /// Center the title in the bar rather than letting it follow [leading].
+  /// The bar keeps it centerd on the *window*, so a title doesn't shift
   /// when a sidebar toggle appears beside it.
   final bool centerTitle;
 
@@ -168,10 +168,10 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
     );
 
     Widget inner = centerTitle
-        // Centred means centred on the *bar*, not on what the slots
+        // Centerd means centerd on the *bar*, not on what the slots
         // left over, so a title doesn't shift when a toggle appears
         // beside it. It rides over the row and takes no pointer, which
-        // asks that a centred title be short enough not to reach the
+        // asks that a centerd title be short enough not to reach the
         // slots.
         ? Stack(
             alignment: Alignment.center,
@@ -379,11 +379,11 @@ class _WindowButton extends StatelessWidget {
       builder: (context, state) {
         // Over the red, the glyph has to be what reads on *it* rather than
         // what read on the bar — and only while the red is actually there.
-        // A wash at rest is the hover colour at zero alpha, not null, so
+        // A wash at rest is the hover color at zero alpha, not null, so
         // asking whether there is one at all painted the close cross in
         // the bar's own fill: a button you could press and never see.
         final washed = danger && (state.hovered || state.pressed);
-        final colour = washed
+        final color = washed
             ? style.surface.fill ?? style.surface.foreground
             : style.surface.foreground;
 
@@ -393,12 +393,12 @@ class _WindowButton extends StatelessWidget {
             color: state.wash,
             child: Center(
               child: icon != null
-                  ? Icon(icon, size: style.controlIconSize, color: colour)
+                  ? Icon(icon, size: style.controlIconSize, color: color)
                   : CustomPaint(
                       size: Size.square(style.controlIconSize),
                       painter: _WindowGlyphPainter(
                         glyph: glyph,
-                        color: colour,
+                        color: color,
                         stroke: style.glyphStroke,
                       ),
                     ),
@@ -417,7 +417,7 @@ class _WindowButton extends StatelessWidget {
 /// beside it, and a set's "restore" is the pair of arrows that means *leave
 /// full screen*. Every desktop draws these four at one weight, and so does
 /// [WindowControls] — unless the theme names a glyph of its own
-/// ([Icons.windowMinimize] and its neighbours).
+/// ([Icons.windowMinimize] and its neighbors).
 enum WindowGlyph { minimize, maximize, restore, close }
 
 class _WindowGlyphPainter extends CustomPainter {

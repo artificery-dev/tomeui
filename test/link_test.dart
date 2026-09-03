@@ -94,7 +94,7 @@ void main() {
 
     await hover(tester);
     expect(painted(tester).decoration, TextDecoration.underline);
-    // The underline is the link's colour, not the page's.
+    // The underline is the link's color, not the page's.
     expect(painted(tester).decorationColor, painted(tester).color);
   });
 

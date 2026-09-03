@@ -14,12 +14,12 @@ Future<void> tapInList(WidgetTester tester, String label) async {
 }
 
 void main() {
-  // The catalogue is taller than the default 600px test window, and rows
+  // The catalog is taller than the default 600px test window, and rows
   // scrolled off the bottom never get built — give the shell room to show
   // every story instead of scrolling to reach them.
   setUp(() {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views
-        .first;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.physicalSize = const Size(1600, 3000);
     view.devicePixelRatio = 1;
     addTearDown(() {
@@ -28,7 +28,7 @@ void main() {
     });
   });
 
-  testWidgets('lists the catalogue: Theme on top, flat single-story rows', (
+  testWidgets('lists the catalog: Theme on top, flat single-story rows', (
     tester,
   ) async {
     await tester.pumpWidget(const PlaygroundApp());

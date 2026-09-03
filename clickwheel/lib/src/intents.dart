@@ -25,7 +25,7 @@ class WheelBackIntent extends Intent {
   const WheelBackIntent();
 }
 
-/// The centre button held: the long word of select. Where a press opens
+/// The center button held: the long word of select. Where a press opens
 /// or chooses, the hold is the alternative - more about the thing, or
 /// the thing done another way. Default handler: nothing, so a screen with
 /// no alternative stays quiet rather than choosing twice.

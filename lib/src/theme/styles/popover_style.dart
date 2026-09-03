@@ -5,7 +5,7 @@ import 'package:tomeui/tomeui.dart';
 /// a popover with no room on its chosen side flips to the opposite one.
 enum PopoverSide { top, bottom, left, right }
 
-/// How a [Popover] lines up along its anchor's edge — leading, centred, or
+/// How a [Popover] lines up along its anchor's edge — leading, centerd, or
 /// trailing. It slides off this to stay on screen.
 enum PopoverAlign { start, center, end }
 

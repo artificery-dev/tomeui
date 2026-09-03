@@ -1,10 +1,10 @@
 import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [TextField] paints: the box the text sits in, the
-/// type of everything around it, and the colours editing needs — the caret,
+/// type of everything around it, and the colors editing needs — the caret,
 /// the selection, the ring.
 ///
-/// Colours, not choices — the choosing happened in [TextFieldResolver], at
+/// Colors, not choices — the choosing happened in [TextFieldResolver], at
 /// `theme.widgets.textField`.
 @immutable
 class TextFieldStyle {
@@ -33,10 +33,10 @@ class TextFieldStyle {
     this.disabledOpacity = 0.38,
   });
 
-  /// The box: fill, border, corners, and the colour its icons wear.
+  /// The box: fill, border, corners, and the color its icons wear.
   final SurfaceStyle surface;
 
-  /// What's typed. Carries the page's text colour rather than the surface's
+  /// What's typed. Carries the page's text color rather than the surface's
   /// tinted foreground — a field's *content* is content, not chrome.
   final TextStyle textStyle;
 
@@ -64,7 +64,7 @@ class TextFieldStyle {
   final EdgeInsetsGeometry padding;
 
   /// Multi-line fields pad top and bottom too: text that wraps needs room
-  /// above and below, where a single line is centred in its height.
+  /// above and below, where a single line is centerd in its height.
   final EdgeInsetsGeometry multilinePadding;
 
   /// Between the box's slots.

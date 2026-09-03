@@ -2,7 +2,7 @@ import 'package:re_highlight/languages/all.dart';
 import 'package:re_highlight/re_highlight.dart';
 import 'package:tomeui/tomeui.dart';
 
-/// The languages [CodeText.block] knows how to colour.
+/// The languages [CodeText.block] knows how to color.
 ///
 /// Every grammar `re_highlight` ships is registered — the whole
 /// highlight.js set, community languages included — so naming a language
@@ -24,7 +24,7 @@ import 'package:tomeui/tomeui.dart';
 /// [register] adds a grammar the set doesn't have, or replaces one with
 /// your own reading of it; [unregister] takes a name back out. A block
 /// asking for a language nobody knows isn't an error — it renders as plain
-/// monospace, still numbered and still copyable. Colour is the part that
+/// monospace, still numbered and still copyable. Color is the part that
 /// degrades, which is the right part.
 abstract final class CodeSyntax {
   static final Highlight _engine = Highlight()
@@ -45,7 +45,7 @@ abstract final class CodeSyntax {
   /// or to undo a [register] in a test.
   static void unregister(String name) => _engine.unregisterLanguage(name);
 
-  /// Whether a block naming [language] would come out coloured. Null and
+  /// Whether a block naming [language] would come out colored. Null and
   /// unknown names both answer false, which is how a caller can decide to
   /// say so.
   static bool knows(String? language) =>

@@ -38,7 +38,7 @@ Story _oneLine() {
     name: 'Text',
     knobs: [role, emphasis, swatch, variant, words],
     // Sat on a surface deliberately: the point of the category is that
-    // uncoloured text takes whatever the surface underneath it speaks.
+    // uncolored text takes whatever the surface underneath it speaks.
     builder: (context) => Surface(
       variant: variant.value,
       padding: EdgeInsets.all(ThemeProvider.of(context).space.x4),

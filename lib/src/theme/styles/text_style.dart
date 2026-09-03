@@ -24,9 +24,9 @@ enum TextRole {
 /// How loudly text speaks against its surface.
 ///
 /// Emphasis grades the inherited foreground with [Opacities] instead of
-/// reaching for a greyer colour, so the same steps read correctly on every
+/// reaching for a grayer color, so the same steps read correctly on every
 /// surface in every brightness — which is the whole reason [Palette] has one
-/// text colour and not five.
+/// text color and not five.
 enum TextEmphasis { full, secondary, tertiary, disabled }
 
 /// The configuration text resolves against: which stop tinted text and links

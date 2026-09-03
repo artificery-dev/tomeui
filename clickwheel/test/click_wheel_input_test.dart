@@ -105,7 +105,7 @@ void main() {
   holdTests();
 }
 
-/// Asleep, the wheel is silent, the centre and menu only wake, and the
+/// Asleep, the wheel is silent, the center and menu only wake, and the
 /// media buttons still speak.
 void asleepTests() {
   testWidgets('asleep: jog and menu say nothing, select wakes, media and '
@@ -155,7 +155,7 @@ void asleepTests() {
     await tester.pump();
     expect(activations, 0);
     expect(backs, 0);
-    expect(wakes, 2, reason: 'the centre and its hold wake; menu does not');
+    expect(wakes, 2, reason: 'the center and its hold wake; menu does not');
     expect(words, everyElement(WheelWord.press));
 
     wheel.menuDown();
@@ -319,7 +319,7 @@ void holdTests() {
     return wheel;
   }
 
-  testWidgets('the centre: a press on release, a hold at the threshold', (
+  testWidgets('the center: a press on release, a hold at the threshold', (
     tester,
   ) async {
     final heard = <Intent>[];

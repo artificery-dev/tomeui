@@ -41,7 +41,7 @@ Story _progress() {
             const Spacing(SpaceStep.x8),
             // Where a spinner earns its keep: inside something else — and
             // where it would drown, since a button wearing the same swatch
-            // is the very colour the spinner would paint itself.
+            // is the very color the spinner would paint itself.
             Button(
               onPressed: () {},
               swatch: swatch.value,

@@ -153,7 +153,7 @@ class _Bar extends StatelessWidget {
     final opacities = theme.opacities;
 
     // A ghost button in the panel's own foreground: the bar is one surface,
-    // and a button on it shouldn't introduce a second colour.
+    // and a button on it shouldn't introduce a second color.
     final button = theme.widgets.button
         .resolve(SemanticSwatch.neutral, SurfaceVariant.ghost)
         .copyWith(

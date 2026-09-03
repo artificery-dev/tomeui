@@ -4,7 +4,7 @@ import 'package:tomeui/tomeui.dart';
 /// A run of buttons that reads as one control.
 ///
 /// The buttons abut: the corners on the group's outside stay rounded, the
-/// ones facing a neighbour go square, and the hairline where two of them
+/// ones facing a neighbor go square, and the hairline where two of them
 /// meet is drawn once rather than twice. Each button keeps its own
 /// [SurfaceVariant], [SemanticSwatch], and `onPressed` — a group is a shape,
 /// not a choice, which is what separates it from a [SegmentedControl].
@@ -28,7 +28,7 @@ class ButtonGroup extends StatelessWidget {
     super.key,
   });
 
-  /// The buttons, in reading order. Anything that honours
+  /// The buttons, in reading order. Anything that honors
   /// [ButtonGroupSlot] takes the shaping; anything else simply sits in the
   /// run.
   final List<Widget> children;
@@ -100,7 +100,7 @@ class ButtonGroupSlot extends InheritedWidget {
   static ButtonGroupSlot? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ButtonGroupSlot>();
 
-  /// [radius] with the corners that face a neighbour squared off.
+  /// [radius] with the corners that face a neighbor squared off.
   BorderRadius shape(BorderRadius radius, TextDirection direction) {
     // The only slot in its run is a button like any other.
     if (first && last) return radius;
@@ -210,10 +210,8 @@ class _RenderAbut extends RenderBox
     child = firstChild;
     while (child != null) {
       final data = child.parentData! as _AbutParentData;
-      final centred = (cross - _cross(child.size)) / 2;
-      data.offset = _horizontal
-          ? Offset(main, centred)
-          : Offset(centred, main);
+      final centerd = (cross - _cross(child.size)) / 2;
+      data.offset = _horizontal ? Offset(main, centerd) : Offset(centerd, main);
       main += _main(child.size);
       if (childAfter(child) != null) main -= _overlap;
       child = childAfter(child);

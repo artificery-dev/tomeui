@@ -16,7 +16,7 @@ class SurfaceStyle {
   final Color foreground;
   final Color? fill;
 
-  /* The palette decides which colour a meaning is;
+  /* The palette decides which color a meaning is;
      the widget only ever asks for the meaning. */
   Color inkOn(Color background) =>
       fill == null ? foreground : foreground.withValues(alpha: 0.9);
@@ -42,7 +42,7 @@ dependencies:
 };
 
 /// Both shapes on the one story, `Multi-line` picking between them: the
-/// inline span, and the listing — a card with a numbered gutter and colour
+/// inline span, and the listing — a card with a numbered gutter and color
 /// that comes out of the palette rather than out of an editor's theme.
 /// Whichever shape is up ignores the knobs belonging to the other; only
 /// `Copyable` and `Swatch` bite in both.
@@ -54,7 +54,7 @@ Story _codeText() {
     'dart',
     options: _samples.keys.toList(),
   );
-  final coloured = BoolKnob('Known language', true);
+  final colored = BoolKnob('Known language', true);
   final lineNumbers = BoolKnob('Line numbers', true);
   final firstLine = DoubleKnob('First line', 1, min: 1, max: 200);
   final callOut = BoolKnob('Call out two lines', false);
@@ -73,7 +73,7 @@ Story _codeText() {
       multiLine,
       code,
       language,
-      coloured,
+      colored,
       lineNumbers,
       firstLine,
       callOut,
@@ -98,8 +98,8 @@ Story _codeText() {
           _samples[language.value]!,
           // Naming a language the registry doesn't know is the graceful
           // case worth seeing: the card, the numbers, and the copy button
-          // all stay, and only the colour goes.
-          language: coloured.value ? language.value : 'not-a-language',
+          // all stay, and only the color goes.
+          language: colored.value ? language.value : 'not-a-language',
           lineNumbers: lineNumbers.value,
           firstLine: start,
           highlightLines: callOut.value ? {start + 2, start + 3} : const {},

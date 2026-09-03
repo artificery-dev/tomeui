@@ -24,7 +24,7 @@ class EmptyStateStyle {
   final TextStyle titleStyle;
   final TextStyle messageStyle;
 
-  /// The glyph's colour — quiet, because an empty state is not an error.
+  /// The glyph's color — quiet, because an empty state is not an error.
   final Color glyph;
 
   final double iconSize;

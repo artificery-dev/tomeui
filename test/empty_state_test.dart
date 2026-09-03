@@ -29,7 +29,7 @@ void main() {
     expect(action.top, greaterThan(message.top));
   });
 
-  testWidgets('it centres itself in whatever it is given', (tester) async {
+  testWidgets('it centers itself in whatever it is given', (tester) async {
     await pump(tester, const EmptyState(title: Text('Nothing here')));
 
     expect(
@@ -55,10 +55,7 @@ void main() {
     expect(panel.width, lessThan(app.width / 2));
     expect(panel.height, lessThan(app.height / 2));
     // And the caller's Center holds it in the middle of the room.
-    expect(
-      panel.center.dx,
-      moreOrLessEquals(app.width / 2, epsilon: 1),
-    );
+    expect(panel.center.dx, moreOrLessEquals(app.width / 2, epsilon: 1));
   });
 
   testWidgets('the faintest panel by default, and none when asked', (

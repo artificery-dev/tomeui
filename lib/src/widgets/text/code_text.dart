@@ -18,7 +18,7 @@ import '../foundation/interactive.dart';
 /// const CodeText('~/.config/tome.yaml', copyable: false),
 /// ```
 ///
-/// **Block** is a listing: a card, a numbered gutter, and syntax coloured
+/// **Block** is a listing: a card, a numbered gutter, and syntax colored
 /// in the palette's own voice rather than in a scheme borrowed from an
 /// editor. Long lines scroll sideways under a gutter that stays put, unless
 /// [wrap] says to fold them instead.
@@ -27,10 +27,10 @@ import '../foundation/interactive.dart';
 /// CodeText.block(source, language: 'dart', highlightLines: const {12}),
 /// ```
 ///
-/// Colour comes from [CodeSyntax], which knows every grammar
+/// Color comes from [CodeSyntax], which knows every grammar
 /// `re_highlight` ships — so [language] is usually the only thing to say.
 /// A block naming one it doesn't know still gets its card, its numbers,
-/// and its copy button; only the colour is missing.
+/// and its copy button; only the color is missing.
 class CodeText extends StatelessWidget {
   const CodeText(
     this.data, {
@@ -67,7 +67,7 @@ class CodeText extends StatelessWidget {
        highlightLines = const {},
        wrap = false;
 
-  /// A listing rather than a chip: a card, a gutter, and colour.
+  /// A listing rather than a chip: a card, a gutter, and color.
   ///
   /// [maxLines] and [overflow] are absent by design — they are questions
   /// about eliding a line, and a block's answer to a long line is to
@@ -115,7 +115,7 @@ class CodeText extends StatelessWidget {
   /// Whether this is the block shape. Set by [CodeText.block].
   final bool block;
 
-  /// What to colour the code as — a name [CodeSyntax] knows, or one of the
+  /// What to color the code as — a name [CodeSyntax] knows, or one of the
   /// aliases its grammars declare (`js`, `yml`, `sh`). Null, or a name
   /// nobody registered, leaves the code plain.
   final String? language;
@@ -368,7 +368,8 @@ class CodeText extends StatelessWidget {
     );
     if (highlighted == null) {
       return [
-        for (final line in source.split('\n')) TextSpan(text: line, style: base),
+        for (final line in source.split('\n'))
+          TextSpan(text: line, style: base),
       ];
     }
 
@@ -396,9 +397,7 @@ class CodeText extends StatelessWidget {
     }
 
     walk(highlighted, base);
-    return [
-      for (final line in lines) TextSpan(children: line, style: base),
-    ];
+    return [for (final line in lines) TextSpan(children: line, style: base)];
   }
 
   /// How wide [text] lays out — the gutter's width, and the one thing here

@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'opacities.dart';
 import 'swatch.dart';
 
-/// The colour tokens: a [Swatch] per [SemanticSwatch] and a [Brightness],
+/// The color tokens: a [Swatch] per [SemanticSwatch] and a [Brightness],
 /// with the semantic roles *derived*.
 ///
 /// A rebrand is one line and light/dark is a flip, never a second palette to
@@ -33,7 +33,7 @@ class Palette {
   /// would shout.
   final Swatch accent;
 
-  /// The greys: backgrounds, surfaces, text, dividers.
+  /// The grays: backgrounds, surfaces, text, dividers.
   final Swatch neutral;
 
   /// Something worth knowing — notices, hints, the calm end of feedback.
@@ -50,7 +50,7 @@ class Palette {
   final Swatch error;
 
   /// The real [Swatch] behind a [SemanticSwatch] — how a semantic choice on
-  /// a widget becomes colour on this palette.
+  /// a widget becomes color on this palette.
   Swatch of(SemanticSwatch swatch) => switch (swatch) {
     SemanticSwatch.primary => primary,
     SemanticSwatch.accent => accent,
@@ -70,7 +70,7 @@ class Palette {
   Color get surface => _dark ? neutral.s900 : neutral.s0;
 
   /// Foreground at full emphasis. Step it down with [Opacities], not with
-  /// greyer colours, so it stays right on every surface.
+  /// grayer colors, so it stays right on every surface.
   Color get text => _dark ? neutral.s50 : neutral.s950;
 
   Color get divider => _dark ? neutral.s800 : neutral.s200;

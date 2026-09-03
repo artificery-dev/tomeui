@@ -11,8 +11,8 @@ import 'package:tomeui/tomeui.dart';
 /// Skeleton.circle(size: 40)
 /// ```
 ///
-/// The shimmer is the whole point: a still grey box reads as a thing that
-/// has loaded and is grey, while one with a light passing over it reads as
+/// The shimmer is the whole point: a still gray box reads as a thing that
+/// has loaded and is gray, while one with a light passing over it reads as
 /// a thing on its way. Where the reader has asked for less motion
 /// ([MediaQuery.disableAnimationsOf]), it holds still and says so through
 /// its semantics instead.
@@ -148,7 +148,7 @@ class _SkeletonState extends State<Skeleton>
   /// The light, part-way across.
   ///
   /// Every stop is opaque: the sheen is blended *onto* the fill rather than
-  /// interpolated towards, because a ramp from an opaque colour to a
+  /// interpolated towards, because a ramp from an opaque color to a
   /// translucent one peaks in brightness halfway along it — which paints
   /// two bright shoulders around a dark core instead of one light.
   ///
@@ -159,15 +159,15 @@ class _SkeletonState extends State<Skeleton>
   /// passing light.
   LinearGradient _sweep(SkeletonStyle style, double progress) {
     // Alignment runs -1 to 1 across the shape, so a band covering a
-    // fraction of the width reaches that fraction either side of centre.
+    // fraction of the width reaches that fraction either side of center.
     final half = style.sheenWidth;
     final from = -1 - half;
     final crossing = (1 + half - from) / style.sheenPass;
-    final centre = from + progress * crossing;
+    final center = from + progress * crossing;
 
     return LinearGradient(
-      begin: AlignmentDirectional(centre - half, 0),
-      end: AlignmentDirectional(centre + half, 0),
+      begin: AlignmentDirectional(center - half, 0),
+      end: AlignmentDirectional(center + half, 0),
       colors: [
         style.fill,
         Color.alphaBlend(style.sheen, style.fill),

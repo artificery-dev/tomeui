@@ -6,7 +6,7 @@ import '../foundation/interactive.dart';
 ///
 /// Wears the same grammar as the surface it's made of — a [SemanticSwatch]
 /// in a [SurfaceVariant] — and adds what a control needs: hover and pressed
-/// washes in its own foreground colour, a focus ring in the swatch's full
+/// washes in its own foreground color, a focus ring in the swatch's full
 /// voice, keyboard activation, and a disabled state when [onPressed] is
 /// null. The interaction machinery lives in the shared [Interactive] core.
 ///
@@ -47,7 +47,7 @@ class Button extends StatelessWidget {
 
   final SurfaceVariant variant;
 
-  /// The meaning to wear — the palette says which colour that is.
+  /// The meaning to wear — the palette says which color that is.
   final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme — set only by [Button.custom].
@@ -59,7 +59,7 @@ class Button extends StatelessWidget {
     final style = this.style ?? theme.widgets.button.resolve(swatch, variant);
     final enabled = onPressed != null;
 
-    // A button in a run shares its edges: the corners facing a neighbour go
+    // A button in a run shares its edges: the corners facing a neighbor go
     // square, and the rest of the shape is its own.
     final slot = ButtonGroupSlot.maybeOf(context);
     final surface = slot == null
@@ -80,7 +80,7 @@ class Button extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (leading != null) ...[leading!, SizedBox(width: style.gap)],
-            // Loose, so a squeezed button squeezes its centre rather than
+            // Loose, so a squeezed button squeezes its center rather than
             // overflowing: the glyphs keep their size and the label yields.
             // A plain child here would take unbounded width from the row,
             // and anything inside that wanted to shrink couldn't.

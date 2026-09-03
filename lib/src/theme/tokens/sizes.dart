@@ -39,7 +39,7 @@ class Sizes {
   /// A comfortable single reading column.
   final double contentNarrow;
 
-  /// The widest a content region grows before it centres instead.
+  /// The widest a content region grows before it centers instead.
   final double content;
 
   Sizes copyWith({

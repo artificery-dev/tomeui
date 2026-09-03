@@ -2,13 +2,13 @@ import 'package:flutter/widgets.dart';
 
 /// The type scale, as swappable tokens.
 ///
-/// Every style carries size, weight, and leading — never a colour and never a
+/// Every style carries size, weight, and leading — never a color and never a
 /// family, so the same scale works over any palette and under any font an app
 /// ships. The defaults are tuned for a UI face at interface sizes; swap the
 /// whole scale by constructing your own, or adjust one style with [copyWith].
 ///
 /// Leading is distributed evenly above and below the glyphs
-/// ([TextLeadingDistribution.even]), so text sits truly centred inside a
+/// ([TextLeadingDistribution.even]), so text sits truly centerd inside a
 /// padded box — a [Surface] pill, a button — instead of hanging from the
 /// font's own ascent.
 @immutable
@@ -154,7 +154,10 @@ class Typography {
         ),
         code: const TextStyle(
           fontFamily: _recursive,
-          fontVariations: [FontVariation('MONO', 1), FontVariation('wght', 400)],
+          fontVariations: [
+            FontVariation('MONO', 1),
+            FontVariation('wght', 400),
+          ],
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.5,

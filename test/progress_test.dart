@@ -118,7 +118,7 @@ void main() {
         .fill!;
 
     // The hover wash lifts the button's fill, which is enough to make two
-    // colours unequal and nowhere near enough to make one visible on the
+    // colors unequal and nowhere near enough to make one visible on the
     // other: the swap has to survive it.
     final button = const Theme().widgets.button.resolve(
       SemanticSwatch.primary,

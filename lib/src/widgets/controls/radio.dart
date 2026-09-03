@@ -106,7 +106,7 @@ class RadioButton<T> extends StatelessWidget {
 
   final SurfaceVariant variant;
 
-  /// The meaning to wear when selected — the palette says which colour.
+  /// The meaning to wear when selected — the palette says which color.
   final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme — set only by

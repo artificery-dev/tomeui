@@ -22,7 +22,7 @@ import '../foundation/overlay_dress.dart';
 ///
 /// The widget is just the panel — [showDialog] is what puts one over the
 /// page, and what most callers want. Built on its own it can sit anywhere,
-/// which is how the catalogue shows one without interrupting anything.
+/// which is how the catalog shows one without interrupting anything.
 class Dialog extends StatelessWidget {
   const Dialog({
     this.title,
@@ -130,7 +130,7 @@ class Dialog extends StatelessWidget {
   }
 }
 
-/// The route a [Dialog] arrives on: centred over a scrim, with the page
+/// The route a [Dialog] arrives on: centerd over a scrim, with the page
 /// behind it left where it was.
 ///
 /// A route rather than an overlay entry, because that's what buys the

@@ -39,10 +39,7 @@ void main() {
     await pumpAt(
       tester,
       1000,
-      const SizedBox(
-        width: 200,
-        child: BreakpointBuilder(builder: _name),
-      ),
+      const SizedBox(width: 200, child: BreakpointBuilder(builder: _name)),
     );
 
     expect(find.text('expanded'), findsOneWidget);
@@ -79,14 +76,14 @@ void main() {
     await pumpAt(
       tester,
       1000,
-      // Centred so the box is free to be 300 wide: a route hands its child
+      // Centerd so the box is free to be 300 wide: a route hands its child
       // tight constraints, and a SizedBox cannot shrink under those.
       Center(
         child: SizedBox(
           width: 300,
           height: 120,
           child: ContainerSizeBuilder(
-          builder: (context, size) {
+            builder: (context, size) {
               seen = size;
               return const SizedBox.shrink();
             },

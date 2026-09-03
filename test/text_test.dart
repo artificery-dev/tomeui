@@ -56,7 +56,7 @@ void main() {
       expect(painted(tester, 'C').fontSize, type.caption.fontSize);
     });
 
-    testWidgets('colour comes from the surface, not from the widget', (
+    testWidgets('color comes from the surface, not from the widget', (
       tester,
     ) async {
       await pump(
@@ -70,7 +70,7 @@ void main() {
       expect(painted(tester, 'x').color, surface.foreground);
     });
 
-    testWidgets('emphasis grades that inherited colour', (tester) async {
+    testWidgets('emphasis grades that inherited color', (tester) async {
       await pump(
         tester,
         const Surface(

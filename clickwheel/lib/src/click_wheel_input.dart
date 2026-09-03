@@ -121,7 +121,7 @@ class ClickWheelController {
 ///  * wheel detents -> [JogIntent] (fast-spin tier -> page jogs). The
 ///    default action walks widget focus; a [WheelList] in focus overrides
 ///    it and moves its own selection instead.
-///  * centre -> [ActivateIntent] on a press, [ActivateHoldIntent] on a
+///  * center -> [ActivateIntent] on a press, [ActivateHoldIntent] on a
 ///    hold past [longPress], to whatever holds focus.
 ///  * menu -> [WheelBackIntent] on a press; a hold is [onMenuHold].
 ///  * prev / next / play-pause -> [MediaIntent], focus-independent, with
@@ -197,7 +197,7 @@ class ClickWheelInput extends StatefulWidget {
   final bool muted;
 
   /// The screen is dark, but the buttons are not: the wheel itself says
-  /// nothing (a thumb on it in a pocket), the centre button says only
+  /// nothing (a thumb on it in a pocket), the center button says only
   /// [onWake] - a press of it is how the dark player wakes, and what it
   /// would have activated is not activated - while the media buttons, the
   /// volume rocker and the power chord speak as they do awake. Menu, in
@@ -206,14 +206,14 @@ class ClickWheelInput extends StatefulWidget {
   /// wins when both are set.
   final bool asleep;
 
-  /// Asleep, what the centre button says instead of its words.
+  /// Asleep, what the center button says instead of its words.
   final VoidCallback? onWake;
 
   /// How long a press becomes a hold, for the power chord and the menu
   /// key: the two whose holds reach past the screen.
   final Duration holdThreshold;
 
-  /// How long a press of the ring's other buttons - centre, previous,
+  /// How long a press of the ring's other buttons - center, previous,
   /// next, play - becomes their long word: [ActivateHoldIntent], or a
   /// [MediaIntent] with `held`. Shorter than [holdThreshold]: these holds
   /// are gestures in a screen, not chords on the player.
@@ -241,7 +241,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// took it, and [WidgetsApp]'s own shortcuts sit above the navigator ready
   /// to turn Enter into a second [ActivateIntent] and an arrow into a focus
   /// move. On the player that doubled every activation - two pushes of a
-  /// screen for one press of the centre, two presses of back to leave it.
+  /// screen for one press of the center, two presses of back to leave it.
   late final _scope = FocusScopeNode(
     debugLabel: 'ClickWheelInput',
     onKeyEvent: _claim,
@@ -531,7 +531,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
     if (widget.asleep) {
-      // The wheel and menu are silent; the centre wakes and does no more;
+      // The wheel and menu are silent; the center wakes and does no more;
       // everything else - media, volume - goes through.
       if (intent is JogIntent || intent is WheelBackIntent) return;
       if (intent is ActivateIntent || intent is ActivateHoldIntent) {

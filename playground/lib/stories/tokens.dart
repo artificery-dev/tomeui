@@ -110,7 +110,7 @@ Widget _colors(BuildContext context) {
 ///
 /// A specimen line per stop, named above and measured below. Raw styles
 /// rather than the widgets that wear them: this is the token, and what a
-/// [SemanticText] adds to it — colour, emphasis, a heading announcement —
+/// [SemanticText] adds to it — color, emphasis, a heading announcement —
 /// is the widget's business and has its own story.
 Widget _typography(BuildContext context) {
   final theme = ThemeProvider.of(context);
@@ -268,7 +268,9 @@ Widget _strokes(BuildContext context) {
       Row(
         children: [
           SizedBox(width: 64, child: _caption(theme, name)),
-          Expanded(child: Container(height: width, color: color)),
+          Expanded(
+            child: Container(height: width, color: color),
+          ),
           SizedBox(width: theme.space.x2),
           _caption(theme, '${width.toStringAsFixed(0)}px'),
         ],
@@ -283,7 +285,7 @@ Widget _opacities(BuildContext context) {
   final opacities = theme.opacities;
   final text = theme.palette.text;
   return _page([
-    _caption(theme, 'emphasis — foreground colour, stepped down'),
+    _caption(theme, 'emphasis — foreground color, stepped down'),
     SizedBox(height: theme.space.x2),
     for (final (name, value) in [
       ('primary', 1.0),

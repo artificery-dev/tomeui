@@ -3,7 +3,7 @@ import 'package:tomeui/tomeui.dart';
 /// A hairline between two things.
 ///
 /// Horizontal by default, filling whatever width it's given; [Axis.vertical]
-/// makes it a rule down a row instead, filling the height. The colour and
+/// makes it a rule down a row instead, filling the height. The color and
 /// weight come from the theme (`theme.widgets.divider`), so every rule in
 /// the app is the one line.
 ///

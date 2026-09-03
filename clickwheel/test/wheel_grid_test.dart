@@ -4,7 +4,7 @@ import 'package:tomeui_clickwheel/tomeui_clickwheel.dart';
 
 /// A grid is read like a page: a detent moves one cell to the right, the
 /// end of a row leads to the start of the next, a page detent moves a
-/// whole row, and the centre button activates the cell under the cursor.
+/// whole row, and the center button activates the cell under the cursor.
 void main() {
   Future<(ClickWheelController, List<int>)> pumpGrid(
     WidgetTester tester, {
@@ -87,7 +87,7 @@ void main() {
     expect(selectedCell(tester), 0);
   });
 
-  testWidgets('the centre button activates the selected cell', (tester) async {
+  testWidgets('the center button activates the selected cell', (tester) async {
     final (wheel, activated) = await pumpGrid(tester);
     wheel.jog(4);
     await tester.pumpAndSettle();
