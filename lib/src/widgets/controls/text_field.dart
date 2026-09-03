@@ -227,6 +227,8 @@ class _TextFieldState extends State<TextField>
         _ownController = null;
       }
       _controller.addListener(_contentChanged);
+      // A new controller, possibly with text of its own already in it.
+      _empty = _controller.text.isEmpty;
     }
     if (widget.focusNode != oldWidget.focusNode) {
       (oldWidget.focusNode ?? _ownFocus)?.removeListener(_focusChanged);
@@ -250,7 +252,11 @@ class _TextFieldState extends State<TextField>
   /// Only the empty-to-not-empty crossing matters here: it's what shows and
   /// hides the placeholder. Every other keystroke redraws inside
   /// [EditableText] without this widget rebuilding at all.
-  bool _empty = true;
+  ///
+  /// Read off the controller rather than assumed: a field handed a
+  /// controller that already has text in it starts full, and a placeholder
+  /// over that text is two strings on top of each other.
+  late bool _empty = _controller.text.isEmpty;
   void _contentChanged() {
     final empty = _controller.text.isEmpty;
     if (empty != _empty) setState(() => _empty = empty);
