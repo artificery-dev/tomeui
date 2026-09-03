@@ -64,6 +64,42 @@ class WheelRailPhysics {
   int get hashCode => Object.hash(weight, give, rest, snap);
 }
 
+/// A hand on a [WheelRail], for an owner that drives it rather than
+/// letting it listen for itself.
+///
+/// A rail inside a list cannot hold focus of its own - the list holds it,
+/// and hands it on for a while ([InputCapture]) - so the words the rail
+/// answers to arrive at the owner instead. This is how they get in:
+///
+/// ```dart
+/// InputCapture(
+///   active: captured,
+///   onCapture: (intent) {
+///     if (intent case JogIntent()) rail.jog(intent);
+///   },
+///   child: WheelRail(controller: rail, ...),
+/// )
+/// ```
+///
+/// A rail with a controller installs no focus and no actions of its own:
+/// it is driven, and it draws.
+class WheelRailController {
+  _WheelRailState<Object?>? _rail;
+
+  /// Whether a rail is listening to this controller right now.
+  bool get attached => _rail != null;
+
+  /// The wheel turned.
+  void jog(JogIntent intent) => _rail?._jog(intent);
+
+  /// The center button.
+  void activate() => _rail?._activate();
+
+  /// Walk the box one option, without the weight: what a media key does
+  /// on the power dialog, where left and right step the rail.
+  void step(int by) => _rail?._step(by);
+}
+
 /// A track of options the wheel drives, with a box that slides to the one
 /// under the thumb.
 ///
@@ -107,8 +143,10 @@ class WheelRail<T> extends StatefulWidget {
     this.onActivate,
     this.onRelease,
     this.onMoved,
+    this.controller,
     this.focusNode,
     this.autofocus = false,
+    this.lit = true,
     this.physics = const WheelRailPhysics(),
     this.variant = SurfaceVariant.solid,
     this.swatch = SemanticSwatch.primary,
@@ -138,11 +176,27 @@ class WheelRail<T> extends StatefulWidget {
   /// for a screen that moves with it.
   final ValueChanged<double>? onMoved;
 
+  /// A hand on the rail, for an owner that drives it.
+  ///
+  /// Given one, the rail keeps no focus and no actions: the owner decides
+  /// when the wheel is the rail's - a settings row that has been activated,
+  /// a dialog that is up - and passes the words in. Without one the rail
+  /// holds focus as a single node and listens for itself, the way a
+  /// [WheelList] does.
+  final WheelRailController? controller;
+
   /// The rail's focus, for an owner that needs to hand focus back to it.
+  /// Ignored when a [controller] drives it.
   final FocusNode? focusNode;
 
-  /// Take focus on appearing.
+  /// Take focus on appearing. Ignored when a [controller] drives it.
   final bool autofocus;
+
+  /// Whether the box is lit: the mark that says the wheel is on this rail.
+  ///
+  /// A rail that listens for itself knows this from its focus. A driven
+  /// one cannot - the focus is the owner's - so the owner says.
+  final bool lit;
 
   final WheelRailPhysics physics;
 
@@ -187,12 +241,17 @@ class _WheelRailState<T> extends State<WheelRail<T>>
   @override
   void initState() {
     super.initState();
+    _attach(widget.controller);
     _travel.addListener(_report);
   }
 
   @override
   void didUpdateWidget(WheelRail<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      _detach(oldWidget.controller);
+      _attach(widget.controller);
+    }
     // The owner moved the box - or agreed to the move this rail asked for,
     // in which case the travel is already spent.
     if (widget.value != oldWidget.value) {
@@ -221,6 +280,7 @@ class _WheelRailState<T> extends State<WheelRail<T>>
 
   @override
   void dispose() {
+    _detach(widget.controller);
     _restTimer?.cancel();
     _travel.dispose();
     _ownNode?.dispose();
@@ -243,6 +303,25 @@ class _WheelRailState<T> extends State<WheelRail<T>>
 
   /// Nothing chosen yet: the first detent lands on the near end.
   int? _nearEnd(int by) => _landing(by > 0 ? -1 : _count, by);
+
+  void _attach(WheelRailController? controller) {
+    controller?._rail = this as _WheelRailState<Object?>;
+  }
+
+  void _detach(WheelRailController? controller) {
+    if (identical(controller?._rail, this)) controller!._rail = null;
+  }
+
+  /// One option along, without the wheel's weight: a media key on the
+  /// power dialog, an arrow on a desk. Stops at the ends.
+  void _step(int by) {
+    if (by == 0) return;
+    final index = _selected;
+    final next = index < 0 ? _nearEnd(by) : _landing(index, by.sign);
+    if (next == null) return;
+    _settle();
+    widget.onChanged(widget.segments[next].value);
+  }
 
   void _jog(JogIntent intent) {
     // A fast spin is one detent: the weight is the point.
@@ -337,6 +416,15 @@ class _WheelRailState<T> extends State<WheelRail<T>>
         theme.widgets.segmented.resolve(widget.swatch, widget.variant);
     final selected = _selected;
 
+    // Driven from outside: no focus of its own to take, and no actions to
+    // catch words that were never dispatched here. [lit] is the owner's to
+    // say - it is the one that knows whether the wheel is here.
+    if (widget.controller != null) {
+      return Builder(
+        builder: (context) => _track(theme, style, selected, widget.lit),
+      );
+    }
+
     return Actions(
       actions: {
         JogIntent: CallbackAction<JogIntent>(
@@ -356,42 +444,44 @@ class _WheelRailState<T> extends State<WheelRail<T>>
         focusNode: _focus,
         autofocus: widget.autofocus,
         child: Builder(
-          builder: (context) {
-            final focused = Focus.of(context).hasFocus;
-            return Semantics(
-              container: true,
-              child: SizedBox(
-                height: style.height,
-                child: Surface.custom(
-                  style: style.track,
-                  padding: EdgeInsets.all(style.inset),
-                  // The box alone moves: the options stay put, and a turn
-                  // past the end carries the box out over the track's edge
-                  // - so the stack must not clip - and back.
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        child: _box(theme, style, selected, focused),
-                      ),
-                      Row(
-                        children: [
-                          for (var i = 0; i < _count; i++)
-                            Expanded(
-                              child: _segment(theme, style, i, selected),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+          builder: (context) =>
+              _track(theme, style, selected, Focus.of(context).hasFocus),
         ),
       ),
     );
   }
+
+  /// The trough, the options, and the box over them.
+  Widget _track(
+    Theme theme,
+    SegmentedControlStyle style,
+    int selected,
+    bool lit,
+  ) => Semantics(
+    container: true,
+    child: SizedBox(
+      height: style.height,
+      child: Surface.custom(
+        style: style.track,
+        padding: EdgeInsets.all(style.inset),
+        // The box alone moves: the options stay put, and a turn past the
+        // end carries the box out over the track's edge - so the stack
+        // must not clip - and back.
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(child: _box(theme, style, selected, lit)),
+            Row(
+              children: [
+                for (var i = 0; i < _count; i++)
+                  Expanded(child: _segment(theme, style, i, selected)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   /// The box, on its way. Between options it is [_travel]'s share of the
   /// way from the option it is on; off an end it is the same share of the
