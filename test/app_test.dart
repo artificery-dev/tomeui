@@ -10,9 +10,7 @@ void main() {
 
     expect(find.text('hello'), findsOneWidget);
 
-    final style = DefaultTextStyle.of(
-      tester.element(find.text('hello')),
-    ).style;
+    final style = DefaultTextStyle.of(tester.element(find.text('hello'))).style;
     expect(style.color, theme.palette.text);
     expect(style.fontSize, theme.typography.body.fontSize);
 
@@ -75,7 +73,7 @@ void main() {
     expect(find.text('go'), findsNothing);
   });
 
-  testWidgets('icons default to the themed size and colour', (tester) async {
+  testWidgets('icons default to the themed size and color', (tester) async {
     const theme = Theme();
     await tester.pumpWidget(TomeApp(home: Icon(theme.icons.settings)));
 

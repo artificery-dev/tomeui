@@ -7,7 +7,7 @@ StoryGroup emptyStateStories() =>
     StoryGroup(name: 'EmptyState', stories: [_emptyState()]);
 
 /// Shown in the slot it would really occupy — a panel with nothing in it —
-/// since an empty state centred on a blank canvas proves nothing. The panel
+/// since an empty state centerd on a blank canvas proves nothing. The panel
 /// is the empty state's own: [SurfaceVariant.outline] makes it the card.
 Story _emptyState() {
   final title = StringKnob('Title', 'No voyages yet');

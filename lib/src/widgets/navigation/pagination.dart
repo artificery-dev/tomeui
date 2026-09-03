@@ -4,7 +4,7 @@ import 'package:tomeui/tomeui.dart';
 ///
 /// A run of numbers with the ends always shown and the middle elided —
 /// `‹ 1 … 7 8 9 … 42 ›` — so the trail is the same width whichever page
-/// you're on. [siblings] says how many neighbours flank the current page.
+/// you're on. [siblings] says how many neighbors flank the current page.
 ///
 /// Same width means *exactly* the same: every slot is a square the size of
 /// a control, the elision included, and the run always holds the same

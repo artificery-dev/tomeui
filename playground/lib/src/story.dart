@@ -28,7 +28,7 @@ class StoryGroup {
   final List<Story> stories;
 }
 
-/// A shelf of the catalogue: the groups that belong together, named the way
+/// A shelf of the catalog: the groups that belong together, named the way
 /// `package:tomeui` shelves the widgets themselves. Groups sit in
 /// alphabetical order within their category.
 class StoryCategory {

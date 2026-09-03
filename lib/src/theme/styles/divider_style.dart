@@ -6,14 +6,16 @@ import 'package:tomeui/tomeui.dart';
 class DividerStyle {
   const DividerStyle({required this.color, this.thickness = 1});
 
-  /// The line's colour at full strength — a faded divider reaches it only
+  /// The line's color at full strength — a faded divider reaches it only
   /// at its middle.
   final Color color;
 
   final double thickness;
 
-  DividerStyle copyWith({Color? color, double? thickness}) =>
-      DividerStyle(color: color ?? this.color, thickness: thickness ?? this.thickness);
+  DividerStyle copyWith({Color? color, double? thickness}) => DividerStyle(
+    color: color ?? this.color,
+    thickness: thickness ?? this.thickness,
+  );
 
   @override
   bool operator ==(Object other) =>

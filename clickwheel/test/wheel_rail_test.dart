@@ -5,10 +5,10 @@ import 'package:tomeui_clickwheel/tomeui_clickwheel.dart';
 /// The rail is heavy: a weight of detents lies between options, and the
 /// same weight carries the box off an end and lets go. What is checked is
 /// the arithmetic of that weight - where the box is part way, that the
-/// option clicks over as the box's centre crosses the line and not before,
+/// option clicks over as the box's center crosses the line and not before,
 /// that resting settles the box onto the side it is on, that the give caps
 /// how far out it goes - and that the rail only ever speaks for the wheel
-/// and the centre.
+/// and the center.
 void main() {
   const options = ['left', 'middle', 'right'];
 
@@ -124,7 +124,7 @@ void main() {
     expect(changes, isEmpty, reason: 'on the line, not over it');
     expect(boxAlignment(tester), -0.5, reason: 'half way to the middle');
     await jog(tester, 1);
-    expect(changes, ['middle'], reason: 'the centre crossed the line');
+    expect(changes, ['middle'], reason: 'the center crossed the line');
     expect(
       boxAlignment(tester),
       -0.25,
@@ -265,7 +265,7 @@ void main() {
     expect(boxOffset(tester), 0);
   });
 
-  testWidgets('the centre activates the option under the box', (tester) async {
+  testWidgets('the center activates the option under the box', (tester) async {
     await pumpRail(tester);
     wheel.press(WheelButton.select);
     await tester.pump();

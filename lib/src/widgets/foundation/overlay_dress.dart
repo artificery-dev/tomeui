@@ -7,7 +7,7 @@ import 'package:tomeui/tomeui.dart';
 /// them, so none of that subtree's theme, text style, or icon look reaches
 /// them. Without this, a panel's words fall back to the framework's debug
 /// style, and a theme installed part-way down the tree — a section with a
-/// palette of its own, or a catalogue previewing one — is lost the moment
+/// palette of its own, or a catalog previewing one — is lost the moment
 /// something floats.
 ///
 /// The theme to dress with is the one that was in scope where the thing

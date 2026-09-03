@@ -23,7 +23,7 @@ class WheelRailPhysics {
   /// Detents from one option to the next, or to push the box off an end
   /// and let go. The box creeps the same fraction of the way with every
   /// detent, so the weight is visible as well as felt - and the option
-  /// changes half way, as the box's centre crosses the line between the
+  /// changes half way, as the box's center crosses the line between the
   /// two, so that a rest just past it clicks onto the new side.
   final int weight;
 
@@ -71,10 +71,10 @@ class WheelRailPhysics {
 /// an indicator that slides to the answer - given the wheel's grammar and
 /// some weight. The box does not hop: every detent moves it a fraction of
 /// the way to the next option, [WheelRailPhysics.weight] detents from one
-/// to the next, and the option changes as the box's centre crosses the
+/// to the next, and the option changes as the box's center crosses the
 /// line between them. Stop anywhere and the box settles onto the side it
 /// is on - so just past the line it clicks over, and short of it, back.
-/// The centre button activates the option under it ([onActivate]), and
+/// The center button activates the option under it ([onActivate]), and
 /// the rail holds focus as one node, the way a [WheelList] does.
 ///
 /// At either end the same turn carries the box out over the track's edge -
@@ -125,7 +125,7 @@ class WheelRail<T> extends StatefulWidget {
   /// The wheel brought the box to another option.
   final ValueChanged<T> onChanged;
 
-  /// The centre button, spoken to the option under the box.
+  /// The center button, spoken to the option under the box.
   final ValueChanged<T>? onActivate;
 
   /// The wheel carried the box off an end and the rail let go: +1 past the
@@ -165,7 +165,7 @@ class _WheelRailState<T> extends State<WheelRail<T>>
   FocusNode get _focus =>
       widget.focusNode ?? (_ownNode ??= FocusNode(debugLabel: 'WheelRail'));
 
-  /// How far the box is from the centre of the option it is on, in
+  /// How far the box is from the center of the option it is on, in
   /// detents, signed the way the wheel turns: positive toward the last
   /// option. Never as much as half a weight between options - past that
   /// the box is on the next one, and this counts from there - and never a

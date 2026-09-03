@@ -1,7 +1,7 @@
 import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [Button] actually paints — its [Surface] dress
-/// plus the geometry and state colours a control needs. Colours, not
+/// plus the geometry and state colors a control needs. Colors, not
 /// choices — the choosing happened in [ButtonResolver], at
 /// `theme.widgets.button`.
 ///
@@ -31,7 +31,7 @@ class ButtonStyle {
   /// Breathing room between the slots.
   final double gap;
 
-  /// What the label wears, over the surface's foreground colour.
+  /// What the label wears, over the surface's foreground color.
   final TextStyle textStyle;
 
   /// The focus ring — the swatch at full voice.

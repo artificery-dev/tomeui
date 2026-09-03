@@ -6,7 +6,7 @@ import 'package:tomeui/tomeui.dart';
 /// and restoration come from [WidgetsApp]; the theme, the page background,
 /// the default text style, and the default icon look come from [Theme].
 /// Everything below it can ask [ThemeProvider.of] for tokens and never name
-/// a colour.
+/// a color.
 ///
 /// Two constructors, matching [WidgetsApp]: the default takes [home], the
 /// pages map, and friends; [TomeApp.router] takes a [routerConfig] instead.

@@ -17,7 +17,7 @@ typedef WheelRowBuilder =
 /// but not a library of ten thousand songs: a lazy list's unbuilt rows
 /// aren't there to focus. So a [WheelList] holds focus as a single node and
 /// owns a selected *index* instead. Jogs move the index, the viewport
-/// follows, the selected row is painted selected, and the centre button
+/// follows, the selected row is painted selected, and the center button
 /// activates it ([onActivate]). The fast-spin tier ([JogIntent.page])
 /// leaps by a visible page.
 ///
@@ -80,7 +80,7 @@ class WheelList extends StatefulWidget {
   /// One height for every row.
   final double itemExtent;
 
-  /// The centre button, spoken to the selected index.
+  /// The center button, spoken to the selected index.
   final ValueChanged<int>? onActivate;
 
   /// The wheel moved the selection - for a preview pane, a scrubber, a
@@ -107,7 +107,7 @@ class WheelList extends StatefulWidget {
 /// subtlest under the cursor row - Tome's [SurfaceVariant.subtle] in the
 /// primary swatch, a faint wash inside its quiet ring, with the primary as
 /// the voice - so the row's words and glyphs answer in the primary's
-/// colour rather than the row turning into a bar of it. Builder rows skip this and dress
+/// color rather than the row turning into a bar of it. Builder rows skip this and dress
 /// themselves - a song row knows whether its subtitle should dim.
 class _DressedRow extends StatelessWidget {
   const _DressedRow({required this.selected, required this.child});

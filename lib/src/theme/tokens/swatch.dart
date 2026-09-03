@@ -10,7 +10,7 @@ enum SemanticSwatch {
   /// would shout.
   accent,
 
-  /// The greys — chrome, containers, anything that shouldn't compete with
+  /// The grays — chrome, containers, anything that shouldn't compete with
   /// the content it holds.
   neutral,
 
@@ -427,7 +427,7 @@ class Swatch {
   );
 
   // Tailwind calls this set "neutral", but that name is the palette's
-  // semantic role here — the grey wears "ash" instead.
+  // semantic role here — the gray wears "ash" instead.
   static const ash = Swatch.custom(
     s50: Color(0xFFFAFAFA),
     s100: Color(0xFFF5F5F5),
@@ -514,12 +514,12 @@ class Swatch {
 }
 
 /// WCAG relative-luminance contrast ratio between two colors, in `[1, 21]`.
-/// How far apart two colours are to the eye, as the WCAG ratio: 1 is the
-/// same colour, 21 is black against white.
+/// How far apart two colors are to the eye, as the WCAG ratio: 1 is the
+/// same color, 21 is black against white.
 ///
 /// The measure a widget uses to ask whether what it is about to paint will
 /// be seen at all — a swatch handed to something drawn *on* that swatch is
-/// a colour painting itself.
+/// a color painting itself.
 double contrastRatio(Color a, Color b) {
   final luminanceA = a.computeLuminance();
   final luminanceB = b.computeLuminance();

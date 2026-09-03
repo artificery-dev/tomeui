@@ -9,7 +9,7 @@ import 'package:tomeui/tomeui.dart';
 /// — in one of the [SurfaceVariant] treatments. The theme does the choosing
 /// (`theme.widgets.surface.resolve`); the surface paints what it's told and
 /// speaks its foreground to everything inside through [DefaultTextStyle] and
-/// [IconTheme], which is how text widgets get their colour without ever
+/// [IconTheme], which is how text widgets get their color without ever
 /// being told one.
 class Surface extends StatelessWidget {
   const Surface({
@@ -31,7 +31,7 @@ class Surface extends StatelessWidget {
 
   final SurfaceVariant variant;
 
-  /// The meaning to wear — the palette says which colour that is.
+  /// The meaning to wear — the palette says which color that is.
   final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme — set only by [Surface.custom].
@@ -101,7 +101,7 @@ class Surface extends StatelessWidget {
 
 /// What the nearest [Surface] above is wearing.
 ///
-/// A widget that paints its own colours can be handed a swatch and still
+/// A widget that paints its own colors can be handed a swatch and still
 /// end up invisible — a primary spinner on a solid primary button is the
 /// button. Asking what it sits on is how it can tell, and [SurfaceStyle]
 /// carries both halves of the answer: the [SurfaceStyle.fill] it would be

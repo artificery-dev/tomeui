@@ -136,9 +136,9 @@ class _SliderState extends State<Slider> {
 
   /// The value under a point, measured along the track's own axis.
   ///
-  /// The thumb's *centre* travels a shorter distance than the track is
+  /// The thumb's *center* travels a shorter distance than the track is
   /// long — half a thumb is parked at each end — so the mapping runs
-  /// between those centres, not between the edges. Vertical counts from
+  /// between those centers, not between the edges. Vertical counts from
   /// the bottom: more is up.
   double _valueAt(double position, double extent, SliderStyle style) {
     final travel = extent - style.thumbSize;
@@ -244,12 +244,8 @@ class _SliderState extends State<Slider> {
                   onHorizontalDragUpdate: _enabled && !_vertical
                       ? dragUpdate
                       : null,
-                  onHorizontalDragEnd: _enabled && !_vertical
-                      ? dragEnd
-                      : null,
-                  onVerticalDragStart: _enabled && _vertical
-                      ? dragStart
-                      : null,
+                  onHorizontalDragEnd: _enabled && !_vertical ? dragEnd : null,
+                  onVerticalDragStart: _enabled && _vertical ? dragStart : null,
                   onVerticalDragUpdate: _enabled && _vertical
                       ? dragUpdate
                       : null,
@@ -283,13 +279,11 @@ class _SliderState extends State<Slider> {
       duration: _pressed ? Duration.zero : theme.motion.instant,
       curve: theme.motion.move,
       builder: (context, fraction, _) {
-        final centre = style.thumbSize / 2 + fraction * travel;
+        final center = style.thumbSize / 2 + fraction * travel;
         return Stack(
           // The travelled part grows from the start of the line: the left
           // end, or the bottom when the line stands up.
-          alignment: _vertical
-              ? Alignment.bottomCenter
-              : Alignment.centerLeft,
+          alignment: _vertical ? Alignment.bottomCenter : Alignment.centerLeft,
           children: [
             // The whole track, then the travelled part over it: two boxes
             // rather than a row, so the join can't show a seam.
@@ -299,8 +293,8 @@ class _SliderState extends State<Slider> {
               child: Surface.custom(style: style.inactive),
             ),
             SizedBox(
-              width: _vertical ? style.trackHeight : centre,
-              height: _vertical ? centre : style.trackHeight,
+              width: _vertical ? style.trackHeight : center,
+              height: _vertical ? center : style.trackHeight,
               child: Surface.custom(style: style.active),
             ),
             if (divisions != null && style.tick != null)
@@ -316,8 +310,8 @@ class _SliderState extends State<Slider> {
                 ),
               ),
             Positioned(
-              left: _vertical ? null : centre - style.thumbSize / 2,
-              bottom: _vertical ? centre - style.thumbSize / 2 : null,
+              left: _vertical ? null : center - style.thumbSize / 2,
+              bottom: _vertical ? center - style.thumbSize / 2 : null,
               child: _thumb(theme, style),
             ),
           ],

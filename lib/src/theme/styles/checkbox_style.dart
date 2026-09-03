@@ -1,7 +1,7 @@
 import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [Checkbox] actually paints: the box in both of its
-/// states, and the interaction dressing around it. Colours, not choices —
+/// states, and the interaction dressing around it. Colors, not choices —
 /// the choosing happened in [CheckboxResolver], at `theme.widgets.checkbox`.
 ///
 /// Construct one directly (or [copyWith] a resolved one) for custom
@@ -21,7 +21,7 @@ class CheckboxStyle {
   });
 
   /// The box when the value is true: the swatch at full voice, the check
-  /// glyph in its contrast colour.
+  /// glyph in its contrast color.
   final SurfaceStyle checked;
 
   /// The box when the value is false: an empty outline, waiting.

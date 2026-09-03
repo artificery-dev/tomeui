@@ -13,7 +13,7 @@ Story _titleBar() {
   final subtitle = StringKnob('Subtitle', 'Endeavour · outbound');
   final leading = BoolKnob('Leading button', true);
   final actions = BoolKnob('Actions', true);
-  final centerTitle = BoolKnob('Centre the title', false);
+  final centerTitle = BoolKnob('Center the title', false);
   final windowControls = BoolKnob('Window buttons', false);
   final drag = BoolKnob('Drag moves the window', false);
 

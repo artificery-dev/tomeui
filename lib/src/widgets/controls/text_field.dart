@@ -179,9 +179,9 @@ class _TextFieldState extends State<TextField>
     TargetPlatform.windows => false,
   };
 
-  TextSelectionHandles _handlesWearing(double size, Color colour) {
-    if (_handles?.size != size || _handles?.color != colour) {
-      _handles = TextSelectionHandles(size: size, color: colour);
+  TextSelectionHandles _handlesWearing(double size, Color color) {
+    if (_handles?.size != size || _handles?.color != color) {
+      _handles = TextSelectionHandles(size: size, color: color);
     }
     return _handles!;
   }

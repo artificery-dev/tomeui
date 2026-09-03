@@ -16,8 +16,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Where the thumb's centre sits, in the slider's own coordinates.
-  double thumbCentre(WidgetTester tester) {
+  /// Where the thumb's center sits, in the slider's own coordinates.
+  double thumbCenter(WidgetTester tester) {
     final slider = tester.getTopLeft(find.byType(Slider));
     // The thumb is the only thing in a slider that scales.
     final thumb = tester.getCenter(
@@ -30,7 +30,7 @@ void main() {
   }
 
   testWidgets('the thumb sits where the value says', (tester) async {
-    // Half a thumb is parked at each end, so the centre travels the width
+    // Half a thumb is parked at each end, so the center travels the width
     // less one thumb — and at 0.5 it lands in the middle either way.
     for (final (value, expected) in [
       (0.0, style.thumbSize / 2),
@@ -38,14 +38,14 @@ void main() {
       (1.0, 300 - style.thumbSize / 2),
     ]) {
       await pump(tester, Slider(value: value, onChanged: (_) {}));
-      expect(thumbCentre(tester), moreOrLessEquals(expected, epsilon: 0.5));
+      expect(thumbCenter(tester), moreOrLessEquals(expected, epsilon: 0.5));
     }
   });
 
   testWidgets('a value past the end draws at the end', (tester) async {
     await pump(tester, Slider(value: 9, onChanged: (_) {}));
     expect(
-      thumbCentre(tester),
+      thumbCenter(tester),
       moreOrLessEquals(300 - style.thumbSize / 2, epsilon: 0.5),
     );
   });
@@ -93,9 +93,9 @@ void main() {
       ),
     );
 
-    final centre = tester.getCenter(find.byType(Slider));
-    final gesture = await tester.startGesture(centre);
-    await gesture.moveTo(centre + const Offset(40, 0));
+    final center = tester.getCenter(find.byType(Slider));
+    final gesture = await tester.startGesture(center);
+    await gesture.moveTo(center + const Offset(40, 0));
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
@@ -245,11 +245,7 @@ void main() {
         home: Center(
           child: SizedBox(
             height: 300,
-            child: Slider(
-              axis: Axis.vertical,
-              value: 0.5,
-              onChanged: seen.add,
-            ),
+            child: Slider(axis: Axis.vertical, value: 0.5, onChanged: seen.add),
           ),
         ),
       ),
@@ -276,11 +272,7 @@ void main() {
         home: Center(
           child: SizedBox(
             height: 300,
-            child: Slider(
-              axis: Axis.vertical,
-              value: 0.5,
-              onChanged: seen.add,
-            ),
+            child: Slider(axis: Axis.vertical, value: 0.5, onChanged: seen.add),
           ),
         ),
       ),

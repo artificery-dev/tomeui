@@ -5,7 +5,11 @@ import '../foundation/interactive.dart';
 
 /// One menu on a [MenuBar]: a word, and what drops from it.
 class BarMenu {
-  const BarMenu({required this.label, required this.entries, this.enabled = true});
+  const BarMenu({
+    required this.label,
+    required this.entries,
+    this.enabled = true,
+  });
 
   /// The word on the bar — File, Edit, View.
   final Widget label;
@@ -19,7 +23,7 @@ class BarMenu {
 ///
 /// A row of words, each dropping a [Menu]. Once one is open the bar is
 /// "active": moving the pointer along it switches menus without a second
-/// click, and the arrows walk between them — the behaviour every desktop
+/// click, and the arrows walk between them — the behavior every desktop
 /// menu bar has had for thirty years.
 ///
 /// ```dart
@@ -166,8 +170,7 @@ class _MenuBarState extends State<MenuBar> {
                     // The bar is active once a menu is open: the pointer
                     // passing over a word is enough to switch to it.
                     onHover: _open == null ? null : () => _openAt(index),
-                    onPressed: () =>
-                        _open == index ? _close() : _openAt(index),
+                    onPressed: () => _open == index ? _close() : _openAt(index),
                   ),
                 ),
               ],

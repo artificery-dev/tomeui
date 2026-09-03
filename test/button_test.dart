@@ -52,10 +52,10 @@ void main() {
     expect(tester.getSize(find.byType(Button)).height, const Sizes().control);
   });
 
-  testWidgets('squeezed, the centre yields rather than overflowing', (
+  testWidgets('squeezed, the center yields rather than overflowing', (
     tester,
   ) async {
-    // The centre rides in a loose Flexible: a room too small for the label
+    // The center rides in a loose Flexible: a room too small for the label
     // squeezes the label, while the leading glyph keeps its size. A plain
     // child would take unbounded width from the row and overflow the
     // button — a Select's trigger in a narrow field was the first casualty.

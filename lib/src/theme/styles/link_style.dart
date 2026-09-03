@@ -3,8 +3,8 @@ import 'package:tomeui/tomeui.dart';
 /// When a [Link] draws its underline.
 ///
 /// [hover] is the default: a link in running text is already findable by
-/// colour, and a page of permanently underlined links reads as a ransom
-/// note. [always] is for links that have to survive a colourblind reader
+/// color, and a page of permanently underlined links reads as a ransom
+/// note. [always] is for links that have to survive a colorblind reader
 /// with no context; [never] for links that are obviously links — a
 /// breadcrumb, a card that is entirely one target.
 enum LinkUnderline { always, hover, never }
@@ -12,7 +12,7 @@ enum LinkUnderline { always, hover, never }
 /// The resolved values a [Link] paints: the type it wears at rest, the type
 /// it wears under the pointer, and the ring it takes when focused.
 ///
-/// Colours, not choices — the choosing happened in [LinkResolver], at
+/// Colors, not choices — the choosing happened in [LinkResolver], at
 /// `theme.widgets.link`.
 @immutable
 class LinkStyle {

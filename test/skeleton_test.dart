@@ -74,8 +74,8 @@ void main() {
     // A ramp from an opaque fill to a translucent sheen is *brightest*
     // halfway along it, which paints two bright shoulders around a dark
     // core — one pass of the light, arriving as two.
-    for (final colour in sweep.colors) {
-      expect(colour.a, 1, reason: '$colour is translucent');
+    for (final color in sweep.colors) {
+      expect(color.a, 1, reason: '$color is translucent');
     }
   });
 

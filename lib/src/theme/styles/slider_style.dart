@@ -3,7 +3,7 @@ import 'package:tomeui/tomeui.dart';
 /// The resolved values a [Slider] paints: the track either side of the
 /// thumb, the thumb itself, and the geometry it all travels through.
 ///
-/// Colours, not choices — the choosing happened in [SliderResolver], at
+/// Colors, not choices — the choosing happened in [SliderResolver], at
 /// `theme.widgets.slider`.
 @immutable
 class SliderStyle {

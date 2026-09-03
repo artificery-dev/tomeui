@@ -8,7 +8,7 @@ import '../foundation/interactive.dart';
 /// in a [SurfaceVariant] — with the check glyph ([Icons.confirm]) growing
 /// in when checked. The variant dresses both states: checked wears the
 /// swatch, unchecked wears neutral, so a `soft` checkbox rests as a faint
-/// grey box and a `ghost` one is invisible until ticked.
+/// gray box and a `ghost` one is invisible until ticked.
 ///
 /// The value belongs to the caller: tapping reports `!value` through
 /// [onChanged] and paints nothing until told. Interaction — hover wash,
@@ -45,7 +45,7 @@ class Checkbox extends StatelessWidget {
 
   final SurfaceVariant variant;
 
-  /// The meaning to wear when checked — the palette says which colour.
+  /// The meaning to wear when checked — the palette says which color.
   final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme — set only by

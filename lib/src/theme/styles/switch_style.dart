@@ -2,7 +2,7 @@ import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [Switch] actually paints: the track in both of its
 /// states, the thumb that rides it, and the interaction dressing around
-/// them. Colours, not choices — the choosing happened in [SwitchResolver],
+/// them. Colors, not choices — the choosing happened in [SwitchResolver],
 /// at `theme.widgets.switch_`.
 ///
 /// Construct one directly (or [copyWith] a resolved one) for custom

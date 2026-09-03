@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 /// Two families in one scale. The emphasis steps ([secondary], [tertiary],
 /// [disabled]) grade text and icons against their surface; the overlay steps
 /// ([hover] through [scrim]) are laid *over* a surface in its own foreground
-/// colour to show interaction state, so the same numbers work on any palette.
+/// color to show interaction state, so the same numbers work on any palette.
 @immutable
 class Opacities {
   const Opacities({
@@ -20,7 +20,7 @@ class Opacities {
     this.scrim = 0.5,
   });
 
-  // Emphasis, applied to a foreground colour.
+  // Emphasis, applied to a foreground color.
   final double secondary;
   final double tertiary;
   final double disabled;
@@ -31,7 +31,7 @@ class Opacities {
   final double focus;
   final double dragged;
 
-  /// A divider drawn in the foreground colour rather than a dedicated hue.
+  /// A divider drawn in the foreground color rather than a dedicated hue.
   final double divider;
 
   /// The veil behind a dialog or sheet.

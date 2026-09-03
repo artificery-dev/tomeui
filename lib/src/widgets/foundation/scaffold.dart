@@ -44,7 +44,7 @@ abstract interface class SelfDressedBar implements Widget {}
 /// [ScaffoldStyle.minBodyWidth] — the narrowest body the scaffold will
 /// leave — and nothing else. The mode follows the window, never what's
 /// currently showing, so a sidebar doesn't change character just because
-/// its neighbour was closed.
+/// its neighbor was closed.
 ///
 /// The open/shut state is the scaffold's own: it hands a [ScaffoldState]
 /// down through [ScaffoldStateProvider], and anything below can find it and
@@ -333,7 +333,7 @@ class ScaffoldState extends State<Scaffold> {
             widthFactor: t,
             // Full height outright: the Align above is for the width
             // reveal, and without saying so it would also shrink-wrap and
-            // centre the panel vertically — a sidebar floating mid-window.
+            // center the panel vertically — a sidebar floating mid-window.
             child: SizedBox(
               width: style.sidebarWidth,
               height: double.infinity,

@@ -4,7 +4,7 @@ import 'package:tomeui/tomeui.dart';
 /// of a row, and the two quieter voices a menu needs — the shortcut hint
 /// and the section label.
 ///
-/// Colours, not choices — the choosing happened in [MenuResolver], at
+/// Colors, not choices — the choosing happened in [MenuResolver], at
 /// `theme.widgets.menu`.
 @immutable
 class MenuStyle {

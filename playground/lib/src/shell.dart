@@ -26,7 +26,7 @@ class _PlaygroundShellState extends State<PlaygroundShell> {
   final List<StoryCategory> _categories = buildStories();
 
   late Story _selected = _categories.first.allStories.first;
-  // Categories start open and groups closed: the catalogue reads as a
+  // Categories start open and groups closed: the catalog reads as a
   // shelved list of widgets first, and their stories only when you ask.
   late final Set<String> _expanded = {
     for (final category in _categories) category.name,
@@ -65,7 +65,9 @@ class _PlaygroundShellState extends State<PlaygroundShell> {
           ),
         ),
         Container(width: 1, color: divider),
-        Expanded(child: StoryCanvas(story: _selected, config: widget.config)),
+        Expanded(
+          child: StoryCanvas(story: _selected, config: widget.config),
+        ),
         Container(width: 1, color: divider),
         SizedBox(
           width: 320,

@@ -24,7 +24,7 @@ enum SurfaceVariant {
   placeholder,
 }
 
-/// The resolved values a [Surface] actually paints. Colours, not choices —
+/// The resolved values a [Surface] actually paints. Colors, not choices —
 /// the choosing happened in [SurfaceResolver], at `theme.widgets.surface`.
 ///
 /// Construct one directly (or [copyWith] a resolved one) for custom
@@ -93,8 +93,8 @@ class SurfaceStyle {
 
 /// The tone mapping for one variant: which shade each role wears.
 ///
-/// A null [foreground] means "pick what reads": the contrast colour over
-/// [fill] when there is one, the palette's text colour when there isn't.
+/// A null [foreground] means "pick what reads": the contrast color over
+/// [fill] when there is one, the palette's text color when there isn't.
 @immutable
 class SurfaceShades {
   const SurfaceShades({
@@ -114,11 +114,11 @@ class SurfaceShades {
 
   /// The swatches that take different stops from the rest.
   ///
-  /// A variant's stops are chosen against a *colour*, and the greys are not
+  /// A variant's stops are chosen against a *color*, and the grays are not
   /// one: [Palette.background] is the neutral swatch's own 50/950, so a
-  /// subtle neutral surface would otherwise paint the page's colour onto
-  /// the page and read as nothing at all. The exception moves the greys one
-  /// stop off the page, where the colours already sit.
+  /// subtle neutral surface would otherwise paint the page's color onto
+  /// the page and read as nothing at all. The exception moves the grays one
+  /// stop off the page, where the colors already sit.
   ///
   /// Anything not named here wears the shades above, and an exception's own
   /// [exceptions] are never consulted — one level deep, so there is always
@@ -184,8 +184,8 @@ class SurfaceShades {
 /// opinions replaces exactly the mappings it has opinions about.
 ///
 /// Where a swatch needs stops of its own, [SurfaceShades.exceptions] names
-/// them — which is how the greys stay visible against a page made of the
-/// grey swatch. A palette that puts a grey in some *other* role (a zinc
+/// them — which is how the grays stay visible against a page made of the
+/// gray swatch. A palette that puts a gray in some *other* role (a zinc
 /// `primary`, say) names its own exception the same way.
 @immutable
 class SurfaceStyles {
@@ -194,8 +194,8 @@ class SurfaceStyles {
     this.soft = const SurfaceShades(
       fill: Shade(light: 100, dark: 900),
       foreground: Shade(light: 700, dark: 300),
-      // The greys, one stop further off the page: neutral's own 100/900 is
-      // the colour of a card, and a soft grey chip on a card would vanish.
+      // The grays, one stop further off the page: neutral's own 100/900 is
+      // the color of a card, and a soft gray chip on a card would vanish.
       exceptions: {
         SemanticSwatch.neutral: SurfaceShades(
           fill: Shade(light: 200, dark: 800),
@@ -208,7 +208,7 @@ class SurfaceStyles {
       foreground: Shade(light: 600, dark: 400),
       // A ring one whisper above the fill, quieter than outline's.
       border: Shade(light: 200, dark: 800),
-      // Neutral's 50/950 *is* [Palette.background], so the greys take the
+      // Neutral's 50/950 *is* [Palette.background], so the grays take the
       // next stop in — the quietest wash that is still a wash.
       exceptions: {
         SemanticSwatch.neutral: SurfaceShades(

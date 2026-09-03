@@ -42,7 +42,7 @@ void main() {
   });
 
   group('TomeTypography', () {
-    test('styles carry no colour and no family, except code', () {
+    test('styles carry no color and no family, except code', () {
       const type = Typography.standard;
       for (final style in [
         type.display,

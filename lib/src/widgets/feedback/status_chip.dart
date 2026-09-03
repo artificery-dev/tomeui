@@ -14,7 +14,7 @@ import 'package:tomeui/tomeui.dart';
 /// ```
 ///
 /// [dot] gives it a round mark in the swatch's full voice, for a status
-/// whose meaning is the colour. [icon] gives it a glyph instead. It isn't
+/// whose meaning is the color. [icon] gives it a glyph instead. It isn't
 /// pressable: a chip that did something would be a [Button] shaped like a
 /// chip, and should say so.
 class StatusChip extends StatelessWidget {

@@ -7,7 +7,7 @@ import '../foundation/interactive.dart';
 /// Wears the swatch at its link stop, brightens under the pointer, and takes
 /// a focus ring like any other control — a link is a control that happens to
 /// be made of words. The underline follows [LinkUnderline]: on hover by
-/// default, since colour already marks it and a page of underlines reads as
+/// default, since color already marks it and a page of underlines reads as
 /// a ransom note.
 ///
 /// [role] is which type it sits in, not how loud it is: a link inside a
@@ -58,7 +58,7 @@ class Link extends StatelessWidget {
   /// The type the link sits in — match it to the text around it.
   final TextRole role;
 
-  /// The meaning to wear — the palette says which colour that is.
+  /// The meaning to wear — the palette says which color that is.
   final SemanticSwatch swatch;
 
   /// Marks a link that leaves: the external-link glyph rides the last line,
@@ -102,7 +102,7 @@ class Link extends StatelessWidget {
                 ? TextDecoration.underline
                 : TextDecoration.none,
             // Without this the underline inherits the ambient decoration
-            // colour, which is the *page's* text, not the link's.
+            // color, which is the *page's* text, not the link's.
             decorationColor: base.color,
           );
 

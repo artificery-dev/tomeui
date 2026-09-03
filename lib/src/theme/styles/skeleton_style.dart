@@ -16,12 +16,12 @@ class SkeletonStyle {
     required this.period,
   });
 
-  /// The resting colour of a shape that isn't there yet.
+  /// The resting color of a shape that isn't there yet.
   final Color fill;
 
-  /// The light that travels across it — a bright colour at a low alpha,
+  /// The light that travels across it — a bright color at a low alpha,
   /// which the widget blends *onto* [fill] rather than interpolating
-  /// towards. A gradient that runs from an opaque colour to a translucent
+  /// towards. A gradient that runs from an opaque color to a translucent
   /// one is brightest halfway between the two, so a sweep painted that way
   /// arrives as two bright shoulders around a dark core.
   final Color sheen;

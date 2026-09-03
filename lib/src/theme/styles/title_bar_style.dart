@@ -26,7 +26,7 @@ class TitleBarStyle {
     this.closePressed,
   });
 
-  /// The band itself — a bar wears the chrome colour, not the page's.
+  /// The band itself — a bar wears the chrome color, not the page's.
   final SurfaceStyle surface;
 
   final double height;
@@ -54,7 +54,7 @@ class TitleBarStyle {
   final Color? controlHover;
   final Color? controlPressed;
 
-  /// Closing is the one window button that answers in a colour: red under
+  /// Closing is the one window button that answers in a color: red under
   /// the pointer, the way every desktop draws it.
   final Color? closeHover;
   final Color? closePressed;

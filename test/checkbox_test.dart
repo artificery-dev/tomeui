@@ -81,7 +81,10 @@ void main() {
     final style = const Theme().widgets.checkbox.resolve();
     final decoration = decorationOf(tester);
     expect(decoration?.color?.a, 0);
-    expect((ringOf(tester)?.border as Border?)?.top.color, style.unchecked.border);
+    expect(
+      (ringOf(tester)?.border as Border?)?.top.color,
+      style.unchecked.border,
+    );
   });
 
   testWidgets('the variant dresses the box, like any surface', (tester) async {
@@ -121,7 +124,7 @@ void main() {
       expect(decorationOf(tester)?.color?.a, 0, reason: 'checked: $value');
     }
 
-    // And the check wears the swatch rather than a contrast colour.
+    // And the check wears the swatch rather than a contrast color.
     final style = const Theme().widgets.checkbox.resolve(
       SemanticSwatch.primary,
       SurfaceVariant.outline,
@@ -258,7 +261,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Page text, not the checked box's contrast colour.
+    // Page text, not the checked box's contrast color.
     final style = DefaultTextStyle.of(tester.element(find.text('Label')));
     expect(style.style.color, const Palette().text);
   });

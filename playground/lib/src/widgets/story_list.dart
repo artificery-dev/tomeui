@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import '../story.dart';
 import 'platform_controls.dart';
 
-/// The leading column: the catalogue, category by category. A widget with
+/// The leading column: the catalog, category by category. A widget with
 /// one story is a single row; more than one becomes a collapsible group.
 class StoryList extends StatelessWidget {
   const StoryList({

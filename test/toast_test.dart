@@ -107,9 +107,7 @@ void main() {
     expect(find.text('Read me'), findsNothing);
   });
 
-  testWidgets('one with something to do about it stays longer', (
-    tester,
-  ) async {
+  testWidgets('one with something to do about it stays longer', (tester) async {
     final context = await pumpToaster(tester);
     var undone = 0;
 
@@ -138,7 +136,7 @@ void main() {
     expect(find.text('Manifest deleted'), findsNothing);
   });
 
-  testWidgets('the swatch colours the glyph, not the card', (tester) async {
+  testWidgets('the swatch colors the glyph, not the card', (tester) async {
     final context = await pumpToaster(tester);
 
     showToast(
@@ -172,7 +170,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('a neutral toast has no glyph to colour', (tester) async {
+  testWidgets('a neutral toast has no glyph to color', (tester) async {
     final context = await pumpToaster(tester);
 
     showToast(context, message: const Text('Just so you know'));
@@ -197,10 +195,7 @@ void main() {
     final toast = tester.getRect(find.byType(Toast));
     final screen = tester.getRect(find.byType(TomeApp));
     expect(toast.top, lessThan(screen.height / 2));
-    expect(
-      toast.center.dx,
-      moreOrLessEquals(screen.center.dx, epsilon: 1),
-    );
+    expect(toast.center.dx, moreOrLessEquals(screen.center.dx, epsilon: 1));
 
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();

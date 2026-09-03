@@ -11,12 +11,14 @@ void main() {
 
   Future<void> pump(WidgetTester tester, Widget child) async {
     await tester.pumpWidget(
-      TomeApp(home: Center(child: SizedBox(width: 600, child: child))),
+      TomeApp(
+        home: Center(child: SizedBox(width: 600, child: child)),
+      ),
     );
     await tester.pump();
   }
 
-  /// Every run of text a paragraph is made of, with the colour it wears —
+  /// Every run of text a paragraph is made of, with the color it wears —
   /// which is what "highlighted" means once it's on screen.
   List<(String, Color?)> runs(WidgetTester tester, String text) {
     final paragraph = tester
@@ -73,10 +75,7 @@ void main() {
         'a line long enough that folding it takes several whole rows inside '
         'a narrow block, which is the case the rule has to survive';
 
-    await pump(
-      tester,
-      const CodeText.block('short\n$long\nshort', wrap: true),
-    );
+    await pump(tester, const CodeText.block('short\n$long\nshort', wrap: true));
 
     final code = find.byWidgetPredicate(
       (widget) =>
@@ -86,7 +85,9 @@ void main() {
     // The rule hangs off whichever side of the row is the tall one, so on
     // a folded line it has to be the code — on the gutter it would stop
     // after the first row and leave the rule in pieces.
-    final ruled = find.ancestor(of: code, matching: find.byType(Container)).first;
+    final ruled = find
+        .ancestor(of: code, matching: find.byType(Container))
+        .first;
 
     expect(tester.getSize(row).height, greaterThan(oneLineHeight(tester)));
     expect(tester.getSize(ruled).height, tester.getSize(row).height);
@@ -114,11 +115,10 @@ void main() {
     );
 
     expect(find.text('1'), findsOneWidget);
-    // Plain: every run wears the same colour the body monospace does.
-    expect(
-      runs(tester, 'SELECT').map((run) => run.$2).toSet(),
-      {style.textStyle.color},
-    );
+    // Plain: every run wears the same color the body monospace does.
+    expect(runs(tester, 'SELECT').map((run) => run.$2).toSet(), {
+      style.textStyle.color,
+    });
   });
 
   test('every grammar re_highlight ships is known, aliases included', () {
@@ -131,7 +131,7 @@ void main() {
     expect(CodeSyntax.languages.length, greaterThan(150));
   });
 
-  testWidgets('a known language colours its scopes from the palette', (
+  testWidgets('a known language colors its scopes from the palette', (
     tester,
   ) async {
     await pump(
@@ -139,16 +139,14 @@ void main() {
       const CodeText.block("const name = 'tome';", language: 'dart'),
     );
 
-    Color? colourOf(String text) => runs(
-      tester,
-      'const',
-    ).firstWhere((run) => run.$1.contains(text)).$2;
+    Color? colorOf(String text) =>
+        runs(tester, 'const').firstWhere((run) => run.$1.contains(text)).$2;
 
     // Keywords speak in the brand, strings in the success swatch — the
     // mapping the resolver lays down, not a scheme from an editor.
-    expect(colourOf('const'), style.syntax['keyword']!.color);
-    expect(colourOf("'tome'"), style.syntax['string']!.color);
-    expect(colourOf('const'), isNot(colourOf("'tome'")));
+    expect(colorOf('const'), style.syntax['keyword']!.color);
+    expect(colorOf("'tome'"), style.syntax['string']!.color);
+    expect(colorOf('const'), isNot(colorOf("'tome'")));
   });
 
   testWidgets('a construct spanning lines stays one construct', (tester) async {
@@ -163,8 +161,10 @@ void main() {
     // The second line is inside the block comment the first line opened.
     // Highlighting line by line would have called it code.
     final second = runs(tester, 'still a comment');
-    expect(second.every((run) => run.$2 == style.syntax['comment']!.color),
-        isTrue);
+    expect(
+      second.every((run) => run.$2 == style.syntax['comment']!.color),
+      isTrue,
+    );
   });
 
   testWidgets('highlightLines washes the lines it names', (tester) async {
@@ -178,10 +178,7 @@ void main() {
 
     // One wash for the gutter cell and one for the code, so the call-out
     // runs unbroken across the rule.
-    await pump(
-      tester,
-      const CodeText.block('a\nb\nc', highlightLines: {2}),
-    );
+    await pump(tester, const CodeText.block('a\nb\nc', highlightLines: {2}));
     expect(washes().length, 2);
   });
 

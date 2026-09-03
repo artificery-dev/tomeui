@@ -59,7 +59,7 @@ class ScaffoldStyle {
 
   /// The narrowest body the scaffold will leave beside an inline sidebar.
   /// Below it the sidebar becomes a drawer — this is the number the whole
-  /// adaptive behaviour turns on.
+  /// adaptive behavior turns on.
   final double minBodyWidth;
 
   /// The elevation a drawer floats at over the body.

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// One adjustable input on a story: a labelled value the Widget tab renders
+/// One adjustable input on a story: a labeled value the Widget tab renders
 /// a control for.
 ///
 /// A story creates its knobs once, closes over them in its builder, and

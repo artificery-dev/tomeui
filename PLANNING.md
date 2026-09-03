@@ -36,15 +36,15 @@ Gray-zone rulings, decided once:
   in a constructor quietly makes `const Widget(...)` impossible. Those
   asserts live in `build` instead — `SegmentedControl` still has the old
   form, and should move when it's next touched.
-- A variant's stops are chosen against a *colour*, and the greys are not
+- A variant's stops are chosen against a *color*, and the grays are not
   one: `Palette.background` is the neutral swatch's own 50/950, so a subtle
-  neutral surface painted the page's colour onto the page. The answer is
+  neutral surface painted the page's color onto the page. The answer is
   `SurfaceShades.exceptions` — a swatch that needs its own stops names them,
-  one level deep, and everything else wears the variant's. The greys take
+  one level deep, and everything else wears the variant's. The grays take
   the next stop in (soft 200/800, subtle 100/900), which also rescues the
   neutral washes that widgets rest on: a slider's untravelled track, a
   switch's off state, a segmented control's trough, a skeleton — all of
-  which were the colour of the card they sat on.
+  which were the color of the card they sat on.
 - Styles are the theme→widget bridge: a style class (e.g. `ButtonStyle`)
   holds the resolved values a widget actually paints, and the built-in
   variant + swatch setup is just a mapping that populates those styles —
@@ -99,7 +99,7 @@ Gray-zone rulings, decided once:
     which replaces the helper *and* turns the box, caret, and ring to the
     error swatch. `leading`/`trailing` hold an icon or a small button.
   - The swatch dresses the chrome; what's typed keeps the page's text
-    colour. Uncontrolled unless handed a `controller`.
+    color. Uncontrolled unless handed a `controller`.
   - Selection is wired end to end, and both presentations come off one
     list (`textSelectionEntries`, which asks `EditableTextState` what it can
     currently do and the theme's `Labels` what to call it):
@@ -163,9 +163,9 @@ Gray-zone rulings, decided once:
   `SemanticText`: `DisplayText`, `HeadlineText`, `TitleText`, `SubtitleText`,
   `BodyText` (+ `.small`), `LabelText`, `CaptionText`.
   - Text widgets derive their color from the surrounding surface's foreground
-    color: no swatch resolves to a style with *no* colour, so it inherits
+    color: no swatch resolves to a style with *no* color, so it inherits
     what the surface speaks. A `swatch` tints; a `TextEmphasis` grades
-    whatever came out, against that same inherited colour.
+    whatever came out, against that same inherited color.
   - The roles that structure a page (display, headline, title) announce
     themselves as headings.
 - [ ] `TomeText` — our custom rich text renderer from ~/Projects/AI's ui
@@ -175,14 +175,14 @@ Gray-zone rulings, decided once:
     button beside it.
   - **Block** (`CodeText.block`) is a listing: a card, a numbered gutter
     (`firstLine` for an excerpt, `highlightLines` to call lines out), and
-    syntax colour. Long lines scroll sideways under a gutter that stays
+    syntax color. Long lines scroll sideways under a gutter that stays
     put, or fold with `wrap: true`.
   - Highlighting is `re_highlight` — a pure-Dart port of highlight.js that
     touches only `flutter/painting` and `flutter/rendering`, so the
-    widgets-layer-only rule holds. It brings grammars, not colours: the
+    widgets-layer-only rule holds. It brings grammars, not colors: the
     scope→swatch mapping lives in `CodeTextResolver`, so keywords are the
     brand, strings read as something that went right, comments step down to
-    tertiary, and a palette swap recolours code with everything else.
+    tertiary, and a palette swap recolors code with everything else.
   - The source is highlighted whole and *then* split into lines — a block
     comment or a triple-quoted string is one construct, and a tokenizer
     shown one line out of it would call the rest of the file code.
@@ -193,7 +193,7 @@ Gray-zone rulings, decided once:
     deliberately, for never having to think about it. `register` adds or
     overrides one, `unregister` takes one out; a block naming a language
     nobody knows keeps its card, numbers, and copy button and loses only
-    the colour.
+    the color.
 - [x] `KickerText` — small spaced uppercase section label. Uppercases at
   paint time, so what a screen reader announces stays as written.
 - [x] `Link`
@@ -207,7 +207,7 @@ Gray-zone rulings, decided once:
 - [x] `Card`
   - Cards have A few slots: Header, Content, Footer in a vertical stack, then bookending that stack is Leading and Trailing. Each slot is spaced apart from the others using the Card's spacing property (the same term Row and Column use, for unity). Each slot takes one nullable spacing override: null inherits the card's spacing, a value is its own — including zero for full bleed header/footer/leading/trailing images/videos, etc.
   - Spacing *is* the padding: a slot keeps its step between itself and its
-    neighbours and between itself and the card's edge, because those are
+    neighbors and between itself and the card's edge, because those are
     one measurement seen from either side. Where two slots meet the roomier
     of the pair wins, so a full-bleed header runs to the corners without
     dragging the content up with it.
@@ -260,19 +260,19 @@ Gray-zone rulings, decided once:
     squares, a cross, all at one weight. No icon set has them — a dash
     drawn for arithmetic is shorter and rounder than the square beside it,
     and every set's "restore" is the pair of arrows meaning *leave full
-    screen*. `Icons.windowMinimize` and its neighbours are null by default
+    screen*. `Icons.windowMinimize` and its neighbors are null by default
     and name a glyph only where an app wants one instead.
   - They bleed: each is as tall as the bar and square with it, hard into
     the corner, outside the padding everything else keeps. A window button
     belongs to the window, not to the page.
   - The close cross was painted in the bar's own fill and so was invisible:
     the code asked whether there *was* a wash, and a wash at rest is the
-    hover colour at zero alpha rather than null. What it meant to ask was
+    hover color at zero alpha rather than null. What it meant to ask was
     whether the red is actually showing — `state.hovered || state.pressed`.
   - `WindowControls` is public in its own right, for a bar built by hand.
     Every window call is guarded: no window to talk to is a bar that simply
     doesn't move, not an exception — which is also what makes it testable.
-  - A centred title is centred on the *bar*, over the slots rather than
+  - A centerd title is centerd on the *bar*, over the slots rather than
     between them, so it doesn't shift when a toggle appears beside it.
   - The window's handle — drag to move, double-click to maximise — sits
     *behind* the bar rather than around it. Wrapped around, the double-tap
@@ -292,7 +292,7 @@ Gray-zone rulings, decided once:
     for the same reason. The chosen one is an answer; the rest are offers.
   - Shaped like a tab, not like a button that happens to be chosen: rounded
     where it meets the air, square where it meets the pane, shoulder to
-    shoulder with its neighbours, and hard against the content it opens
+    shoulder with its neighbors, and hard against the content it opens
     onto. Daylight under the strip makes it a row of buttons.
   - `TabOption.onClose` grows a cross, shown on the tab you're on and on
     whichever one the pointer is over, the way an editor's are. It keeps
@@ -318,7 +318,7 @@ Gray-zone rulings, decided once:
 - [x] `Breadcrumbs` - Allows customizing the sperator, and allows each item to have an optional icon.
   - The last crumb is where you are: full voice, no press, whatever it was
     given. The rest are quiet and light up under the pointer.
-  - The separators wear the same colour as the crumbs behind you, not the
+  - The separators wear the same color as the crumbs behind you, not the
     palette's divider: a chevron is a word in the trail rather than a line
     drawn between things, and at a divider's weight it disappears into the
     page.
@@ -338,8 +338,8 @@ Gray-zone rulings, decided once:
     — and the rows on their way out aren't walkable, since a row leaving is
     not a row you can arrive at.
   - Whatever trails a row — a chevron, a count — sits in a column at least
-    a glyph wide and centres in it. Flush to the same edge, a wide glyph
-    and a narrow number sit on different centres, and a sidebar is read
+    a glyph wide and centers in it. Flush to the same edge, a wide glyph
+    and a narrow number sit on different centers, and a sidebar is read
     down its trailing edge.
   - Walked with `ListWalk`, but not autofocused — a sidebar that took the
     keyboard as the page opened would be a nuisance.
@@ -415,13 +415,13 @@ Gray-zone rulings, decided once:
     icons through `DefaultTextStyle` and `IconTheme`.
   - The test is `contrastRatio`, not equality: a surface is rarely painting
     exactly what it resolved, and a hover wash lifts a button's fill just
-    enough to make two colours unequal and nowhere near enough to make one
+    enough to make two colors unequal and nowhere near enough to make one
     visible on the other — which is what made the spinner invert under the
     pointer. Every surface a progress reads against clears 2.3; every one
     it drowns in, wash included, comes in under 1.4.
 - [x] `StatusChip`
   - A *subtle* stadium: a row of solid chips would shout every status at
-    once, and a row of soft ones would still read as a row of colour before
+    once, and a row of soft ones would still read as a row of color before
     a row of words. `dot` gives it the swatch at full voice, which is the
     loudest thing on a quiet chip.
   - Not pressable. A chip that did something would be a `Button` shaped
@@ -436,7 +436,7 @@ Gray-zone rulings, decided once:
 - [x] `Toast`
   - Reports what already happened, so it never asks a question — an action
     undoes or opens, and anything more belongs in a `Dialog`.
-  - The swatch colours the *glyph*, not the card. A wall of red is an
+  - The swatch colors the *glyph*, not the card. A wall of red is an
     emergency and most toasts aren't.
 - [x] `Callout`
   - The page speaking for itself, where a chip speaks for one row. Its
@@ -457,19 +457,19 @@ Gray-zone rulings, decided once:
     `SurfaceVariant.outline` *is* the panel rather than something to wrap
     in a `Card`. `subtle` by default — the faintest panel the palette has,
     which is what an empty slot looks like — and `ghost` where none is
-    wanted. Given room it fills it and centres in it; given none it hugs
+    wanted. Given room it fills it and centers in it; given none it hugs
     its words.
   - Its words keep the *page's* voice on every panel that doesn't swallow
     them, and hand over to the surface's foreground only where the page's
     text stops clearing 4.5 against the fill. A heading is a heading, not a
     tint of whatever it happens to be sitting on — which is what a quiet
-    variant's own foreground (a mid-grey stop) would have made of it. A `Card` is only
+    variant's own foreground (a mid-gray stop) would have made of it. A `Card` is only
     ever as tall as its stack, so an empty state inside one that's been
     forced taller still sits at the top: that slack is the card's to hand
     over, and it doesn't.
 - [x] `Skeleton` — loading placeholder
   - A shimmering surface, not the striped one `Placeholder` wears: a still
-    grey box reads as a thing that has loaded and is grey, while a light
+    gray box reads as a thing that has loaded and is gray, while a light
     passing over it reads as a thing on its way.
   - The sheen travels from off one edge to off the other, so the shape
     rests between passes — a sheen that never leaves is a pattern, not a
@@ -477,10 +477,10 @@ Gray-zone rulings, decided once:
     squeezing its stops against the edges, which is what let it pile up as
     a hard-edged band at the end of a pass.
   - Every stop of the sweep is opaque, the sheen blended *onto* the fill
-    rather than interpolated towards: a ramp from an opaque colour to a
+    rather than interpolated towards: a ramp from an opaque color to a
     translucent one is brightest halfway along it, so the light arrived as
     two bright shoulders around a dark core. Measured, not guessed — the
-    painted profile peaked either side of the band's own centre.
+    painted profile peaked either side of the band's own center.
   - Where the reader asked for less motion it holds still and leans on its
     semantics instead. Decoration is the first thing that should stop.
 

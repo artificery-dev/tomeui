@@ -3,10 +3,10 @@ import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [CodeText] paints: the chip it sits in, the
 /// monospace it wears, the dressing of its copy affordance, and — for the
-/// block shape — the card, the gutter, and the colour every syntax scope
+/// block shape — the card, the gutter, and the color every syntax scope
 /// speaks in.
 ///
-/// Colours, not choices — the choosing happened in [CodeTextResolver], at
+/// Colors, not choices — the choosing happened in [CodeTextResolver], at
 /// `theme.widgets.code`.
 @immutable
 class CodeTextStyle {

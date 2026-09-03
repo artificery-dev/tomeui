@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tomeui/tomeui.dart';
 
-/// A theme installed part-way down the tree, the way a catalogue previewing
+/// A theme installed part-way down the tree, the way a catalog previewing
 /// a palette does — and the way any section with a palette of its own would.
 const _inner = Theme(
   palette: Palette(brightness: Brightness.dark, primary: Swatch.orange),
@@ -33,9 +33,7 @@ void main() {
   /// What the words inside [of] are actually wearing.
   TextStyle styleInside(WidgetTester tester, Finder of, String text) =>
       DefaultTextStyle.of(
-        tester.element(
-          find.descendant(of: of, matching: find.text(text)),
-        ),
+        tester.element(find.descendant(of: of, matching: find.text(text))),
       ).style;
 
   testWidgets('a dialog wears the theme it was asked for, not the one at the '
@@ -59,7 +57,7 @@ void main() {
     expect(
       styleInside(tester, find.byType(Dialog), 'Sign?').color,
       isNotNull,
-      reason: 'and so the words have a colour at all',
+      reason: 'and so the words have a color at all',
     );
   });
 
@@ -69,10 +67,8 @@ void main() {
     unawaited(
       showSheet<void>(
         context,
-        builder: (context) => const Sheet(
-          title: Text('Sort by'),
-          child: Text('Name'),
-        ),
+        builder: (context) =>
+            const Sheet(title: Text('Sort by'), child: Text('Name')),
       ),
     );
     await tester.pumpAndSettle();

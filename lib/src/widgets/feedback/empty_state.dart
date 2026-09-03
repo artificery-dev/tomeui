@@ -16,7 +16,7 @@ import 'package:tomeui/tomeui.dart';
 ///
 /// Quiet all through: nothing has gone wrong, so the loudest thing on
 /// screen is the [action]. Its words wrap at a readable measure rather
-/// than running the width of the slot, and the whole thing sits centred in
+/// than running the width of the slot, and the whole thing sits centerd in
 /// the room it's given — an empty state fills the emptiness it's reporting,
 /// which is what makes it read as the slot rather than as a note left in
 /// the corner of one. Under unbounded room it hugs its words instead.
@@ -77,7 +77,7 @@ class EmptyState extends StatelessWidget {
         style: style.surface,
         padding: style.padding,
         // The panel hugs its words: an empty state is a card the caller
-        // centres in the empty room, not a wash over all of it.
+        // centers in the empty room, not a wash over all of it.
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: style.maxWidth),
           child: Column(

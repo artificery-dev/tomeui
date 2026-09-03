@@ -16,7 +16,7 @@ dependencies:
   lucide_icons_flutter: ^3.0.0
   # The tokenizer behind CodeText.block's highlighting — a pure-Dart port of
   # highlight.js that touches only flutter/painting and flutter/rendering.
-  # It brings grammars, not colours: the palette does the dressing.
+  # It brings grammars, not colors: the palette does the dressing.
   re_highlight: ^0.0.3
 
 dev_dependencies:
@@ -26,13 +26,13 @@ dev_dependencies:
 
 flutter:
   fonts:
-    # Recursive (OFL, licence alongside): one variable file — MONO, CASL,
+    # Recursive (OFL, license alongside): one variable file — MONO, CASL,
     # wght 300–1000, slnt, CRSV — serves the whole scale, sans and mono
     # both. [Typography.recursive] dresses the type scale in it.
     - family: Recursive
       fonts:
         - asset: fonts/Recursive.ttf
-    # Symbols Nerd Font Mono (MIT, licence alongside): glyphs only, bound
+    # Symbols Nerd Font Mono (MIT, license alongside): glyphs only, bound
     # as [NerdFontIcons]. The Mono cut keeps every glyph in one cell, which
     # is what an Icon wants.
     - family: SymbolsNerdFontMono

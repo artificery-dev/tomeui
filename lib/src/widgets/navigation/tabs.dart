@@ -293,7 +293,7 @@ class _TabsState<T> extends State<Tabs<T>> {
                 radius: style.radius,
                 // Dressed in place rather than slid: tabs are as wide as
                 // their words, so there is no one distance for a marker to
-                // travel. The colour crosses instead.
+                // travel. The color crosses instead.
                 child: AnimatedContainer(
                   duration: theme.motion.fast,
                   curve: theme.motion.move,
@@ -334,7 +334,7 @@ class _TabsState<T> extends State<Tabs<T>> {
                               // the strip doesn't shuffle as the pointer
                               // crosses it.
                               showing: live && (chosen || _hovered == index),
-                              colour: textStyle.color,
+                              color: textStyle.color,
                               duration: theme.motion.fast,
                               curve: theme.motion.move,
                               onPressed: live ? tab.onClose : null,
@@ -360,7 +360,7 @@ class _Close extends StatefulWidget {
   const _Close({
     required this.style,
     required this.showing,
-    required this.colour,
+    required this.color,
     required this.duration,
     required this.curve,
     required this.onPressed,
@@ -368,7 +368,7 @@ class _Close extends StatefulWidget {
 
   final TabsStyle style;
   final bool showing;
-  final Color? colour;
+  final Color? color;
   final Duration duration;
   final Curve curve;
   final VoidCallback? onPressed;
@@ -408,7 +408,7 @@ class _CloseState extends State<_Close> {
               child: Icon(
                 theme.icons.close,
                 size: style.closeIconSize,
-                color: widget.colour,
+                color: widget.color,
               ),
             ),
           ),

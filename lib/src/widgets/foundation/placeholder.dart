@@ -5,7 +5,7 @@ import 'package:tomeui/tomeui.dart';
 ///
 /// Wears [SurfaceVariant.placeholder]: a dashed hairline over a diagonally
 /// striped wash, [SemanticSwatch.neutral] unless told otherwise. Fills
-/// whatever size its parent dictates and centres [child] in it; under loose
+/// whatever size its parent dictates and centers [child] in it; under loose
 /// constraints it hugs the child instead — a placeholder never forces its
 /// parent bigger.
 ///
@@ -24,7 +24,7 @@ class Placeholder extends StatelessWidget {
 
   final EdgeInsetsGeometry? padding;
 
-  /// What stands in for the missing thing — a label, an icon. Centred when
+  /// What stands in for the missing thing — a label, an icon. Centerd when
   /// the box is bigger than it.
   final Widget? child;
 
@@ -34,7 +34,7 @@ class Placeholder extends StatelessWidget {
     swatch: swatch,
     padding: padding,
     // Factors of 1 size the box to the child when constraints are loose;
-    // tight constraints win anyway, and then the child sits centred. The
+    // tight constraints win anyway, and then the child sits centerd. The
     // gap keeps the stripes from running behind the child.
     child: Center(
       widthFactor: 1,

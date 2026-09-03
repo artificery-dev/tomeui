@@ -2,7 +2,7 @@ import 'package:tomeui/tomeui.dart';
 
 /// The resolved values a [RadioButton] actually paints: the circle in both
 /// of its states, the dot inside it, and the interaction dressing around
-/// it. Colours, not choices — the choosing happened in [RadioResolver], at
+/// it. Colors, not choices — the choosing happened in [RadioResolver], at
 /// `theme.widgets.radio`.
 ///
 /// Construct one directly (or [copyWith] a resolved one) for custom

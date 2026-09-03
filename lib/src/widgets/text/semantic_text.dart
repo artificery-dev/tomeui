@@ -5,13 +5,13 @@ import 'package:tomeui/tomeui.dart';
 /// The shared base of the scale widgets — [DisplayText] through
 /// [CaptionText]. Each subclass fixes a [TextRole]; everything else about
 /// them is here: the tint a [swatch] gives, the grading an [emphasis] gives,
-/// and the rule that decides the colour when neither is asked for.
+/// and the rule that decides the color when neither is asked for.
 ///
 /// That rule is the whole point of the category. A text widget with no
-/// swatch resolves to a style with **no colour**, so it inherits what the
+/// swatch resolves to a style with **no color**, so it inherits what the
 /// enclosing [Surface] speaks through [DefaultTextStyle] — which is why the
 /// same [BodyText] reads dark on the page and light on a solid button
-/// without either one being told a colour.
+/// without either one being told a color.
 ///
 /// ```dart
 /// const TitleText('Ship’s stores'),
@@ -43,7 +43,7 @@ abstract class SemanticText extends StatelessWidget {
   /// message, a success note. Null inherits the surface's foreground.
   final SemanticSwatch? swatch;
 
-  /// How loudly to speak against that colour.
+  /// How loudly to speak against that color.
   final TextEmphasis emphasis;
 
   /// Last word over the resolved style, for the one-off a design needs.
@@ -75,7 +75,7 @@ abstract class SemanticText extends StatelessWidget {
       swatch: swatch,
       emphasis: emphasis,
       // What the surrounding surface says, so emphasis grades against the
-      // colour actually under the text rather than against the page's.
+      // color actually under the text rather than against the page's.
       on: DefaultTextStyle.of(context).style.color,
     );
 

@@ -141,7 +141,7 @@ void main() {
     expect((ringOf(tester)?.border as Border?)?.top.color, errored);
   });
 
-  testWidgets('what is typed keeps the page’s text colour', (tester) async {
+  testWidgets('what is typed keeps the page’s text color', (tester) async {
     await pump(tester, const TextField(swatch: SemanticSwatch.error));
 
     expect(

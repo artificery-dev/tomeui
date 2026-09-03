@@ -40,7 +40,7 @@ class Toast extends StatelessWidget {
   /// Putting it away early. [Toaster] passes its own.
   final VoidCallback? onDismiss;
 
-  /// What kind of news this is. It colours the glyph, not the card.
+  /// What kind of news this is. It colors the glyph, not the card.
   final SemanticSwatch swatch;
 
   /// The style to paint, bypassing the theme.
@@ -91,10 +91,7 @@ class Toast extends StatelessWidget {
                     child: message,
                   ),
                 ),
-                if (action != null) ...[
-                  SizedBox(width: style.gap),
-                  action!,
-                ],
+                if (action != null) ...[SizedBox(width: style.gap), action!],
                 if (onDismiss != null) ...[
                   SizedBox(width: style.gap),
                   Semantics(

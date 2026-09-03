@@ -6,10 +6,10 @@ import 'intents.dart';
 /// row, then down to the next.
 ///
 /// The same model as [WheelList] - one focus node, one selected index, the
-/// wheel moving it and the centre button activating it - laid out in
+/// wheel moving it and the center button activating it - laid out in
 /// [columns]. A detent moves one cell along; the fast-spin tier
 /// ([JogIntent.page]) moves a whole row. The selected cell wears the
-/// primary as a rounded outline, its glyph and words in the same colour -
+/// primary as a rounded outline, its glyph and words in the same color -
 /// the cursor as a frame rather than the bar a list's row wears. Rows
 /// share one [cellExtent]; the width is the grid's share.
 ///
@@ -41,7 +41,7 @@ class WheelGrid extends StatefulWidget {
   /// One height for every row of cells.
   final double cellExtent;
 
-  /// The centre button, spoken to the selected index.
+  /// The center button, spoken to the selected index.
   final ValueChanged<int>? onActivate;
 
   /// The wheel moved the selection. Not the activation.
@@ -151,8 +151,8 @@ class _WheelGridState extends State<WheelGrid> {
 }
 
 /// The selection dress: a rounded plate of the primary under the cell,
-/// inset a little so neighbouring plates never touch, and the cell's
-/// glyph and words in the primary's contrast colour.
+/// inset a little so neighboring plates never touch, and the cell's
+/// glyph and words in the primary's contrast color.
 class _DressedCell extends StatelessWidget {
   const _DressedCell({required this.selected, required this.child});
 
@@ -163,18 +163,18 @@ class _DressedCell extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!selected) return child;
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    final colour = theme.palette.primary.s500;
+    final color = theme.palette.primary.s500;
     return Padding(
       padding: EdgeInsets.all(theme.space.x1),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: colour, width: theme.strokes.focus),
+          border: Border.all(color: color, width: theme.strokes.focus),
           borderRadius: theme.radii.medium,
         ),
         child: IconTheme.merge(
-          data: IconThemeData(color: colour),
+          data: IconThemeData(color: color),
           child: DefaultTextStyle.merge(
-            style: TextStyle(color: colour),
+            style: TextStyle(color: color),
             child: child,
           ),
         ),

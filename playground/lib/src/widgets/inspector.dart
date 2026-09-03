@@ -49,7 +49,9 @@ class Inspector extends StatelessWidget {
     if (story.knobs.isEmpty) {
       return const [Text('This story has no knobs.')];
     }
-    return [for (final knob in story.knobs) _KnobRow(knob, key: ObjectKey(knob))];
+    return [
+      for (final knob in story.knobs) _KnobRow(knob, key: ObjectKey(knob)),
+    ];
   }
 
   List<Widget> _appRows(BuildContext context) => [
@@ -60,9 +62,8 @@ class Inspector extends StatelessWidget {
           const Expanded(child: Text('Dark mode')),
           PlatformSwitch(
             value: config.brightness == Brightness.dark,
-            onChanged: (dark) => config.brightness = dark
-                ? Brightness.dark
-                : Brightness.light,
+            onChanged: (dark) =>
+                config.brightness = dark ? Brightness.dark : Brightness.light,
           ),
         ],
       ),
@@ -94,9 +95,8 @@ class Inspector extends StatelessWidget {
 
   /// The display name of a configured swatch — always one of
   /// [namedSwatches], since that's all the dropdowns offer.
-  String _swatchName(tome.Swatch swatch) => namedSwatches.entries
-      .firstWhere((entry) => entry.value == swatch)
-      .key;
+  String _swatchName(tome.Swatch swatch) =>
+      namedSwatches.entries.firstWhere((entry) => entry.value == swatch).key;
 }
 
 /// One knob, rendered as the control its type calls for.
@@ -171,7 +171,11 @@ class _KnobRow extends StatelessWidget {
 
 /// A tappable choice in a select knob.
 class _Pill extends StatelessWidget {
-  const _Pill({required this.label, required this.selected, required this.onTap});
+  const _Pill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -186,7 +190,9 @@ class _Pill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: selected ? accent : null,
-          border: Border.all(color: selected ? accent : platformDivider(context)),
+          border: Border.all(
+            color: selected ? accent : platformDivider(context),
+          ),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -200,7 +206,7 @@ class _Pill extends StatelessWidget {
   }
 }
 
-/// The colour sample beside a swatch's name in the App tab's dropdowns.
+/// The color sample beside a swatch's name in the App tab's dropdowns.
 class _SwatchChip extends StatelessWidget {
   const _SwatchChip({required this.swatch});
 
