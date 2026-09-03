@@ -54,6 +54,27 @@ void main() {
     expect(find.text('Port of call'), findsOneWidget);
   });
 
+  testWidgets('a controller that arrives with text keeps the placeholder '
+      'out', (tester) async {
+    final full = TextEditingController(text: '/home/you/Music');
+    addTearDown(full.dispose);
+    await pump(
+      tester,
+      TextField(controller: full, placeholder: const Text('Port of call')),
+    );
+    expect(find.text('/home/you/Music'), findsOneWidget);
+    expect(find.text('Port of call'), findsNothing);
+
+    // Swapped for an empty one, the placeholder comes back.
+    final empty = TextEditingController();
+    addTearDown(empty.dispose);
+    await pump(
+      tester,
+      TextField(controller: empty, placeholder: const Text('Port of call')),
+    );
+    expect(find.text('Port of call'), findsOneWidget);
+  });
+
   testWidgets('a tap puts the keyboard in it, and rings it', (tester) async {
     final focus = FocusNode();
     addTearDown(focus.dispose);
