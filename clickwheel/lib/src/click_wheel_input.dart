@@ -197,15 +197,16 @@ class ClickWheelInput extends StatefulWidget {
   final bool muted;
 
   /// The screen is dark, but the buttons are not: the wheel itself says
-  /// nothing (a thumb on it in a pocket), the centre and menu buttons say
-  /// only [onWake] - a press of either is how the dark player wakes, and
-  /// what it would have activated is not activated - while the media
-  /// buttons, the volume rocker and the power chord speak as they do
-  /// awake. Holding menu, which would bring up chrome nobody can see,
-  /// says nothing. [muted] wins when both are set.
+  /// nothing (a thumb on it in a pocket), the centre button says only
+  /// [onWake] - a press of it is how the dark player wakes, and what it
+  /// would have activated is not activated - while the media buttons, the
+  /// volume rocker and the power chord speak as they do awake. Menu, in
+  /// either of its words, says nothing: back would move the player blind,
+  /// and the dock would come up over a screen nobody can see. [muted]
+  /// wins when both are set.
   final bool asleep;
 
-  /// Asleep, what the centre and menu buttons say instead of their words.
+  /// Asleep, what the centre button says instead of its words.
   final VoidCallback? onWake;
 
   /// How long a press becomes a hold, for the power chord and the menu
@@ -530,12 +531,10 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
     if (widget.asleep) {
-      // The wheel is silent; the centre and menu wake and do no more;
+      // The wheel and menu are silent; the centre wakes and does no more;
       // everything else - media, volume - goes through.
-      if (intent is JogIntent) return;
-      if (intent is ActivateIntent ||
-          intent is ActivateHoldIntent ||
-          intent is WheelBackIntent) {
+      if (intent is JogIntent || intent is WheelBackIntent) return;
+      if (intent is ActivateIntent || intent is ActivateHoldIntent) {
         widget.onWord?.call(WheelWord.press);
         widget.onWake?.call();
         return;

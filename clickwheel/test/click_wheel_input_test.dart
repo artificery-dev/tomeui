@@ -108,7 +108,7 @@ void main() {
 /// Asleep, the wheel is silent, the centre and menu only wake, and the
 /// media buttons still speak.
 void asleepTests() {
-  testWidgets('asleep: jog says nothing, select and menu wake, media and '
+  testWidgets('asleep: jog and menu say nothing, select wakes, media and '
       'volume speak', (tester) async {
     var activations = 0;
     var wakes = 0;
@@ -155,7 +155,7 @@ void asleepTests() {
     await tester.pump();
     expect(activations, 0);
     expect(backs, 0);
-    expect(wakes, 3, reason: 'centre, its hold, and menu each wake');
+    expect(wakes, 2, reason: 'the centre and its hold wake; menu does not');
     expect(words, everyElement(WheelWord.press));
 
     wheel.menuDown();
@@ -163,7 +163,7 @@ void asleepTests() {
     wheel.menuUp();
     await tester.pump();
     expect(holds, 0, reason: 'no dock over a dark screen');
-    expect(wakes, 4, reason: 'the release said menu\'s short word: a wake');
+    expect(backs, 0, reason: 'and no back on the release either');
 
     wheel.press(WheelButton.playPause);
     wheel.press(WheelButton.next);
@@ -171,7 +171,7 @@ void asleepTests() {
     await tester.pump();
     expect(media, [MediaCommand.toggle, MediaCommand.next]);
     expect(volume, [1]);
-    expect(wakes, 4, reason: 'none of those woke it');
+    expect(wakes, 2, reason: 'none of those woke it');
   });
 }
 
