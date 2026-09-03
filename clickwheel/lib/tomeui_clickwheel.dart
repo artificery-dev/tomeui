@@ -14,9 +14,13 @@
 ///    library of thousands), identical mechanics in both.
 ///  * [WheelRail] is a short track of options with a box the wheel slides
 ///    along it, which gives at its ends and lets go when pushed.
+///  * [InputCapture] takes some of the wheel's words for a while - the jog
+///    for a slider on a row, the skip keys for a scrubber - and leaves the
+///    rest to whoever was answering them.
 library;
 
 export 'src/click_wheel_input.dart';
+export 'src/input_capture.dart';
 export 'src/intents.dart';
 export 'src/wheel_grid.dart';
 export 'src/wheel_list.dart';
