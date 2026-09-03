@@ -191,9 +191,11 @@ class _InputCaptureState extends State<InputCapture> {
 
   @override
   void dispose() {
-    // A capture torn down while it holds the wheel still hands it back:
-    // the row it was on may be gone, but the list is not.
-    if (widget.active) _give();
+    // No hand-back here, deliberately. A capture is torn down either
+    // because its screen is going (there is nobody to hand the wheel to,
+    // and the focus manager may already be on its way out) or because its
+    // row was rebuilt away - and disposing a focused node already moves
+    // focus up to the nearest scope, which is the list's.
     _node.dispose();
     super.dispose();
   }

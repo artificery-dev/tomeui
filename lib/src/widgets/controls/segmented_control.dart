@@ -59,6 +59,7 @@ class SegmentedControl<T> extends StatefulWidget {
     this.variant = SurfaceVariant.solid,
     this.swatch = SemanticSwatch.primary,
     this.style,
+    this.stretch = false,
     super.key,
   }) : assert(segments.length > 0, 'A segmented control needs segments.');
 
@@ -78,6 +79,15 @@ class SegmentedControl<T> extends StatefulWidget {
 
   /// The style to paint, bypassing the theme.
   final SegmentedControlStyle? style;
+
+  /// Whether the track fills the width it is given rather than hugging its
+  /// segments.
+  ///
+  /// Hugging is right on a page, where a control that spanned the column
+  /// would read as a toolbar. It is wrong in a row that *is* the control -
+  /// a settings tile, where the track is the row's own line - and there
+  /// the segments should divide the whole width between them.
+  final bool stretch;
 
   @override
   State<SegmentedControl<T>> createState() => _SegmentedControlState<T>();
@@ -179,29 +189,38 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>> {
               // it vertically; the width it takes, it fills.
               child: Center(
                 heightFactor: 1,
-                child: SizedBox(
-                  height: style.height,
-                  child: Surface.custom(
-                    style: style.track,
-                    padding: EdgeInsets.all(style.inset),
-                    // Every segment flexes, so the row's intrinsic width is
-                    // the widest segment times the count — which is what
-                    // makes them equal without anything being measured.
-                    child: IntrinsicWidth(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: _indicator(theme, style, count, selected),
-                          ),
-                          Row(
-                            children: [
-                              for (var i = 0; i < count; i++)
-                                Expanded(
-                                  child: _segment(theme, style, i, selected),
-                                ),
-                            ],
-                          ),
-                        ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SizedBox(
+                    height: style.height,
+                    // Stretched, the track takes the width it was given -
+                    // and only where there is one to take: in an unbounded
+                    // row it still has to size itself.
+                    width: widget.stretch && constraints.hasBoundedWidth
+                        ? constraints.maxWidth
+                        : null,
+                    child: Surface.custom(
+                      style: style.track,
+                      padding: EdgeInsets.all(style.inset),
+                      // Every segment flexes, so the row's intrinsic width
+                      // is the widest segment times the count — which is
+                      // what makes them equal without anything being
+                      // measured.
+                      child: IntrinsicWidth(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: _indicator(theme, style, count, selected),
+                            ),
+                            Row(
+                              children: [
+                                for (var i = 0; i < count; i++)
+                                  Expanded(
+                                    child: _segment(theme, style, i, selected),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
