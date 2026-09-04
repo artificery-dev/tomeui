@@ -487,15 +487,21 @@ class _WheelRailState<T> extends State<WheelRail<T>>
   /// way from the option it is on; off an end it is the same share of the
   /// give, in pixels.
   ///
-  /// The box says two things at once, so it has two dresses. That the wheel
-  /// is on this rail: filled, at the swatch's full voice. And, whether the
-  /// wheel is here or not, which answer the rail is set to: the same shape
-  /// in outline. It used to fade out altogether when focus went up to the
-  /// list, which left a row that plainly had a setting on it saying nothing
-  /// about what that setting was.
+  /// The box says two things at once, so it has two dresses. Which answer
+  /// the rail is set to, whether the wheel is here or not: a ring at a
+  /// hairline. And that the wheel is on this rail now: the same ring at the
+  /// focus weight, with the swatch's wash inside it.
   ///
-  /// Between the two it lerps rather than crossfades - one box moving and
-  /// changing weight, not two boxes trading places.
+  /// The *ring* carries the second of those, not the fill. A wash is the
+  /// one thing that cannot: the track is a neutral trough, and every stop
+  /// of a swatch quiet enough to sit on a card lands within a hair of it in
+  /// one light or the other - in light mode a soft fill and the track come
+  /// out at a contrast of 1.00, identical but for hue. The ring is already
+  /// the one part of the box that reads against the track in both, so it is
+  /// what changes.
+  ///
+  /// Between the two it lerps rather than crossfades - one box changing
+  /// weight, not two boxes trading places.
   Widget _box(
     Theme theme,
     SegmentedControlStyle style,
@@ -507,9 +513,7 @@ class _WheelRailState<T> extends State<WheelRail<T>>
     if (selected < 0) return const SizedBox.shrink();
     final weight = widget.physics.weight;
     final indicator = style.indicator;
-    // What the resting box is drawn in: what the lit one is *filled* with,
-    // which is the one color on the rail that means "this one".
-    final ink = indicator.fill ?? indicator.foreground;
+    final ink = _ink(style);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(end: focused ? 1.0 : 0.0),
@@ -517,12 +521,18 @@ class _WheelRailState<T> extends State<WheelRail<T>>
       curve: focused ? theme.motion.enter : theme.motion.exit,
       builder: (context, lit, _) => AnimatedBuilder(
         animation: _travel,
-        child: Surface.custom(
-          style: indicator.copyWith(
-            fill: Color.lerp(ink.withValues(alpha: 0), indicator.fill, lit),
-            // Lit, the fill carries it and the ring goes; at rest the ring
-            // is the whole of the box.
-            border: Color.lerp(ink, indicator.border, lit),
+        // Drawn here rather than through Surface, which rings itself at a
+        // hairline and no other weight: the weight is the signal.
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Color.lerp(ink.withValues(alpha: 0), indicator.fill, lit),
+            borderRadius: indicator.radius,
+            border: Border.all(
+              color: ink,
+              width:
+                  theme.strokes.hairline +
+                  (theme.strokes.focus - theme.strokes.hairline) * lit,
+            ),
           ),
         ),
         builder: (context, child) {
@@ -548,6 +558,24 @@ class _WheelRailState<T> extends State<WheelRail<T>>
     );
   }
 
+  /// The color the resting box is drawn in, and that its label wears.
+  ///
+  /// Whichever of the indicator's two voices actually reads against the
+  /// track, rather than whichever one a particular variant happens to keep
+  /// it in: a solid indicator carries the swatch in its *fill* and a
+  /// contrast color in its foreground, and a subtle one has them the other
+  /// way round. Assuming either would leave the rail drawing its outline in
+  /// a color a step from the track it is drawn on.
+  static Color _ink(SegmentedControlStyle style) {
+    final ground = style.track.fill;
+    final fill = style.indicator.fill;
+    final foreground = style.indicator.foreground;
+    if (ground == null || fill == null) return foreground;
+    return contrastRatio(fill, ground) > contrastRatio(foreground, ground)
+        ? fill
+        : foreground;
+  }
+
   Widget _segment(
     Theme theme,
     SegmentedControlStyle style,
@@ -565,9 +593,7 @@ class _WheelRailState<T> extends State<WheelRail<T>>
     final textStyle = chosen
         ? (lit
               ? style.selectedStyle
-              : style.selectedStyle.copyWith(
-                  color: style.indicator.fill ?? style.indicator.foreground,
-                ))
+              : style.selectedStyle.copyWith(color: _ink(style)))
         : style.unselectedStyle;
 
     return Semantics(

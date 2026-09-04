@@ -45,13 +45,13 @@ void main() {
   ) async {
     await pumpMenu(tester);
 
-    // The fixed shape dresses the selected row in the primary's subtle
+    // The fixed shape dresses the selected row in the primary's soft
     // wash; an unselected row sits on the page.
     bool selected(String label) {
       final wash = ThemeProvider.of(tester.element(find.text(label)))
           .widgets
           .surface
-          .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
+          .resolve(SemanticSwatch.primary, SurfaceVariant.soft)
           .fill;
       return find
           .ancestor(
