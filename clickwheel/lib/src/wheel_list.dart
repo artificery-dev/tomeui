@@ -68,7 +68,7 @@ class WheelList extends StatefulWidget {
     super.key,
   }) : itemCount = children.length,
        itemBuilder = ((context, index, selected) =>
-           _DressedRow(selected: selected, child: children[index]));
+           WheelRowDress(selected: selected, child: children[index]));
 
   /// The lazy shape: rows built on demand, told their selection.
   const WheelList.builder({
@@ -141,10 +141,21 @@ class WheelList extends StatefulWidget {
 /// Soft rather than subtle, which is the quieter neighbour: at subtle the
 /// wash is the swatch's darkest stop in the dark and its lightest in the
 /// light, and the cursor came out barely a shade off the page it sits on -
-/// the row was being marked mostly by hue. Builder rows skip this and dress
-/// themselves - a song row knows whether its subtitle should dim.
-class _DressedRow extends StatelessWidget {
-  const _DressedRow({required this.selected, required this.child});
+/// the row was being marked mostly by hue.
+///
+/// The fixed shape puts this on every row for you. A builder row dresses
+/// itself - a song row knows whether its subtitle should dim, and a
+/// picker row may want a card instead - and a builder row that wants
+/// nothing more than the ordinary cursor wraps itself in this rather than
+/// working the resolver out again. It carries the [WheelRowSelection] its
+/// children read either way, so a row wrapped in it need not also be
+/// wrapped in that.
+class WheelRowDress extends StatelessWidget {
+  const WheelRowDress({
+    required this.selected,
+    required this.child,
+    super.key,
+  });
 
   final bool selected;
   final Widget child;

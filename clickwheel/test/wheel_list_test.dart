@@ -79,6 +79,129 @@ void main() {
     expect(bar.minThumbLength, 40);
   });
 
+  group('wrapping at the ends', () {
+    /// A wrapping list of [rows], reporting where the selection lands.
+    Future<(ClickWheelController, List<int>)> pumpWrapping(
+      WidgetTester tester, {
+      int rows = 4,
+      bool wrap = true,
+    }) async {
+      final wheel = ClickWheelController();
+      final landed = <int>[];
+      await tester.pumpWidget(
+        TomeApp(
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              ClickWheelInput(controller: wheel, child: child!),
+          home: SizedBox(
+            height: 300,
+            child: WheelList(
+              itemExtent: 40,
+              autofocus: true,
+              wrap: wrap,
+              onSelectionChanged: landed.add,
+              children: [for (var i = 0; i < rows; i++) Text('Row $i')],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return (wheel, landed);
+    }
+
+    testWidgets('a detent past the last row comes back to the first', (
+      tester,
+    ) async {
+      final (wheel, landed) = await pumpWrapping(tester);
+      wheel.jog(3);
+      await tester.pump();
+      expect(landed.last, 3, reason: 'at the end');
+
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed.last, 0);
+
+      // And the other way, off the front.
+      wheel.jog(-1);
+      await tester.pump();
+      expect(landed.last, 3);
+    });
+
+    testWidgets('and does not, where the list does not wrap', (tester) async {
+      final (wheel, landed) = await pumpWrapping(tester, wrap: false);
+      wheel.jog(3);
+      await tester.pump();
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed.last, 3, reason: 'the end is the end');
+    });
+
+    testWidgets('a fast spin still stops at the end', (tester) async {
+      // A page that wrapped would carry the selection somewhere nobody
+      // was looking - the end of a long list is where a spin should stop.
+      final (wheel, landed) = await pumpWrapping(tester, rows: 40);
+      wheel.jog(1, page: true);
+      await tester.pump();
+      final first = landed.last;
+      for (var i = 0; i < 20; i++) {
+        wheel.jog(1, page: true);
+        await tester.pump();
+      }
+      expect(landed.last, 39);
+      expect(first, lessThan(39), reason: 'it took more than one spin');
+    });
+
+    testWidgets('a list of one row has nowhere to wrap to', (tester) async {
+      final (wheel, landed) = await pumpWrapping(tester, rows: 1);
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed, isEmpty);
+    });
+  });
+
+  group('the row dress', () {
+    /// The fill the dress paints, or null where it paints none.
+    Color? fillUnder(WidgetTester tester, String text) {
+      final boxes = tester.widgetList<DecoratedBox>(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(text),
+            matching: find.byType(WheelRowDress),
+          ),
+          matching: find.byType(DecoratedBox),
+        ),
+      );
+      for (final box in boxes) {
+        final decoration = box.decoration;
+        if (decoration is BoxDecoration && decoration.color != null) {
+          return decoration.color;
+        }
+      }
+      return null;
+    }
+
+    testWidgets('marks the selected row and leaves the rest alone', (
+      tester,
+    ) async {
+      final wheel = await pumpList(tester, rows: 3);
+      expect(fillUnder(tester, 'Row 0'), isNotNull);
+      expect(fillUnder(tester, 'Row 1'), isNull);
+
+      wheel.jog(1);
+      await tester.pump();
+      expect(fillUnder(tester, 'Row 0'), isNull);
+      expect(fillUnder(tester, 'Row 1'), isNotNull);
+    });
+
+    testWidgets('and says which row it is, dressed or not', (tester) async {
+      // A builder row that dresses itself still reads the selection off
+      // the same widget, so wrapping in the dress is enough.
+      await pumpList(tester, rows: 2);
+      final rows = tester.widgetList<WheelRowDress>(find.byType(WheelRowDress));
+      expect(rows.where((row) => row.selected), hasLength(1));
+    });
+  });
+
   platformScrollbarTests();
   variedExtentTests();
 }
@@ -212,84 +335,4 @@ void platformScrollbarTests() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
-
-  group('wrapping at the ends', () {
-    /// A wrapping list of [rows], reporting where the selection lands.
-    Future<(ClickWheelController, List<int>)> pumpWrapping(
-      WidgetTester tester, {
-      int rows = 4,
-      bool wrap = true,
-    }) async {
-      final wheel = ClickWheelController();
-      final landed = <int>[];
-      await tester.pumpWidget(
-        TomeApp(
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) =>
-              ClickWheelInput(controller: wheel, child: child!),
-          home: SizedBox(
-            height: 300,
-            child: WheelList(
-              itemExtent: 40,
-              autofocus: true,
-              wrap: wrap,
-              onSelectionChanged: landed.add,
-              children: [for (var i = 0; i < rows; i++) Text('Row $i')],
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      return (wheel, landed);
-    }
-
-    testWidgets('a detent past the last row comes back to the first', (
-      tester,
-    ) async {
-      final (wheel, landed) = await pumpWrapping(tester);
-      wheel.jog(3);
-      await tester.pump();
-      expect(landed.last, 3, reason: 'at the end');
-
-      wheel.jog(1);
-      await tester.pump();
-      expect(landed.last, 0);
-
-      // And the other way, off the front.
-      wheel.jog(-1);
-      await tester.pump();
-      expect(landed.last, 3);
-    });
-
-    testWidgets('and does not, where the list does not wrap', (tester) async {
-      final (wheel, landed) = await pumpWrapping(tester, wrap: false);
-      wheel.jog(3);
-      await tester.pump();
-      wheel.jog(1);
-      await tester.pump();
-      expect(landed.last, 3, reason: 'the end is the end');
-    });
-
-    testWidgets('a fast spin still stops at the end', (tester) async {
-      // A page that wrapped would carry the selection somewhere nobody
-      // was looking - the end of a long list is where a spin should stop.
-      final (wheel, landed) = await pumpWrapping(tester, rows: 40);
-      wheel.jog(1, page: true);
-      await tester.pump();
-      final first = landed.last;
-      for (var i = 0; i < 20; i++) {
-        wheel.jog(1, page: true);
-        await tester.pump();
-      }
-      expect(landed.last, 39);
-      expect(first, lessThan(39), reason: 'it took more than one spin');
-    });
-
-    testWidgets('a list of one row has nowhere to wrap to', (tester) async {
-      final (wheel, landed) = await pumpWrapping(tester, rows: 1);
-      wheel.jog(1);
-      await tester.pump();
-      expect(landed, isEmpty);
-    });
-  });
 }
