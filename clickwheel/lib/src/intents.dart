@@ -54,6 +54,52 @@ class VolumeIntent extends Intent {
   final int direction;
 }
 
+/// What still speaks while the screen is dark.
+///
+/// A dark player is still a player: it is in a pocket, and a thumb finds
+/// the rocker or the play key without looking. Which of those a person
+/// wants answered is a matter of taste and of trousers, so it is set
+/// rather than decided - Settings > Display, at the bottom.
+///
+/// Menu is not here. In either of its words it says nothing while the
+/// screen is dark: back would move the player blind, and the dock would
+/// come up over a screen nobody can see. Nor is the center button, which
+/// is how a dark player wakes and has no second meaning to give away.
+@immutable
+class DarkInput {
+  const DarkInput({this.media = true, this.wheel = false, this.volume = true});
+
+  /// Play, next and previous act while the screen sleeps.
+  final bool media;
+
+  /// The wheel is the volume, rather than saying nothing. Off by
+  /// default: a thumb resting on the wheel in a pocket would otherwise be
+  /// turning the music up.
+  final bool wheel;
+
+  /// The rocker acts. A press on it in a pocket means what it says.
+  final bool volume;
+
+  /// What the player ships with.
+  static const DarkInput standard = DarkInput();
+
+  DarkInput copyWith({bool? media, bool? wheel, bool? volume}) => DarkInput(
+    media: media ?? this.media,
+    wheel: wheel ?? this.wheel,
+    volume: volume ?? this.volume,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is DarkInput &&
+      other.media == media &&
+      other.wheel == wheel &&
+      other.volume == volume;
+
+  @override
+  int get hashCode => Object.hash(media, wheel, volume);
+}
+
 /// The kinds of thing the wheel says, for whatever answers each with a
 /// sound or a shake: a detent of the wheel, a press of a button, a hold.
 enum WheelWord {

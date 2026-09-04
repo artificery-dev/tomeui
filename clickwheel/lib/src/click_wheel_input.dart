@@ -147,6 +147,7 @@ class ClickWheelInput extends StatefulWidget {
     this.onMenuHold,
     this.muted = false,
     this.asleep = false,
+    this.dark = DarkInput.standard,
     this.onWake,
     this.holdThreshold = const Duration(milliseconds: 1500),
     this.longPress = const Duration(milliseconds: 600),
@@ -205,6 +206,11 @@ class ClickWheelInput extends StatefulWidget {
   /// and the dock would come up over a screen nobody can see. [muted]
   /// wins when both are set.
   final bool asleep;
+
+  /// What still speaks while [asleep]. The shape of the dark is a
+  /// setting on this player, so it is an argument here rather than a
+  /// rule: see [DarkInput].
+  final DarkInput dark;
 
   /// Asleep, what the center button says instead of its words.
   final VoidCallback? onWake;
@@ -531,9 +537,28 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
     if (widget.asleep) {
-      // The wheel and menu are silent; the center wakes and does no more;
-      // everything else - media, volume - goes through.
-      if (intent is JogIntent || intent is WheelBackIntent) return;
+      // Menu is silent either way: back would move the player blind, and
+      // the dock would come up over a screen nobody can see.
+      if (intent is WheelBackIntent) return;
+      // The wheel is silent unless the dark is set to let it be the
+      // volume, which is what a thumb in a pocket is reaching for when it
+      // is reaching for anything.
+      if (intent is JogIntent) {
+        if (!widget.dark.wheel) return;
+        final by = intent.amount.sign;
+        if (by == 0) return;
+        widget.onWord?.call(WheelWord.detent);
+        widget.onVolume?.call(by);
+        Actions.maybeInvoke(
+          _focused() ?? _actionsContext ?? context,
+          VolumeIntent(by),
+        );
+        return;
+      }
+      if (intent is MediaIntent && !widget.dark.media) return;
+      if (intent is VolumeIntent && !widget.dark.volume) return;
+      // The center wakes and does no more: what it would have activated
+      // is not activated.
       if (intent is ActivateIntent || intent is ActivateHoldIntent) {
         widget.onWord?.call(WheelWord.press);
         widget.onWake?.call();
