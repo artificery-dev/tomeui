@@ -91,6 +91,11 @@ class SurfaceStyle {
       Object.hash(foreground, fill, border, dashed, striped, radius);
 }
 
+/// How much of its stop [SurfaceVariant.subtle] lays down. Most of the way
+/// there, and no further: a surface that is felt *over* something rather
+/// than instead of it.
+const double _washAlpha = 0.82;
+
 /// The tone mapping for one variant: which shade each role wears.
 ///
 /// A null [foreground] means "pick what reads": the contrast color over
@@ -204,7 +209,11 @@ class SurfaceStyles {
       },
     ),
     this.subtle = const SurfaceShades(
-      fill: Shade(light: 50, dark: 950),
+      // A wash, not a slab: the quietest stop laid down at four fifths, so
+      // what is behind a subtle surface - a wallpaper, a cover - is still
+      // felt through it. The variant has always been described as a wash;
+      // this is what makes it one.
+      fill: Shade(light: 50, dark: 950, alpha: _washAlpha),
       foreground: Shade(light: 600, dark: 400),
       // A ring one whisper above the fill, quieter than outline's.
       border: Shade(light: 200, dark: 800),
@@ -212,7 +221,7 @@ class SurfaceStyles {
       // next stop in — the quietest wash that is still a wash.
       exceptions: {
         SemanticSwatch.neutral: SurfaceShades(
-          fill: Shade(light: 100, dark: 900),
+          fill: Shade(light: 100, dark: 900, alpha: _washAlpha),
           foreground: Shade(light: 600, dark: 400),
           border: Shade(light: 200, dark: 800),
         ),
