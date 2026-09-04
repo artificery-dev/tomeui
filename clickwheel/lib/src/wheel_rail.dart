@@ -474,7 +474,7 @@ class _WheelRailState<T> extends State<WheelRail<T>>
             Row(
               children: [
                 for (var i = 0; i < _count; i++)
-                  Expanded(child: _segment(theme, style, i, selected)),
+                  Expanded(child: _segment(theme, style, i, selected, lit)),
               ],
             ),
           ],
@@ -485,52 +485,66 @@ class _WheelRailState<T> extends State<WheelRail<T>>
 
   /// The box, on its way. Between options it is [_travel]'s share of the
   /// way from the option it is on; off an end it is the same share of the
-  /// give, in pixels. It is the wheel's mark, so it is there only while the wheel
-  /// is on the rail: when focus has gone up to something else the box
-  /// fades where it stands, and comes back there when the wheel returns.
+  /// give, in pixels.
+  ///
+  /// The box says two things at once, so it has two dresses. That the wheel
+  /// is on this rail: filled, at the swatch's full voice. And, whether the
+  /// wheel is here or not, which answer the rail is set to: the same shape
+  /// in outline. It used to fade out altogether when focus went up to the
+  /// list, which left a row that plainly had a setting on it saying nothing
+  /// about what that setting was.
+  ///
+  /// Between the two it lerps rather than crossfades - one box moving and
+  /// changing weight, not two boxes trading places.
   Widget _box(
     Theme theme,
     SegmentedControlStyle style,
     int selected,
     bool focused,
   ) {
-    final showing = focused && selected >= 0;
+    // Nothing chosen is the one state with no box: a rail whose stored
+    // answer is no longer on offer should not point at an answer.
+    if (selected < 0) return const SizedBox.shrink();
     final weight = widget.physics.weight;
+    final indicator = style.indicator;
+    // What the resting box is drawn in: what the lit one is *filled* with,
+    // which is the one color on the rail that means "this one".
+    final ink = indicator.fill ?? indicator.foreground;
 
     return TweenAnimationBuilder<double>(
-      tween: Tween(end: showing ? 1.0 : 0.0),
+      tween: Tween(end: focused ? 1.0 : 0.0),
       duration: theme.motion.fast,
-      curve: showing ? theme.motion.enter : theme.motion.exit,
-      builder: (context, presence, child) => presence == 0
-          ? const SizedBox.shrink()
-          : Opacity(
-              opacity: presence,
-              child: AnimatedBuilder(
-                animation: _travel,
-                child: child,
-                builder: (context, child) {
-                  final share = _travel.value / weight;
-                  final direction = share.sign.toInt();
-                  final index = selected < 0 ? 0 : selected;
-                  final outward =
-                      direction != 0 && _landing(index, direction) == null;
-                  final position = outward ? index.toDouble() : index + share;
-                  final offset = outward ? share * widget.physics.give : 0.0;
-                  return Transform.translate(
-                    offset: Offset(offset, 0),
-                    child: FractionallySizedBox(
-                      widthFactor: 1 / _count,
-                      alignment: Alignment(
-                        _count == 1 ? 0 : -1 + 2 * position / (_count - 1),
-                        0,
-                      ),
-                      child: child,
-                    ),
-                  );
-                },
+      curve: focused ? theme.motion.enter : theme.motion.exit,
+      builder: (context, lit, _) => AnimatedBuilder(
+        animation: _travel,
+        child: Surface.custom(
+          style: indicator.copyWith(
+            fill: Color.lerp(ink.withValues(alpha: 0), indicator.fill, lit),
+            // Lit, the fill carries it and the ring goes; at rest the ring
+            // is the whole of the box.
+            border: Color.lerp(ink, indicator.border, lit),
+          ),
+        ),
+        builder: (context, child) {
+          final share = _travel.value / weight;
+          final direction = share.sign.toInt();
+          final outward =
+              direction != 0 && _landing(selected, direction) == null;
+          final position = outward ? selected.toDouble() : selected + share;
+          final offset = outward ? share * widget.physics.give : 0.0;
+          return Transform.translate(
+            offset: Offset(offset, 0),
+            child: FractionallySizedBox(
+              widthFactor: 1 / _count,
+              alignment: Alignment(
+                _count == 1 ? 0 : -1 + 2 * position / (_count - 1),
+                0,
               ),
+              child: child,
             ),
-      child: Surface.custom(style: style.indicator),
+          );
+        },
+      ),
     );
   }
 
@@ -539,10 +553,22 @@ class _WheelRailState<T> extends State<WheelRail<T>>
     SegmentedControlStyle style,
     int index,
     int selected,
+    bool lit,
   ) {
     final segment = widget.segments[index];
     final chosen = index == selected;
-    final textStyle = chosen ? style.selectedStyle : style.unselectedStyle;
+    // The chosen segment is read against the box, so its words follow the
+    // box's dress: the indicator's own foreground while the box is filled,
+    // and the color the outline is drawn in once it is only an outline -
+    // otherwise a label picked to read on a solid fill (white, commonly)
+    // would be left standing on the bare track.
+    final textStyle = chosen
+        ? (lit
+              ? style.selectedStyle
+              : style.selectedStyle.copyWith(
+                  color: style.indicator.fill ?? style.indicator.foreground,
+                ))
+        : style.unselectedStyle;
 
     return Semantics(
       inMutuallyExclusiveGroup: true,
