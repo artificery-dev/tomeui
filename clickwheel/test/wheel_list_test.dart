@@ -185,29 +185,111 @@ void variedExtentTests() {
 /// The platform adds no scrollbar of its own under the wheel: the list's
 /// persistent bar is the only one.
 void platformScrollbarTests() {
-  testWidgets('a scrolling list wears one bar, the list\'s own', (
-    tester,
-  ) async {
-    final wheel = ClickWheelController();
-    await tester.pumpWidget(
-      TomeApp(
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) =>
-            ClickWheelInput(controller: wheel, child: child!),
-        home: SizedBox(
-          height: 120,
-          child: WheelList(
-            itemExtent: 40,
-            autofocus: true,
-            children: [for (var i = 0; i < 20; i++) Text('Row $i')],
+  testWidgets(
+    'a scrolling list wears one bar, the list\'s own',
+    (tester) async {
+      final wheel = ClickWheelController();
+      await tester.pumpWidget(
+        TomeApp(
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              ClickWheelInput(controller: wheel, child: child!),
+          home: SizedBox(
+            height: 120,
+            child: WheelList(
+              itemExtent: 40,
+              autofocus: true,
+              children: [for (var i = 0; i < 20; i++) Text('Row $i')],
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    wheel.jog(3);
-    await tester.pump();
-    // The platform's would be a second RawScrollbar around the viewport.
-    expect(find.byType(RawScrollbar), findsOneWidget);
-  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+      );
+      await tester.pumpAndSettle();
+      wheel.jog(3);
+      await tester.pump();
+      // The platform's would be a second RawScrollbar around the viewport.
+      expect(find.byType(RawScrollbar), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+
+  group('wrapping at the ends', () {
+    /// A wrapping list of [rows], reporting where the selection lands.
+    Future<(ClickWheelController, List<int>)> pumpWrapping(
+      WidgetTester tester, {
+      int rows = 4,
+      bool wrap = true,
+    }) async {
+      final wheel = ClickWheelController();
+      final landed = <int>[];
+      await tester.pumpWidget(
+        TomeApp(
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              ClickWheelInput(controller: wheel, child: child!),
+          home: SizedBox(
+            height: 300,
+            child: WheelList(
+              itemExtent: 40,
+              autofocus: true,
+              wrap: wrap,
+              onSelectionChanged: landed.add,
+              children: [for (var i = 0; i < rows; i++) Text('Row $i')],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return (wheel, landed);
+    }
+
+    testWidgets('a detent past the last row comes back to the first', (
+      tester,
+    ) async {
+      final (wheel, landed) = await pumpWrapping(tester);
+      wheel.jog(3);
+      await tester.pump();
+      expect(landed.last, 3, reason: 'at the end');
+
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed.last, 0);
+
+      // And the other way, off the front.
+      wheel.jog(-1);
+      await tester.pump();
+      expect(landed.last, 3);
+    });
+
+    testWidgets('and does not, where the list does not wrap', (tester) async {
+      final (wheel, landed) = await pumpWrapping(tester, wrap: false);
+      wheel.jog(3);
+      await tester.pump();
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed.last, 3, reason: 'the end is the end');
+    });
+
+    testWidgets('a fast spin still stops at the end', (tester) async {
+      // A page that wrapped would carry the selection somewhere nobody
+      // was looking - the end of a long list is where a spin should stop.
+      final (wheel, landed) = await pumpWrapping(tester, rows: 40);
+      wheel.jog(1, page: true);
+      await tester.pump();
+      final first = landed.last;
+      for (var i = 0; i < 20; i++) {
+        wheel.jog(1, page: true);
+        await tester.pump();
+      }
+      expect(landed.last, 39);
+      expect(first, lessThan(39), reason: 'it took more than one spin');
+    });
+
+    testWidgets('a list of one row has nowhere to wrap to', (tester) async {
+      final (wheel, landed) = await pumpWrapping(tester, rows: 1);
+      wheel.jog(1);
+      await tester.pump();
+      expect(landed, isEmpty);
+    });
+  });
 }
