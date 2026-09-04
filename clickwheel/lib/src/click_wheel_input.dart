@@ -148,6 +148,8 @@ class ClickWheelInput extends StatefulWidget {
     this.muted = false,
     this.asleep = false,
     this.dark = DarkInput.standard,
+    this.feel = WheelFeel.standard,
+    this.repeatWhileHeld = true,
     this.onWake,
     this.holdThreshold = const Duration(milliseconds: 1500),
     this.longPress = const Duration(milliseconds: 600),
@@ -211,6 +213,14 @@ class ClickWheelInput extends StatefulWidget {
   /// setting on this player, so it is an argument here rather than a
   /// rule: see [DarkInput].
   final DarkInput dark;
+
+  /// How a turn of the ring becomes movement: how far a detent carries,
+  /// whether a fast spin carries further, and which way round it goes.
+  final WheelFeel feel;
+
+  /// Whether the volume keys keep stepping while one is held down. Off,
+  /// a held key is one press and no more.
+  final bool repeatWhileHeld;
 
   /// Asleep, what the center button says instead of its words.
   final VoidCallback? onWake;
@@ -357,6 +367,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       _timers.remove(button)?.cancel();
       if (volume) {
         _dispatch(_short(button));
+        if (!widget.repeatWhileHeld) return;
         _timers[button] = Timer(widget.longPress, () {
           _timers[button] = Timer.periodic(_repeat, (_) {
             if (!_down.contains(button)) return;
@@ -534,8 +545,38 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   ///
   /// The scope's own idea of what is focused, not the platform's - see
   /// [_scope]. On the device the two are the same node.
+  /// What is left of the ring's carry: a firm wheel turns further than a
+  /// detent to move a row, and the part of a turn that did not add up to
+  /// one is kept rather than thrown away.
+  double _carry = 0;
+
+  /// [intent] as the wheel is set to feel: turned the way round it is
+  /// set to, carried as far as a detent carries, and at the fast tier
+  /// only where a fast tier is wanted.
+  ///
+  /// Null where the turn did not come to a whole row yet.
+  JogIntent? _felt(JogIntent intent) {
+    final feel = widget.feel;
+    final amount = feel.reversed ? -intent.amount : intent.amount;
+    final page = intent.page && feel.acceleration;
+    if (feel.rowsPerDetent == 1) return JogIntent(amount, page: page);
+    // A turn the other way starts its own carry: whatever was left over
+    // going one way is not a head start on going back.
+    if (_carry != 0 && _carry.sign != amount.sign) _carry = 0;
+    _carry += amount * feel.rowsPerDetent;
+    final whole = _carry.truncate();
+    _carry -= whole;
+    if (whole == 0) return null;
+    return JogIntent(whole, page: page);
+  }
+
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
+    if (intent is JogIntent) {
+      final felt = _felt(intent);
+      if (felt == null) return;
+      intent = felt;
+    }
     if (widget.asleep) {
       // Menu is silent either way: back would move the player blind, and
       // the dock would come up over a screen nobody can see.
