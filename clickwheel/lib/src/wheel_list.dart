@@ -160,23 +160,44 @@ class WheelRowDress extends StatelessWidget {
   final bool selected;
   final Widget child;
 
+  /// The room a row keeps at the viewport's edges.
+  ///
+  /// Every row, not only the dressed one: a row that moved sideways as
+  /// the cursor arrived on it would make the list step under the eye
+  /// following it. The box appears; the words stay where they were.
+  static EdgeInsets insetOf(Theme theme) =>
+      EdgeInsets.symmetric(horizontal: theme.space.x2);
+
+  /// The corners a dressed row wears: the small radius rather than the
+  /// surface's own, since a cursor walking a list reads as a bar with its
+  /// corners taken off and not as a pill.
+  ///
+  /// Anything else that marks a row - a trail's mark in a column browser,
+  /// say - takes these too. It is the same box in another color, and two
+  /// boxes of different shapes on one screen read as two ideas.
+  static BorderRadius radiusOf(Theme theme) => theme.radii.small;
+
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    if (!selected) return WheelRowSelection(selected: false, child: child);
+    final inset = insetOf(theme);
+    if (!selected) {
+      return WheelRowSelection(
+        selected: false,
+        child: Padding(padding: inset, child: child),
+      );
+    }
     final dress = theme.widgets.surface.resolve(
       SemanticSwatch.primary,
       SurfaceVariant.soft,
     );
-    // The whole surface: its wash and the ring it keeps around itself, at
-    // the small radius rather than the surface's own - a cursor walking a
-    // list reads as a bar with its corners taken off, not as a pill - and
+    // The whole surface: its wash and the ring it keeps around itself,
     // held off the viewport's edges, so it is a mark *on* the list rather
     // than the list changing color from edge to edge.
     return WheelRowSelection(
       selected: true,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: theme.space.x2),
+        padding: inset,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: dress.fill,
@@ -186,7 +207,7 @@ class WheelRowDress extends StatelessWidget {
                     color: dress.border!,
                     width: theme.strokes.hairline,
                   ),
-            borderRadius: theme.radii.small,
+            borderRadius: radiusOf(theme),
           ),
           child: IconTheme.merge(
             data: IconThemeData(color: dress.foreground),

@@ -193,6 +193,38 @@ void main() {
       expect(fillUnder(tester, 'Row 1'), isNotNull);
     });
 
+    testWidgets('a row does not move when the cursor arrives on it', (
+      tester,
+    ) async {
+      final wheel = await pumpList(tester, rows: 3);
+      final before = tester.getRect(find.text('Row 1'));
+      expect(tester.getRect(find.text('Row 0')).left, before.left);
+
+      wheel.jog(1);
+      await tester.pump();
+      expect(
+        tester.getRect(find.text('Row 1')),
+        before,
+        reason: 'the words shifted under the cursor',
+      );
+      // And the row it left is where it was too.
+      expect(tester.getRect(find.text('Row 0')).left, before.left);
+    });
+
+    testWidgets('and every row keeps the same room at the edges', (
+      tester,
+    ) async {
+      await pumpList(tester, rows: 3);
+      final viewport = tester.getRect(find.byType(WheelList));
+      for (final row in ['Row 0', 'Row 1', 'Row 2']) {
+        expect(
+          tester.getRect(find.text(row)).left,
+          greaterThan(viewport.left),
+          reason: '$row was flush with the edge',
+        );
+      }
+    });
+
     testWidgets('and says which row it is, dressed or not', (tester) async {
       // A builder row that dresses itself still reads the selection off
       // the same widget, so wrapping in the dress is enough.
