@@ -64,6 +64,7 @@ class WheelList extends StatefulWidget {
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
+    this.wrap = false,
     super.key,
   }) : itemCount = children.length,
        itemBuilder = ((context, index, selected) =>
@@ -80,6 +81,7 @@ class WheelList extends StatefulWidget {
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
+    this.wrap = false,
     super.key,
   });
 
@@ -106,6 +108,14 @@ class WheelList extends StatefulWidget {
   /// The wheel moved the selection - for a preview pane, a scrubber, a
   /// sound. Not the activation.
   final ValueChanged<int>? onSelectionChanged;
+
+  /// Whether a detent past the last row comes back to the first.
+  ///
+  /// Only a detent: a fast spin still stops at the end, because a page
+  /// that wrapped would carry the selection somewhere nobody was
+  /// looking, and the stretch at the edge is how a list says it has run
+  /// out. A list of one row never wraps - there is nowhere to go.
+  final bool wrap;
 
   final int initialIndex;
 
@@ -389,7 +399,16 @@ class _WheelListState extends State<WheelList>
   void _jog(JogIntent intent) {
     if (widget.itemCount == 0) return;
     final step = intent.page ? intent.amount * _rowsPerPage : intent.amount;
-    final next = (_index + step).clamp(0, widget.itemCount - 1);
+    final last = widget.itemCount - 1;
+    final wrapping = widget.wrap && !intent.page && last > 0;
+    final int next;
+    if (wrapping && _index + step < 0) {
+      next = last;
+    } else if (wrapping && _index + step > last) {
+      next = 0;
+    } else {
+      next = (_index + step).clamp(0, last);
+    }
     if (next == _index) {
       _stretch(step.sign);
       return;
