@@ -511,6 +511,80 @@ class Swatch {
     s900: Color(0xFF1D1816),
     s950: Color(0xFF0C0A09),
   );
+
+  /// Every swatch above, by the name it is written with.
+  ///
+  /// A palette that can be chosen has to survive being written down - a
+  /// settings file holds "sky", not a ramp of twelve colors - so the names
+  /// are part of the API rather than a detail of how they were declared.
+  static const Map<String, Swatch> named = {
+    'red': red,
+    'orange': orange,
+    'amber': amber,
+    'yellow': yellow,
+    'lime': lime,
+    'green': green,
+    'emerald': emerald,
+    'teal': teal,
+    'cyan': cyan,
+    'sky': sky,
+    'blue': blue,
+    'indigo': indigo,
+    'violet': violet,
+    'purple': purple,
+    'fuchsia': fuchsia,
+    'pink': pink,
+    'rose': rose,
+    'slate': slate,
+    'gray': gray,
+    'zinc': zinc,
+    'ash': ash,
+    'stone': stone,
+    'mauve': mauve,
+    'olive': olive,
+    'mist': mist,
+    'taupe': taupe,
+  };
+
+  /// The swatch [name] stands for, or null where nothing does. Callers
+  /// reading a stored value take their own default for null rather than
+  /// being handed one, because what "default" means is theirs to say.
+  static Swatch? byName(String? name) => name == null ? null : named[name];
+
+  /// The colors, in the order the ramp runs round the wheel. Suitable for
+  /// anything offering a choice of brand color.
+  static const List<String> colorNames = [
+    'red',
+    'orange',
+    'amber',
+    'yellow',
+    'lime',
+    'green',
+    'emerald',
+    'teal',
+    'cyan',
+    'sky',
+    'blue',
+    'indigo',
+    'violet',
+    'purple',
+    'fuchsia',
+    'pink',
+    'rose',
+  ];
+
+  /// The grays, warm to cool. What a neutral is chosen from.
+  static const List<String> grayNames = [
+    'slate',
+    'gray',
+    'zinc',
+    'ash',
+    'stone',
+    'mauve',
+    'olive',
+    'mist',
+    'taupe',
+  ];
 }
 
 /// WCAG relative-luminance contrast ratio between two colors, in `[1, 21]`.
