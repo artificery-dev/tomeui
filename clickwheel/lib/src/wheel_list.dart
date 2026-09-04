@@ -123,11 +123,15 @@ class WheelList extends StatefulWidget {
   State<WheelList> createState() => _WheelListState();
 }
 
-/// The default selection dress for the fixed shape: the primary at its
-/// subtlest under the cursor row - Tome's [SurfaceVariant.subtle] in the
-/// primary swatch, a faint wash inside its quiet ring, with the primary as
-/// the voice - so the row's words and glyphs answer in the primary's
-/// color rather than the row turning into a bar of it. Builder rows skip this and dress
+/// The default selection dress for the fixed shape: [SurfaceVariant.soft]
+/// in the primary swatch under the cursor row - a wash inside its own ring,
+/// with the primary as the voice, so the row's words and glyphs answer in
+/// the primary's color rather than the row turning into a bar of it.
+///
+/// Soft rather than subtle, which is the quieter neighbour: at subtle the
+/// wash is the swatch's darkest stop in the dark and its lightest in the
+/// light, and the cursor came out barely a shade off the page it sits on -
+/// the row was being marked mostly by hue. Builder rows skip this and dress
 /// themselves - a song row knows whether its subtitle should dim.
 class _DressedRow extends StatelessWidget {
   const _DressedRow({required this.selected, required this.child});
@@ -141,25 +145,34 @@ class _DressedRow extends StatelessWidget {
     if (!selected) return WheelRowSelection(selected: false, child: child);
     final dress = theme.widgets.surface.resolve(
       SemanticSwatch.primary,
-      SurfaceVariant.subtle,
+      SurfaceVariant.soft,
     );
-    // The whole surface: its wash, and the quiet ring subtle keeps around
-    // itself, at the surface's own radius.
+    // The whole surface: its wash and the ring it keeps around itself, at
+    // the small radius rather than the surface's own - a cursor walking a
+    // list reads as a bar with its corners taken off, not as a pill - and
+    // held off the viewport's edges, so it is a mark *on* the list rather
+    // than the list changing color from edge to edge.
     return WheelRowSelection(
       selected: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: dress.fill,
-          border: dress.border == null
-              ? null
-              : Border.all(color: dress.border!, width: theme.strokes.hairline),
-          borderRadius: dress.radius,
-        ),
-        child: IconTheme.merge(
-          data: IconThemeData(color: dress.foreground),
-          child: DefaultTextStyle.merge(
-            style: TextStyle(color: dress.foreground),
-            child: child,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: theme.space.x2),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: dress.fill,
+            border: dress.border == null
+                ? null
+                : Border.all(
+                    color: dress.border!,
+                    width: theme.strokes.hairline,
+                  ),
+            borderRadius: theme.radii.small,
+          ),
+          child: IconTheme.merge(
+            data: IconThemeData(color: dress.foreground),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: dress.foreground),
+              child: child,
+            ),
           ),
         ),
       ),
