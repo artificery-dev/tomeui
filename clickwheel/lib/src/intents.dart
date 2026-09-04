@@ -54,6 +54,60 @@ class VolumeIntent extends Intent {
   final int direction;
 }
 
+/// How a turn of the ring becomes movement.
+///
+/// The hardware reports detents, and a detent has always been a row. That
+/// is a fine default and a poor rule: the ring on this player is small,
+/// and how far a thumb has to drag it to cross a list is the difference
+/// between the thing being pleasant and being work. Settings > Controls >
+/// Wheel sets it.
+@immutable
+class WheelFeel {
+  const WheelFeel({
+    this.rowsPerDetent = 1,
+    this.acceleration = true,
+    this.reversed = false,
+  });
+
+  /// How far one detent carries. Above one a light turn goes further;
+  /// below it the ring has to be turned further to move at all, and the
+  /// fraction is carried rather than dropped, so a firm wheel still
+  /// arrives - it just takes the turning.
+  final double rowsPerDetent;
+
+  /// Whether a fast spin moves further per detent than a slow one. The
+  /// hardware reports the fast tier itself; off, it is treated as an
+  /// ordinary turn.
+  final bool acceleration;
+
+  /// Clockwise goes up the list rather than down.
+  final bool reversed;
+
+  /// What the player ships with: a detent is a row, a spin is faster, and
+  /// clockwise goes down.
+  static const WheelFeel standard = WheelFeel();
+
+  WheelFeel copyWith({
+    double? rowsPerDetent,
+    bool? acceleration,
+    bool? reversed,
+  }) => WheelFeel(
+    rowsPerDetent: rowsPerDetent ?? this.rowsPerDetent,
+    acceleration: acceleration ?? this.acceleration,
+    reversed: reversed ?? this.reversed,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is WheelFeel &&
+      other.rowsPerDetent == rowsPerDetent &&
+      other.acceleration == acceleration &&
+      other.reversed == reversed;
+
+  @override
+  int get hashCode => Object.hash(rowsPerDetent, acceleration, reversed);
+}
+
 /// What still speaks while the screen is dark.
 ///
 /// A dark player is still a player: it is in a pocket, and a thumb finds
