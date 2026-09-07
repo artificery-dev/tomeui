@@ -104,3 +104,18 @@ TomeUI, including its desktop and clickwheel packages, is licensed under the
 
 Bundled fonts retain their own licenses: [Recursive (OFL 1.1)](fonts/Recursive-OFL.txt)
 and [Symbols Nerd Font Mono and its component icon sets](fonts/SymbolsNerdFont-LICENSE.txt).
+
+## Web playground
+
+Explore the [TomeUI Playground](https://artificery-dev.github.io/tomeui/).
+CI builds it for pull requests and main. After main passes the workspace checks
+and web build, it deploys to GitHub Pages independently of package releases.
+
+Build locally with `just playground-web` (output: `playground/build/web`).
+The default base path is `/tomeui/`; use `just playground-web /` when serving
+from a domain root.
+
+GitHub Pages must use **GitHub Actions** as its publishing source in repository
+Settings → Pages. The `github-pages` environment should allow deployments
+from the `main` branch. The workflow uses the repository's built-in token;
+no deployment secret is needed.

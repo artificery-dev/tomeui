@@ -62,3 +62,7 @@ publish package="all" *args: check
   for directory in "${packages[@]}"; do
     (cd "$release_dir/$directory" && '{{flutter}}' pub publish {{args}})
   done
+
+# Build the web playground for GitHub Pages; use / for a root-domain deployment.
+playground-web base_href="/tomeui/": bootstrap
+  @(cd playground && '{{flutter}}' build web --release --base-href '{{base_href}}')
