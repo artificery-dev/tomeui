@@ -144,6 +144,22 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual((staged / "pubspec_overrides.yaml").read_text(), "resolution:\nworkspace: []\n")
         self.assertFalse((staged.parent / ".git").exists())
 
+    def test_dependency_resolution_retries_propagation_failure(self):
+        run = Mock(side_effect=[subprocess.CalledProcessError(1, "pub get"), None])
+        sleep = Mock()
+        release.resolve_dependencies(self.root, run=run, sleep=sleep)
+        self.assertEqual(run.call_count, 2)
+        sleep.assert_called_once_with(10)
+        self.assertEqual(run.call_args.args[0], ["flutter", "pub", "get"])
+
+    def test_dependency_resolution_failure_is_bounded(self):
+        run = Mock(side_effect=subprocess.CalledProcessError(1, "pub get"))
+        sleep = Mock()
+        with self.assertRaises(subprocess.CalledProcessError):
+            release.resolve_dependencies(self.root, run=run, timeout=0, sleep=sleep)
+        run.assert_called_once()
+        sleep.assert_not_called()
+
     def test_publication_order_waits_and_skips_existing_packages(self):
         events = []
         def stage(package, root):

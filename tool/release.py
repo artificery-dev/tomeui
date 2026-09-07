@@ -190,6 +190,22 @@ def stage_package(package: str, root: Path = ROOT) -> Path:
     return directory
 
 
+def resolve_dependencies(directory: Path, *, run=subprocess.run, timeout=600,
+                         sleep=time.sleep, now=time.monotonic) -> None:
+    # The package API can see a new core release before pub's resolver does.
+    # Retry resolution only; validation and uploads must still fail immediately.
+    deadline = now() + timeout
+    while True:
+        try:
+            run(["flutter", "pub", "get"], cwd=directory, check=True)
+            return
+        except subprocess.CalledProcessError:
+            if now() >= deadline:
+                raise
+            print("Dependency resolution failed; retrying in 10 seconds while pub.dev propagates...", flush=True)
+            sleep(10)
+
+
 def publish_release(root: Path = ROOT, fetch=published_versions, stage=stage_package,
                     run=subprocess.run, wait=wait_for_version) -> None:
     plan = release_plan(root, fetch)
@@ -200,8 +216,8 @@ def publish_release(root: Path = ROOT, fetch=published_versions, stage=stage_pac
     for package in release["packages"]:
         directory = stage(package, root)
         try:
-            for command in [["flutter", "pub", "get"],
-                            ["flutter", "pub", "publish", "--dry-run"],
+            resolve_dependencies(directory, run=run)
+            for command in [["flutter", "pub", "publish", "--dry-run"],
                             ["flutter", "pub", "publish", "--force"]]:
                 run(command, cwd=directory, check=True)
             wait(package, release["version"])
