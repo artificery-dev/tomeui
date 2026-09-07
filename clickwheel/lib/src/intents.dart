@@ -25,6 +25,12 @@ class WheelBackIntent extends Intent {
   const WheelBackIntent();
 }
 
+/// Menu held: open the focused app's menu. Unhandled, this does nothing.
+/// This is separate from Back and from holding the selected item.
+class WheelMenuIntent extends Intent {
+  const WheelMenuIntent();
+}
+
 /// The center button held: the long word of select. Where a press opens
 /// or chooses, the hold is the alternative - more about the thing, or
 /// the thing done another way. Default handler: nothing, so a screen with
@@ -116,7 +122,7 @@ class WheelFeel {
 /// rather than decided - Settings > Display, at the bottom.
 ///
 /// Menu is not here. In either of its words it says nothing while the
-/// screen is dark: back would move the player blind, and the dock would
+/// screen is dark: back would move the player blind, and an app menu would
 /// come up over a screen nobody can see. Nor is the center button, which
 /// is how a dark player wakes and has no second meaning to give away.
 @immutable
@@ -163,7 +169,7 @@ enum WheelWord {
 
   static WheelWord of(Intent intent) => switch (intent) {
     JogIntent() => WheelWord.detent,
-    ActivateHoldIntent() => WheelWord.hold,
+    ActivateHoldIntent() || WheelMenuIntent() => WheelWord.hold,
     MediaIntent(held: true) => WheelWord.hold,
     _ => WheelWord.press,
   };

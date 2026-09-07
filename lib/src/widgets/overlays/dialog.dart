@@ -107,10 +107,7 @@ class Dialog extends StatelessWidget {
                   ),
                   SizedBox(height: style.gap),
                 ],
-                if (content != null) ...[
-                  Flexible(child: content!),
-                  SizedBox(height: style.gap),
-                ],
+                if (content != null) ...[content!, SizedBox(height: style.gap)],
                 if (actions.isNotEmpty)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -187,10 +184,23 @@ class DialogRoute<T> extends PopupRoute<T> {
         },
       },
       child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(_style.margin),
-          child: Center(
-            child: Focus(autofocus: true, child: Builder(builder: builder)),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            // The card, including its title, scrolls as one surface. Leave
+            // empty space around a short card available to the scrim.
+            hitTestBehavior: HitTestBehavior.deferToChild,
+            padding: EdgeInsets.all(_style.margin),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: (constraints.maxHeight - 2 * _style.margin).clamp(
+                  0.0,
+                  double.infinity,
+                ),
+              ),
+              child: Center(
+                child: Focus(autofocus: true, child: Builder(builder: builder)),
+              ),
+            ),
           ),
         ),
       ),

@@ -5,6 +5,29 @@ import 'package:tomeui/tomeui.dart';
 
 import 'intents.dart';
 
+/// Enables speed-sensitive scrolling for long lists beneath the app input.
+class WheelAcceleration extends InheritedWidget {
+  const WheelAcceleration({
+    required this.enabled,
+    this.surfaceBuilder,
+    required super.child,
+    super.key,
+  });
+  final bool enabled;
+
+  /// Dresses the letter overlay using the host app’s surface treatment.
+  final Widget Function(BuildContext context, Widget child)? surfaceBuilder;
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<WheelAcceleration>()
+          ?.enabled ??
+      false;
+  @override
+  bool updateShouldNotify(WheelAcceleration oldWidget) =>
+      enabled != oldWidget.enabled ||
+      surfaceBuilder != oldWidget.surfaceBuilder;
+}
+
 /// How a [WheelList] row is drawn: the item at [index], told whether it is
 /// the selected one. The list draws no chrome of its own around the row -
 /// selection dress belongs to the row, which knows what it contains.
@@ -61,10 +84,12 @@ class WheelList extends StatefulWidget {
     this.onActivate,
     this.onSelectionChanged,
     this.extentOf,
+    this.sectionOf,
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
     this.wrap = false,
+    this.scrollPhysics,
     super.key,
   }) : itemCount = children.length,
        itemBuilder = ((context, index, selected) =>
@@ -78,12 +103,25 @@ class WheelList extends StatefulWidget {
     this.onActivate,
     this.onSelectionChanged,
     this.extentOf,
+    this.sectionOf,
     this.initialIndex = 0,
     this.initialTopRow = 0,
     this.autofocus = false,
     this.wrap = false,
+    this.scrollPhysics,
     super.key,
   });
+
+  /// A section label for alphabetically ordered rows. Null rows are skipped
+  /// by section navigation (for example, Back and Options above file names).
+  final String? Function(int index)? sectionOf;
+
+  static const bandKey = ValueKey('WheelList.band');
+  static const accelerationMinimum = 30;
+  static const accelerationIdle = Duration(seconds: 1);
+  static const accelerationEntry = Duration(milliseconds: 500);
+  static const letterEntry = Duration(milliseconds: 1500);
+  static const modeTransition = Duration(milliseconds: 180);
 
   final int itemCount;
   final WheelRowBuilder itemBuilder;
@@ -117,6 +155,11 @@ class WheelList extends StatefulWidget {
   /// out. A list of one row never wraps - there is nowhere to go.
   final bool wrap;
 
+  /// Override gesture scrolling when an enclosing viewport owns the scroll.
+  final ScrollPhysics? scrollPhysics;
+
+  /// The selected row on entry. The initial viewport reveals this row before
+  /// the first frame is painted, including when row heights differ.
   final int initialIndex;
 
   /// The row at the top of the viewport to begin with. Rows above it start
@@ -151,11 +194,7 @@ class WheelList extends StatefulWidget {
 /// children read either way, so a row wrapped in it need not also be
 /// wrapped in that.
 class WheelRowDress extends StatelessWidget {
-  const WheelRowDress({
-    required this.selected,
-    required this.child,
-    super.key,
-  });
+  const WheelRowDress({required this.selected, required this.child, super.key});
 
   final bool selected;
   final Widget child;
@@ -265,9 +304,35 @@ class _WheelListState extends State<WheelList>
   /// multiplication away and an array would be a waste.
   List<double>? _offsets;
 
-  late final _controller = ScrollController(
-    initialScrollOffset: _offsetOf(widget.initialTopRow),
-  );
+  late final ScrollController _controller;
+  bool _controllerReady = false;
+
+  /// Layout supplies the viewport before the scroll position is attached, so
+  /// opening on a saved selection never paints the top and then jumps away.
+  void _initializeScroll(double viewport) {
+    if (_controllerReady) return;
+    var offset = _offsetOf(widget.initialTopRow);
+    if (widget.itemCount > 0) {
+      final top = _offsetOf(_index);
+      final bottom = top + _extentOf(_index);
+      if (top < offset || bottom - top > viewport) {
+        offset = top;
+      } else if (bottom > offset + viewport) {
+        offset = bottom - viewport;
+      }
+    }
+    final padding = widget.initialTopRow == 0
+        ? 0.0
+        : (viewport - _extentBelowTopRow).clamp(0.0, double.infinity);
+    final maximum = (_totalExtent + padding - viewport).clamp(
+      0.0,
+      double.infinity,
+    );
+    _controller = ScrollController(
+      initialScrollOffset: offset.clamp(0.0, maximum),
+    );
+    _controllerReady = true;
+  }
 
   /// The height of row [index].
   double _extentOf(int index) =>
@@ -306,6 +371,7 @@ class _WheelListState extends State<WheelList>
   void initState() {
     super.initState();
     _measure();
+    _readSections();
   }
 
   /// The overscroll rubber band, owned outright: [_band]'s value is how far
@@ -337,6 +403,11 @@ class _WheelListState extends State<WheelList>
   @override
   void didUpdateWidget(WheelList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.itemCount != oldWidget.itemCount ||
+        widget.sectionOf != oldWidget.sectionOf) {
+      _readSections();
+      if (widget.itemCount != oldWidget.itemCount) _resetAcceleration();
+    }
     if (widget.itemCount != oldWidget.itemCount && widget.itemCount > 0) {
       _index = _index.clamp(0, widget.itemCount - 1);
     }
@@ -349,9 +420,10 @@ class _WheelListState extends State<WheelList>
 
   @override
   void dispose() {
+    _resetAcceleration();
     _restTimer?.cancel();
     _band.dispose();
-    _controller.dispose();
+    if (_controllerReady) _controller.dispose();
     super.dispose();
   }
 
@@ -360,7 +432,7 @@ class _WheelListState extends State<WheelList>
   /// a page down from a tall row is fewer rows than a page down from a
   /// short one, which is what "a page" means on screen.
   int get _rowsPerPage {
-    if (!_controller.hasClients) return 1;
+    if (!_controllerReady || !_controller.hasClients) return 1;
     final pixels = _controller.position.viewportDimension;
     if (_offsets == null) {
       return (pixels / widget.itemExtent).floor().clamp(1, widget.itemCount);
@@ -378,7 +450,7 @@ class _WheelListState extends State<WheelList>
   /// The scroll axis's visible extent - the panel height a screen is laid out
   /// for, and the honest measure of how much give it can spare. Falls back to
   /// a few rows for the moment before the list is attached.
-  double get _viewport => _controller.hasClients
+  double get _viewport => _controllerReady && _controller.hasClients
       ? _controller.position.viewportDimension
       : widget.itemExtent * 3;
 
@@ -401,7 +473,9 @@ class _WheelListState extends State<WheelList>
   /// - the last row is right there - and stretching it would say there is
   /// more when there is not.
   bool get _scrolls =>
-      _controller.hasClients && _controller.position.maxScrollExtent > 0;
+      _controllerReady &&
+      _controller.hasClients &&
+      _controller.position.maxScrollExtent > 0;
 
   /// The bar's width, in logical pixels: thin, a stroke beside the rows.
   static const double barThickness = 2;
@@ -414,6 +488,10 @@ class _WheelListState extends State<WheelList>
   Widget _scrollbar(BuildContext context, Widget list, bool scrolls) {
     if (!scrolls) return list;
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
+    final thumb = theme.widgets.surface.resolve(
+      SemanticSwatch.primary,
+      SurfaceVariant.solid,
+    );
     return RawScrollbar(
       controller: _controller,
       thumbVisibility: true,
@@ -421,18 +499,136 @@ class _WheelListState extends State<WheelList>
       thickness: barThickness,
       radius: const Radius.circular(barThickness / 2),
       minThumbLength: widget.itemExtent,
-      thumbColor: theme.palette.text.withValues(alpha: 0.55),
+      thumbColor: thumb.fill,
       trackColor: theme.palette.divider.withValues(alpha: 0.4),
       trackBorderColor: const Color(0x00000000),
       child: list,
     );
   }
 
+  Timer? _paceTimer;
+  Timer? _entryTimer;
+  bool _sustained = false;
+  Timer? _accelerationTimer;
+  int _burst = 0;
+  int _direction = 0;
+  bool _accelerated = false;
+  bool _accelerationEnabled = false;
+  bool _managedAcceleration = false;
+  List<(String, int)> _sections = [];
+  int? _letterSection;
+  bool get _letters => _accelerated && _sections.length > 1;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _accelerationEnabled = WheelAcceleration.of(context);
+    _managedAcceleration =
+        context.getInheritedWidgetOfExactType<WheelAcceleration>() != null;
+    if (!_accelerationEnabled) _resetAcceleration();
+  }
+
+  void _resetAcceleration() {
+    _paceTimer?.cancel();
+    _entryTimer?.cancel();
+    _sustained = false;
+    _accelerationTimer?.cancel();
+    _burst = 0;
+    _direction = 0;
+    _accelerated = false;
+    _letterSection = null;
+  }
+
+  void _dismissAcceleration() {
+    final section = _letterSection;
+    final next = section == null ? _index : _sections[section].$2;
+    _resetAcceleration();
+    if (next != _index) {
+      _index = next;
+      _reveal();
+      widget.onSelectionChanged?.call(next);
+    }
+  }
+
+  void _readSections() {
+    final sections = <(String, int)>[];
+    final sectionOf = widget.sectionOf;
+    if (sectionOf != null) {
+      for (var i = 0; i < widget.itemCount; i++) {
+        final label = sectionOf(i);
+        if (label != null && (sections.isEmpty || sections.last.$1 != label)) {
+          sections.add((label, i));
+        }
+      }
+    }
+    _sections = sections;
+  }
+
+  int get _sectionIndex {
+    if (_letterSection != null) return _letterSection!;
+    var section = 0;
+    for (var i = 0; i < _sections.length; i++) {
+      if (_sections[i].$2 > _index) break;
+      section = i;
+    }
+    return section;
+  }
+
   void _jog(JogIntent intent) {
-    if (widget.itemCount == 0) return;
-    final step = intent.page ? intent.amount * _rowsPerPage : intent.amount;
+    if (widget.itemCount == 0 || intent.amount == 0) return;
+    final enabled =
+        _accelerationEnabled &&
+        widget.itemCount >= WheelList.accelerationMinimum;
+    var fast = false;
+    if (enabled) {
+      final ordered = _sections.length > 1;
+      // Letter browsing measures the whole gesture, including slow detents.
+      // An idle pause or direction change starts its duration over.
+      final restart = ordered
+          ? _accelerationTimer?.isActive != true ||
+                _direction != intent.amount.sign
+          : _paceTimer?.isActive != true || _direction != intent.amount.sign;
+      if (restart) {
+        _burst = 0;
+        _sustained = false;
+        _entryTimer?.cancel();
+        _entryTimer = Timer(
+          ordered ? WheelList.letterEntry : WheelList.accelerationEntry,
+          () {
+            _sustained = true;
+          },
+        );
+      }
+      _direction = intent.amount.sign;
+      _burst += intent.amount.abs();
+      // Letter browsing stays latched until idle, even on slow or reversed turns.
+      fast =
+          _letters || (_sustained && (ordered || intent.page || _burst >= 4));
+      _paceTimer?.cancel();
+      _paceTimer = Timer(Duration(milliseconds: fast ? 160 : 90), () {});
+      _accelerationTimer?.cancel();
+      _accelerationTimer = Timer(WheelList.accelerationIdle, () {
+        if (mounted) setState(_dismissAcceleration);
+      });
+    }
+    if (_accelerated != fast) setState(() => _accelerated = fast);
+    if (_letters) {
+      final section = (_sectionIndex + intent.amount).clamp(
+        0,
+        _sections.length - 1,
+      );
+      setState(() => _letterSection = section);
+      if (_stretched) _release();
+      return;
+    }
+    final multiplier = fast
+        ? _rowsPerPage * (_burst >= 10 ? 2 : 1)
+        : intent.page && !_managedAcceleration
+        ? _rowsPerPage
+        : 1;
+    final step = intent.amount * multiplier;
     final last = widget.itemCount - 1;
-    final wrapping = widget.wrap && !intent.page && last > 0;
+    final wrapping = widget.wrap && !fast && !intent.page && last > 0;
     final int next;
     if (wrapping && _index + step < 0) {
       next = last;
@@ -446,7 +642,7 @@ class _WheelListState extends State<WheelList>
       return;
     }
     setState(() => _index = next);
-    _reveal();
+    _reveal(animate: fast);
     if (_stretched) _release();
     widget.onSelectionChanged?.call(next);
   }
@@ -480,9 +676,12 @@ class _WheelListState extends State<WheelList>
 
   /// Keep the selection on screen: scroll the least distance that shows the
   /// whole row, the way a scrolled focus behaves.
-  void _reveal() {
-    if (!_controller.hasClients) return;
+  void _reveal({bool animate = false}) {
+    if (!_controllerReady || !_controller.hasClients) return;
     final position = _controller.position;
+    if (!animate && position.isScrollingNotifier.value) {
+      _controller.jumpTo(position.pixels);
+    }
     final top = _offsetOf(_index);
     final bottom = top + _extentOf(_index);
     double? target;
@@ -492,7 +691,18 @@ class _WheelListState extends State<WheelList>
       target = bottom - position.viewportDimension;
     }
     if (target != null) {
-      _controller.jumpTo(target.clamp(0, position.maxScrollExtent));
+      final offset = target.clamp(0.0, position.maxScrollExtent);
+      if (animate) {
+        unawaited(
+          _controller.animateTo(
+            offset,
+            duration: WheelList.modeTransition,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+      } else {
+        _controller.jumpTo(offset);
+      }
     }
   }
 
@@ -508,7 +718,11 @@ class _WheelListState extends State<WheelList>
         ),
         ActivateIntent: CallbackAction<ActivateIntent>(
           onInvoke: (_) {
-            if (widget.itemCount > 0) widget.onActivate?.call(_index);
+            if (_letters) {
+              setState(_dismissAcceleration);
+            } else if (widget.itemCount > 0) {
+              widget.onActivate?.call(_index);
+            }
             return null;
           },
         ),
@@ -516,6 +730,9 @@ class _WheelListState extends State<WheelList>
       child: Focus(
         autofocus: widget.autofocus,
         debugLabel: 'WheelList',
+        onFocusChange: (focused) {
+          if (!focused && mounted) setState(_resetAcceleration);
+        },
         child: Builder(
           builder: (context) {
             final focused = Focus.of(context).hasFocus;
@@ -523,62 +740,173 @@ class _WheelListState extends State<WheelList>
             // box: the overscroll never becomes a real scroll position, so it
             // slides the rows past the edge and shows the ground behind them
             // without the viewport ever scrolling past its extent.
-            return ClipRect(
-              child: AnimatedBuilder(
-                animation: _band,
-                builder: (context, child) => Transform.translate(
-                  offset: Offset(0, -_band.value),
-                  child: child,
-                ),
-                child: LayoutBuilder(
-                  // Whether the rows outrun the box is known from the
-                  // box, before the list has ever been laid out.
-                  builder: (context, constraints) => _scrollbar(
-                    context,
-                    ListView.builder(
-                      controller: _controller,
-                      // Room under the last row, when rows start scrolled
-                      // off: the rows from [initialTopRow] must be able
-                      // to fill the box on their own, or a short list
-                      // could not scroll its top rows away at all.
-                      padding: EdgeInsets.only(
-                        bottom: widget.initialTopRow == 0
-                            ? 0
-                            : (constraints.maxHeight - _extentBelowTopRow)
-                                  .clamp(0.0, double.infinity),
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedScale(
+                  scale: _letters ? 0.92 : 1,
+                  duration: WheelList.modeTransition,
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    opacity: _letters ? 0.18 : 1,
+                    duration: WheelList.modeTransition,
+                    child: ClipRect(
+                      child: AnimatedBuilder(
+                        animation: _band,
+                        builder: (context, child) => Transform.translate(
+                          key: WheelList.bandKey,
+                          offset: Offset(0, -_band.value),
+                          child: child,
+                        ),
+                        child: LayoutBuilder(
+                          // Whether the rows outrun the box is known from the
+                          // box, before the list has ever been laid out.
+                          builder: (context, constraints) {
+                            _initializeScroll(constraints.maxHeight);
+                            return _scrollbar(
+                              context,
+                              ListView.builder(
+                                controller: _controller,
+                                // Room under the last row, when rows start scrolled
+                                // off: the rows from [initialTopRow] must be able
+                                // to fill the box on their own, or a short list
+                                // could not scroll its top rows away at all.
+                                padding: EdgeInsets.only(
+                                  bottom: widget.initialTopRow == 0
+                                      ? 0
+                                      : (constraints.maxHeight -
+                                                _extentBelowTopRow)
+                                            .clamp(0.0, double.infinity),
+                                ),
+                                // The cupertino feel, unconditionally, for whatever
+                                // the viewport itself scrolls: detent jogs land
+                                // exactly (jumps), a fling would ride a spring. The
+                                // overscroll past an edge is the band's, above -
+                                // nothing here springs against it.
+                                physics:
+                                    widget.scrollPhysics ??
+                                    const BouncingScrollPhysics(
+                                      parent: AlwaysScrollableScrollPhysics(),
+                                    ),
+                                // One or the other: the framework takes a fixed
+                                // extent or a builder for it, never both.
+                                itemExtent: widget.extentOf == null
+                                    ? widget.itemExtent
+                                    : null,
+                                itemExtentBuilder: widget.extentOf == null
+                                    ? null
+                                    : (index, _) => _extentOf(index),
+                                itemCount: widget.itemCount,
+                                itemBuilder: (context, index) {
+                                  final selected = focused && index == _index;
+                                  return widget.itemBuilder(
+                                    context,
+                                    index,
+                                    selected,
+                                  );
+                                },
+                              ),
+                              // The rows past the top row: a list whose only give
+                              // is its scrolled-off head has nothing to show a bar
+                              // for.
+                              _extentBelowTopRow > constraints.maxHeight + 0.5,
+                            );
+                          },
+                        ),
                       ),
-                      // The cupertino feel, unconditionally, for whatever
-                      // the viewport itself scrolls: detent jogs land
-                      // exactly (jumps), a fling would ride a spring. The
-                      // overscroll past an edge is the band's, above -
-                      // nothing here springs against it.
-                      physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
-                      // One or the other: the framework takes a fixed
-                      // extent or a builder for it, never both.
-                      itemExtent: widget.extentOf == null
-                          ? widget.itemExtent
-                          : null,
-                      itemExtentBuilder: widget.extentOf == null
-                          ? null
-                          : (index, _) => _extentOf(index),
-                      itemCount: widget.itemCount,
-                      itemBuilder: (context, index) {
-                        final selected = focused && index == _index;
-                        return widget.itemBuilder(context, index, selected);
-                      },
                     ),
-                    // The rows past the top row: a list whose only give
-                    // is its scrolled-off head has nothing to show a bar
-                    // for.
-                    _extentBelowTopRow > constraints.maxHeight + 0.5,
                   ),
                 ),
-              ),
+                IgnorePointer(
+                  child: AnimatedSwitcher(
+                    duration: WheelList.modeTransition,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween(begin: 0.85, end: 1.0).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
+                        child: child,
+                      ),
+                    ),
+                    child: _letters
+                        ? _letterOverlay(context)
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ],
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _letterOverlay(BuildContext context) {
+    final theme = ThemeProvider.of(context);
+    final section = _sectionIndex;
+    final primary = theme.widgets.surface
+        .resolve(SemanticSwatch.primary, SurfaceVariant.soft)
+        .foreground;
+    final largeSize = (theme.typography.display.fontSize ?? 20) * 2.4;
+    final smallSize = (theme.typography.caption.fontSize ?? 12) * 1.4;
+    final rowHeight = largeSize * 1.2;
+    final content = Padding(
+      padding: EdgeInsets.all(theme.space.x4),
+      child: SizedBox(
+        width: largeSize * 2.5,
+        height: rowHeight * 3,
+        child: ClipRect(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: section.toDouble(), end: section.toDouble()),
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOutCubic,
+            builder: (context, position, _) => Stack(
+              children: [
+                for (var i = 0; i < _sections.length; i++)
+                  if ((i - position).abs() < 2)
+                    Positioned(
+                      key: ValueKey(('letter', i)),
+                      top: (1 + i - position) * rowHeight,
+                      left: 0,
+                      right: 0,
+                      height: rowHeight,
+                      child: Center(
+                        child: Text(
+                          _sections[i].$1,
+                          style: theme.typography.display.copyWith(
+                            color: Color.lerp(
+                              DefaultTextStyle.of(context).style.color,
+                              primary,
+                              (1 - (i - position).abs()).clamp(0.0, 1.0),
+                            ),
+                            fontSize:
+                                smallSize +
+                                (largeSize - smallSize) *
+                                    (1 - (i - position).abs()).clamp(0.0, 1.0),
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final surfaceBuilder = context
+        .dependOnInheritedWidgetOfExactType<WheelAcceleration>()
+        ?.surfaceBuilder;
+    return Center(
+      key: const ValueKey('WheelList.letters'),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child:
+            surfaceBuilder?.call(context, content) ??
+            Surface(swatch: SemanticSwatch.neutral, child: content),
       ),
     );
   }

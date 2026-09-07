@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Scroll tall dialogs as one card, including their title and actions, while preserving scrim dismissal.
+
 ## 0.2.0
 
 - Adopt a shared version and automated releases for all TomeUI libraries.

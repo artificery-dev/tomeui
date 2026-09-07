@@ -51,12 +51,64 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets(
+    'a tall dialog scrolls its title, content, and actions together',
+    (tester) async {
+      tester.view.physicalSize = const Size(480, 240);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        TomeApp(
+          home: Builder(
+            builder: (context) => Center(
+              child: Button(
+                center: const Text('open'),
+                onPressed: () => showDialog<void>(
+                  context,
+                  builder: (context) => Dialog(
+                    title: const Text('Long dialog'),
+                    content: const SizedBox(
+                      height: 400,
+                      child: Text('Contents'),
+                    ),
+                    actions: [
+                      Button(
+                        center: const Text('Done'),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await open(tester);
+      final titleTop = tester.getTopLeft(find.text('Long dialog')).dy;
+      expect(tester.getSize(find.byType(Dialog)).height, greaterThan(240));
+      await tester.dragFrom(const Offset(240, 160), const Offset(0, -400));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('Long dialog')).dy,
+        lessThan(titleTop),
+      );
+      expect(tester.getRect(find.text('Done')).bottom, lessThanOrEqualTo(240));
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+    },
+  );
+
   testWidgets('the slots read title, message, actions', (tester) async {
     await pumpPage(tester);
     await open(tester);
 
     final title = tester.getRect(find.text('Sign the manifest?'));
-    final message = tester.getRect(find.text('Nothing sails until it is signed.'));
+    final message = tester.getRect(
+      find.text('Nothing sails until it is signed.'),
+    );
     final action = tester.getRect(find.text('Sign'));
     expect(message.top, greaterThan(title.top));
     expect(action.top, greaterThan(message.top));

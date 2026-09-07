@@ -30,15 +30,90 @@ void main() {
     return wheel;
   }
 
-  double pull(WidgetTester tester) {
-    final transform = tester.widget<Transform>(
-      find
-          .descendant(
-            of: find.byType(WheelList),
-            matching: find.byType(Transform),
-          )
-          .first,
+  group('initial selection', () {
+    for (final variable in [false, true]) {
+      for (final selected in [25, 39]) {
+        testWidgets(
+          'reveals row $selected on the first frame (variable: $variable)',
+          (tester) async {
+            const viewport = Key('viewport');
+            const rowKey = Key('selected-row');
+            await tester.pumpWidget(
+              TomeApp(
+                home: Center(
+                  child: SizedBox(
+                    key: viewport,
+                    width: 240,
+                    height: 200,
+                    child: WheelList.builder(
+                      initialIndex: selected,
+                      itemCount: 40,
+                      itemExtent: 40,
+                      extentOf: variable ? (i) => i.isEven ? 28 : 72 : null,
+                      itemBuilder: (_, i, _) => SizedBox.expand(
+                        key: i == selected ? rowKey : null,
+                        child: Text('Row $i'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            // No extra frame or wheel jog: the selection must already be visible.
+            final bounds = tester.getRect(find.byKey(viewport));
+            final row = tester.getRect(find.byKey(rowKey));
+            expect(row.top, greaterThanOrEqualTo(bounds.top));
+            expect(row.bottom, lessThanOrEqualTo(bounds.bottom));
+            final position = tester
+                .state<ScrollableState>(find.byType(Scrollable))
+                .position;
+            expect(
+              position.pixels,
+              inInclusiveRange(0, position.maxScrollExtent),
+            );
+            expect(position.pixels, greaterThan(0));
+            final offset = position.pixels;
+            await tester.pump();
+            expect(
+              position.pixels,
+              offset,
+              reason: 'no jump after the first frame',
+            );
+          },
+        );
+      }
+    }
+
+    testWidgets(
+      'keeps an explicit top row when the selection is already visible',
+      (tester) async {
+        await tester.pumpWidget(
+          TomeApp(
+            home: Center(
+              child: SizedBox(
+                width: 240,
+                height: 200,
+                child: WheelList(
+                  initialIndex: 2,
+                  initialTopRow: 2,
+                  itemExtent: 40,
+                  children: [for (var i = 0; i < 4; i++) Text('Row $i')],
+                ),
+              ),
+            ),
+          ),
+        );
+        final position = tester
+            .state<ScrollableState>(find.byType(Scrollable))
+            .position;
+        expect(position.pixels, 80);
+        expect(position.maxScrollExtent, 80);
+      },
     );
+  });
+
+  double pull(WidgetTester tester) {
+    final transform = tester.widget<Transform>(find.byKey(WheelList.bandKey));
     return transform.transform.getTranslation().y;
   }
 
@@ -77,6 +152,13 @@ void main() {
     expect(bar.thumbVisibility, isTrue);
     expect(bar.trackVisibility, isTrue);
     expect(bar.minThumbLength, 40);
+    final theme = ThemeProvider.of(tester.element(find.byType(RawScrollbar)));
+    expect(
+      bar.thumbColor,
+      theme.widgets.surface
+          .resolve(SemanticSwatch.primary, SurfaceVariant.solid)
+          .fill,
+    );
   });
 
   group('wrapping at the ends', () {

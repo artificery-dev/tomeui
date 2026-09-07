@@ -1,3 +1,9 @@
+## Unreleased
+
+- Restore focused menu-hold intents with an optional fallback.
+- Add opt-in wheel acceleration and alphabetic section browsing.
+- Reveal initial list selection on the first frame, support custom scroll physics, and use primary scrollbar thumbs.
+
 # Changelog
 
 ## 0.2.0

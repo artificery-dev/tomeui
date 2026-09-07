@@ -237,6 +237,46 @@ void mutedTests() {
     expect(backs, 3);
   });
 
+  testWidgets('menu hold reaches the focused app before the fallback', (
+    tester,
+  ) async {
+    final wheel = ClickWheelController();
+    var menus = 0;
+    var backs = 0;
+    var fallback = 0;
+    await tester.pumpWidget(
+      TomeApp(
+        home: ClickWheelInput(
+          controller: wheel,
+          onMenuHold: () => fallback++,
+          child: Actions(
+            actions: {
+              WheelMenuIntent: CallbackAction<WheelMenuIntent>(
+                onInvoke: (_) => menus++,
+              ),
+              WheelBackIntent: CallbackAction<WheelBackIntent>(
+                onInvoke: (_) => backs++,
+              ),
+            },
+            child: const Focus(autofocus: true, child: SizedBox.expand()),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    wheel.menuDown();
+    await tester.pump(const Duration(milliseconds: 1600));
+    wheel.menuUp();
+    await tester.pump();
+    expect(menus, 1);
+    expect(backs, 0);
+    expect(fallback, 0);
+    wheel.hold(WheelButton.menu);
+    await tester.pump();
+    expect(menus, 2);
+    expect(WheelWord.of(const WheelMenuIntent()), WheelWord.hold);
+  });
+
   testWidgets('a muted wheel says nothing but power', (tester) async {
     var activations = 0;
     final presses = <PowerPress>[];

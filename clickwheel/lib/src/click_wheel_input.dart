@@ -93,7 +93,7 @@ class ClickWheelController {
   void powerUp() => _input?._power(down: false);
 
   /// The menu button as a key going down and coming up, for the hold: a
-  /// short press is back on release, a hold is [ClickWheelInput.onMenuHold].
+  /// short press is back on release, a hold is [WheelMenuIntent].
   /// [press] with [WheelButton.menu] is the short press said at once.
   void menuDown() => _input?._menu(down: true);
 
@@ -123,7 +123,7 @@ class ClickWheelController {
 ///    it and moves its own selection instead.
 ///  * center -> [ActivateIntent] on a press, [ActivateHoldIntent] on a
 ///    hold past [longPress], to whatever holds focus.
-///  * menu -> [WheelBackIntent] on a press; a hold is [onMenuHold].
+///  * menu -> [WheelBackIntent] on a press; a hold is [WheelMenuIntent].
 ///  * prev / next / play-pause -> [MediaIntent], focus-independent, with
 ///    `held` for the long press.
 ///  * volume -> [VolumeIntent], likewise; held, it repeats.
@@ -185,9 +185,8 @@ class ClickWheelInput extends StatefulWidget {
   /// volume rocker's) are reported.
   final ValueChanged<WheelWord>? onWord;
 
-  /// The menu button held for [holdThreshold]. With a listener the button
-  /// speaks on release - back, if it was let go in time - so a hold is
-  /// never also a press; without one it speaks on press, as it always did.
+  /// Fallback for [WheelMenuIntent] when the focused app has no handler.
+  /// A hold fires after [holdThreshold] and never also dispatches Back.
   final VoidCallback? onMenuHold;
 
   /// Whether the wheel is to say nothing. Its keys are still claimed -
@@ -205,7 +204,7 @@ class ClickWheelInput extends StatefulWidget {
   /// would have activated is not activated - while the media buttons, the
   /// volume rocker and the power chord speak as they do awake. Menu, in
   /// either of its words, says nothing: back would move the player blind,
-  /// and the dock would come up over a screen nobody can see. [muted]
+  /// and an app menu would open over a screen nobody can see. [muted]
   /// wins when both are set.
   final bool asleep;
 
@@ -327,8 +326,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     WheelButton.volumeDown => const VolumeIntent(-1),
   };
 
-  /// The long word of a button: what a hold says. Menu's is not an
-  /// intent but [ClickWheelInput.onMenuHold]; the volume keys' is a
+  /// The long word of a button: what a hold says. Menu's is
+  /// [WheelMenuIntent]; the volume keys' is a
   /// repeat of the short one.
   static Intent _long(WheelButton button) => switch (button) {
     WheelButton.select => const ActivateHoldIntent(),
@@ -338,9 +337,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     ),
     WheelButton.next => const MediaIntent(MediaCommand.next, held: true),
     WheelButton.playPause => const MediaIntent(MediaCommand.toggle, held: true),
-    WheelButton.menu ||
-    WheelButton.volumeUp ||
-    WheelButton.volumeDown => _short(button),
+    WheelButton.menu => const WheelMenuIntent(),
+    WheelButton.volumeUp || WheelButton.volumeDown => _short(button),
   };
 
   /// Which buttons are down, and whether their hold has spoken.
@@ -407,10 +405,6 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   /// The menu key, when a hold means something: back on a release that
   /// comes in time, the hold at the threshold, and nothing twice.
   void _menu({required bool down}) {
-    if (widget.onMenuHold == null) {
-      if (down) _dispatch(const WheelBackIntent());
-      return;
-    }
     if (down) {
       if (_menuDown) return; // a repeat of a key already down
       _menuDown = true;
@@ -419,8 +413,7 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
       _menuTimer = Timer(widget.holdThreshold, () {
         if (!_menuDown || widget.muted || widget.asleep) return;
         _menuHeld = true;
-        widget.onWord?.call(WheelWord.hold);
-        widget.onMenuHold!();
+        _dispatch(const WheelMenuIntent());
       });
     } else {
       if (!_menuDown) return;
@@ -579,8 +572,8 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     }
     if (widget.asleep) {
       // Menu is silent either way: back would move the player blind, and
-      // the dock would come up over a screen nobody can see.
-      if (intent is WheelBackIntent) return;
+      // an app menu would open over a screen nobody can see.
+      if (intent is WheelBackIntent || intent is WheelMenuIntent) return;
       // The wheel is silent unless the dark is set to let it be the
       // volume, which is what a thumb in a pocket is reaching for when it
       // is reaching for anything.
@@ -683,6 +676,12 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
             // the intent was dispatched (the focused screen, inside the
             // navigator) - this widget itself stands above it.
             WheelBackIntent: _WheelBackAction(),
+            WheelMenuIntent: CallbackAction<WheelMenuIntent>(
+              onInvoke: (_) {
+                widget.onMenuHold?.call();
+                return null;
+              },
+            ),
             if (widget.onMedia != null || widget.onMediaHold != null)
               MediaIntent: CallbackAction<MediaIntent>(
                 onInvoke: (intent) {
