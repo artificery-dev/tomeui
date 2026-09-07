@@ -1,0 +1,24 @@
+name: Checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Analyze, test, and validate packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Test release automation
+        run: python3 -m unittest discover -s tool -p '*_test.py' -v
+      - name: Resolve, analyze, and test the workspace
+        run: just check
+      - name: Validate all publication archives
+        run: just --no-deps publish all --dry-run

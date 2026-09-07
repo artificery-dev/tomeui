@@ -9,3 +9,4 @@ pubspec.lock
 build/
 coverage/
 **/doc/api/
+__pycache__/

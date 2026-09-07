@@ -60,6 +60,11 @@ during development and from pub.dev when installed by consumers.
 
 ## Publishing
 
+GitHub Actions validates pull requests and automatically publishes version bumps
+merged into `main`. Complete the one-time
+[CI/CD setup guide](docs/CI_CD_SETUP.md) to enable pub.dev trusted publishing.
+The commands below remain available for local validation and manual publishing.
+
 Update package versions, matching dependency constraints, and changelogs, then
 commit the release changes before publishing. Each publish task resolves,
 analyzes, and tests the workspace first, then publishes the committed files

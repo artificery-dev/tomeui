@@ -1,0 +1,84 @@
+name: Publish
+run-name: Publish ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - 'tomeui-v*'
+      - 'tomeui_desktop-v*'
+      - 'tomeui_clickwheel-v*'
+  # GITHUB_TOKEN tag pushes do not start workflows. CI explicitly dispatches
+  # this workflow on the tag, which gives pub.dev the required tag OIDC ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      package: ${{ steps.tag.outputs.package }}
+      version: ${{ steps.tag.outputs.version }}
+      pending: ${{ steps.tag.outputs.pending }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a matching version tag on main
+        id: tag
+        run: python3 tool/release.py validate-tag
+
+  checks:
+    needs: validate
+    if: needs.validate.outputs.pending == 'true'
+    uses: ./.github/workflows/checks.yml
+
+  publish:
+    name: Upload to pub.dev
+    needs: [validate, checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: pub-dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      # setup-dart provisions the short-lived pub.dev OIDC credential. Flutter
+      # is installed afterwards so its matching Dart SDK remains first on PATH.
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1
+        with:
+          sdk: '3.12.2'
+      - uses: ./.github/actions/setup
+      - name: Wait for the core dependency to be available
+        env:
+          RELEASE_PACKAGE: ${{ needs.validate.outputs.package }}
+        run: python3 tool/release.py wait-core "$RELEASE_PACKAGE"
+      - name: Stage the committed package outside the workspace
+        id: stage
+        env:
+          RELEASE_PACKAGE: ${{ needs.validate.outputs.package }}
+        run: python3 tool/release.py stage "$RELEASE_PACKAGE"
+      - name: Resolve dependencies from pub.dev
+        working-directory: ${{ steps.stage.outputs.directory }}
+        run: flutter pub get
+      - name: Validate the package against hosted dependencies
+        working-directory: ${{ steps.stage.outputs.directory }}
+        run: flutter pub publish --dry-run
+      - name: Publish with GitHub OIDC
+        working-directory: ${{ steps.stage.outputs.directory }}
+        run: flutter pub publish --force
+      - name: Confirm the published version is available
+        env:
+          RELEASE_PACKAGE: ${{ needs.validate.outputs.package }}
+        run: python3 tool/release.py wait-version "$RELEASE_PACKAGE"
