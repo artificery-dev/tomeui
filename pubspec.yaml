@@ -2,7 +2,7 @@ name: tomeui
 description: >-
   Tome UI: a Flutter UI toolkit built directly on the widgets layer,
   standalone from material and cupertino.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/artificery-dev/tomeui
 issue_tracker: https://github.com/artificery-dev/tomeui/issues
 topics:

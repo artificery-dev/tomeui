@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- Adopt a shared version and automated releases for all TomeUI libraries.
+
 ## 0.1.0
 
 - First pub.dev release, with MIT licensing and complete bundled font notices.

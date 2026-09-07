@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- Adopt a shared version and automated releases for all TomeUI libraries.
+- Update the core TomeUI dependency to `^0.2.0`.
+
 ## 0.1.0
 
 - Initial release of the `window_manager` adapter for TomeUI's `WindowShell`.
