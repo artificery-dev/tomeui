@@ -308,11 +308,15 @@ class SkeletonResolver {
     final palette = _theme.palette;
 
     return SkeletonStyle(
-      fill:
-          SurfaceResolver(
-            _theme,
-          ).resolve(SemanticSwatch.neutral, SurfaceVariant.subtle).fill ??
-          palette.divider,
+      // The gradient needs an opaque base even when subtle surfaces are
+      // translucent, otherwise its sheen develops two bright shoulders.
+      fill: Color.alphaBlend(
+        SurfaceResolver(
+              _theme,
+            ).resolve(SemanticSwatch.neutral, SurfaceVariant.subtle).fill ??
+            palette.divider,
+        palette.background,
+      ),
       sheen: palette.text.withValues(alpha: _theme.opacities.hover),
       radius: _theme.radii.small,
       lineHeight: _theme.space.x3,

@@ -3,10 +3,21 @@ description: >-
   Tome UI: a Flutter UI toolkit built directly on the widgets layer,
   standalone from material and cupertino.
 version: 0.1.0
-publish_to: none
+repository: https://github.com/artificery-dev/tomeui
+issue_tracker: https://github.com/artificery-dev/tomeui/issues
+topics:
+  - widgets
+  - ui
+  - design-system
+
+workspace:
+  - clickwheel
+  - desktop
+  - playground
 
 environment:
   sdk: ^3.12.2
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:

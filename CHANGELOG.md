@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.1.0
+
+- First pub.dev release, with MIT licensing and complete bundled font notices.
+- Keep the skeleton shimmer's base opaque when subtle surfaces are translucent.
+- Preserve the text selection menu when a right-click first focuses a field.
 
 - **`tomeui_clickwheel` joins the repository** (in `clickwheel/` beside
   `desktop/`): the click-wheel grammar for devices that are a wheel, five
@@ -69,6 +73,4 @@
   the semantic [Icons] tokens through the single tomeui import, without a
   direct dependency on `lucide_icons_flutter`.
 
-## 0.1.0
-
-- Initial scaffold: re-exports `flutter/widgets.dart` as the toolkit's base.
+- Initial release of the complete toolkit, built on `flutter/widgets.dart`.

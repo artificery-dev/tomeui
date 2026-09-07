@@ -256,14 +256,14 @@ void main() {
       theme.widgets.surface
           .resolve(SemanticSwatch.primary, SurfaceVariant.subtle)
           .fill,
-      const Palette().primary.s950,
+      const Palette().primary.s950.withValues(alpha: 0.82),
     );
     // ...while neutral wears the one named for it.
     expect(
       theme.widgets.surface
           .resolve(SemanticSwatch.neutral, SurfaceVariant.subtle)
           .fill,
-      const Palette().neutral.s900,
+      const Palette().neutral.s900.withValues(alpha: 0.82),
     );
   });
 

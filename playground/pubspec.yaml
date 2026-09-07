@@ -1,6 +1,7 @@
 name: tomeui_playground
 description: "A new Flutter project."
 publish_to: "none"
+resolution: workspace
 
 version: 1.0.0+1
 
@@ -11,8 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.9
-  tomeui:
-    path: ../
+  tomeui: ^0.1.0
   re_highlight: ^0.0.3
 
 dev_dependencies:

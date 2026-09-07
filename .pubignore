@@ -1,0 +1,17 @@
+# .pubignore replaces .gitignore for the published archive.
+.dart_tool/
+.flutter-plugins-dependencies
+.fvm/
+pubspec.lock
+pubspec_overrides.yaml
+build/
+coverage/
+**/doc/api/
+
+# Publish the child libraries separately; the playground stays in GitHub.
+/clickwheel/
+/desktop/
+/playground/
+/PLANNING.md
+/Justfile
+/tool/

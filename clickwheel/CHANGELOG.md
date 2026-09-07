@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0
 
 - Moved into the tomeui repository as `clickwheel/` and renamed
   `tomeui_clickwheel` (was `tomeui_click_wheel`, beside its consumer).

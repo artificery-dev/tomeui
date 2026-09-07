@@ -264,6 +264,11 @@ class _TextFieldState extends State<TextField>
 
   void _focusChanged() => setState(() {});
 
+  // Keep the builder's identity stable when focus redraws the field so the
+  // selection overlay is not recreated while its context menu is opening.
+  static Widget _contextMenu(BuildContext context, EditableTextState state) =>
+      TextSelectionMenu(editableTextState: state);
+
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
@@ -306,8 +311,7 @@ class _TextFieldState extends State<TextField>
       showSelectionHandles: _showHandles,
       onSelectionChanged: _selectionChanged,
       contextMenuBuilder:
-          widget.contextMenuBuilder ??
-          (context, state) => TextSelectionMenu(editableTextState: state),
+          widget.contextMenuBuilder ?? _contextMenu,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       // The gesture detector below owns the pointer; the renderer taking it

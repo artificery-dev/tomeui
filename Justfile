@@ -26,6 +26,35 @@ bootstrap:
 analyze:
   @{{flutter}} analyze
 
-# The widget test suite
+# The widget test suites across the workspace
 test:
   @{{flutter}} test
+  @(cd clickwheel && {{flutter}} test)
+  @(cd playground && {{flutter}} test)
+
+# Resolve, analyze, and test before publishing
+check: bootstrap analyze test
+
+# Publish all libraries in dependency order, or select tomeui/desktop/clickwheel.
+# Preview: just publish all --dry-run. Upload: just publish all --force.
+publish package="all" *args: check
+  #!/usr/bin/env bash
+  set -euo pipefail
+  case '{{package}}' in
+    all) packages=(. desktop clickwheel) ;;
+    tomeui) packages=(.) ;;
+    desktop|tomeui_desktop) packages=(desktop) ;;
+    clickwheel|tomeui_clickwheel) packages=(clickwheel) ;;
+    *) echo 'Expected all, tomeui, desktop, or clickwheel.' >&2; exit 2 ;;
+  esac
+  if [[ -n "$(git status --porcelain)" ]]; then
+    echo 'Commit or stash changes before publishing.' >&2
+    exit 1
+  fi
+  # A Git-free copy prevents the root .pubignore from hiding child packages.
+  release_dir="$(mktemp -d)"
+  trap 'rm -rf "$release_dir"' EXIT
+  git archive HEAD | tar -x -C "$release_dir"
+  for directory in "${packages[@]}"; do
+    (cd "$release_dir/$directory" && '{{flutter}}' pub publish {{args}})
+  done

@@ -16,11 +16,10 @@ class Shade {
   });
 
   /// The same stop in both modes.
-  const Shade.fixed(num stop, {Swatch? on, double? alpha})
+  const Shade.fixed(num stop, {Swatch? on, this.alpha})
     : light = stop,
       dark = stop,
-      swatch = on,
-      alpha = alpha;
+      swatch = on;
 
   final num light;
   final num dark;
