@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class PlatformWidget extends StatelessWidget {
@@ -16,7 +15,8 @@ class PlatformWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget widget;
 
-    if (Platform.isIOS || Platform.isMacOS) {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
       widget = cupertino(context);
     } else {
       widget = material(context);

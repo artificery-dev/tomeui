@@ -66,3 +66,7 @@ publish package="all" *args: check
 # Build the web playground for GitHub Pages; use / for a root-domain deployment.
 playground-web base_href="/tomeui/": bootstrap
   @(cd playground && '{{flutter}}' build web --release --base-href '{{base_href}}')
+
+# Exercise the playground in a real browser to catch web-only runtime failures.
+playground-web-test: bootstrap
+  @(cd playground && '{{flutter}}' test --platform chrome)

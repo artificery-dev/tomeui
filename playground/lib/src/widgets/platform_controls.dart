@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -7,17 +6,25 @@ import 'platform_widget.dart';
 
 /// The ambient accent for playground chrome (selection pills, rings) —
 /// resolved from whichever design language the shell is running in.
-Color platformAccent(BuildContext context) => Platform.isIOS || Platform.isMacOS
+Color platformAccent(BuildContext context) =>
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS)
     ? CupertinoTheme.of(context).primaryColor
     : Theme.of(context).colorScheme.primary;
 
 /// The hairline between the shell's columns.
-Color platformDivider(BuildContext context) => Platform.isIOS || Platform.isMacOS
+Color platformDivider(BuildContext context) =>
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS)
     ? CupertinoColors.separator.resolveFrom(context)
     : Theme.of(context).dividerColor;
 
 class PlatformSwitch extends StatelessWidget {
-  const PlatformSwitch({required this.value, required this.onChanged, super.key});
+  const PlatformSwitch({
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
 
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -79,8 +86,10 @@ class _PlatformTextFieldState extends State<PlatformTextField> {
 
   @override
   Widget build(BuildContext context) => PlatformWidget(
-    cupertino: (_) =>
-        CupertinoTextField(controller: _controller, onChanged: widget.onChanged),
+    cupertino: (_) => CupertinoTextField(
+      controller: _controller,
+      onChanged: widget.onChanged,
+    ),
     material: (_) => TextField(
       controller: _controller,
       onChanged: widget.onChanged,
@@ -178,9 +187,7 @@ class PlatformTabSwitch extends StatelessWidget {
   Widget build(BuildContext context) => PlatformWidget(
     cupertino: (_) => CupertinoSlidingSegmentedControl<int>(
       groupValue: index,
-      children: {
-        for (var i = 0; i < labels.length; i++) i: Text(labels[i]),
-      },
+      children: {for (var i = 0; i < labels.length; i++) i: Text(labels[i])},
       onValueChanged: (value) {
         if (value != null) onChanged(value);
       },

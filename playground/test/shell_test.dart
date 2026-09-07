@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Placeholder;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tomeui/tomeui.dart' as tome;
@@ -27,6 +29,23 @@ void main() {
       view.resetDevicePixelRatio();
     });
   });
+
+  testWidgets(
+    'the shell opens with platform-appropriate chrome',
+    (tester) async {
+      await tester.pumpWidget(const PlaygroundApp());
+      expect(tester.takeException(), isNull);
+      final apple =
+          defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS;
+      expect(find.byType(apple ? CupertinoApp : MaterialApp), findsOneWidget);
+      expect(inList('Theme'), findsOneWidget);
+      await tapInList(tester, 'Foundation');
+      expect(inList('Surface'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant.all(),
+  );
 
   testWidgets('lists the catalog: Theme on top, flat single-story rows', (
     tester,

@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -95,7 +94,9 @@ class _Chevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cupertino = Platform.isIOS || Platform.isMacOS;
+    final cupertino =
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS);
     return Icon(
       open
           ? (cupertino ? CupertinoIcons.chevron_down : Icons.expand_more)
