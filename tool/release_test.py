@@ -34,18 +34,23 @@ class ReleaseTests(unittest.TestCase):
         for package in release.PACKAGES:
             self.bump(package, "0.1.1")
         plan = release.release_plan(self.root, lambda _: {"0.1.0"})
-        self.assertEqual([item["package"] for item in plan], list(release.PACKAGES))
-        self.assertEqual(plan[1]["tag"], "tomeui_desktop-v0.1.1")
+        self.assertEqual(plan, [{"version": "0.1.1", "tag": "v0.1.1", "packages": list(release.PACKAGES)}])
 
-    def test_only_bumped_package_is_released(self):
+    def test_mismatched_versions_fail_before_network_access(self):
         self.bump("tomeui_clickwheel", "0.1.1")
-        plan = release.release_plan(self.root, lambda _: {"0.1.0"})
-        self.assertEqual([item["package"] for item in plan], ["tomeui_clickwheel"])
+        fetch = Mock()
+        with self.assertRaisesRegex(ValueError, "same version"):
+            release.release_plan(self.root, fetch)
+        fetch.assert_not_called()
+
+    def test_partial_release_retains_shared_tag(self):
+        plan = release.release_plan(self.root, lambda p: {"0.1.0"} if p == "tomeui" else {"0.0.1"})
+        self.assertEqual(plan, [{"version": "0.1.0", "tag": "v0.1.0", "packages": ["tomeui_desktop", "tomeui_clickwheel"]}])
 
     def test_numeric_version_order(self):
-        self.bump("tomeui", "0.10.0")
-        versions = lambda name: {"0.9.0"} if name == "tomeui" else {"0.1.0"}
-        self.assertEqual(release.release_plan(self.root, versions)[0]["version"], "0.10.0")
+        for package in release.PACKAGES:
+            self.bump(package, "0.10.0")
+        self.assertEqual(release.release_plan(self.root, lambda _: {"0.9.0"})[0]["version"], "0.10.0")
 
     def test_downgrade_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "older"):
@@ -87,32 +92,32 @@ class ReleaseTests(unittest.TestCase):
                 release.published_versions("tomeui")
 
     def test_tag_must_match_manifest(self):
-        self.assertEqual(release.resolve_tag("tomeui-v0.1.0", self.root), ("tomeui", "0.1.0"))
-        for tag in ["main", "tomeui-v0.1.1", "tomeui_playground-v1.0.0", "tomeui-v0.1.0/evil"]:
+        self.assertEqual(release.resolve_tag("v0.1.0", self.root), "0.1.0")
+        for tag in ["main", "tomeui-v0.1.0", "v0.1.1", "tomeui_playground-v1.0.0", "v0.1.0/evil"]:
             with self.subTest(tag=tag), self.assertRaises(ValueError):
                 release.resolve_tag(tag, self.root)
 
     def test_dispatch_creates_tag_then_explicitly_starts_workflow(self):
         api = Mock(side_effect=[HTTPError("https://github.com", 404, "Not found", {}, None), {}, None])
-        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "tomeui-v0.1.1"}, "abc", api)
-        self.assertEqual(api.call_args_list[1].kwargs["body"], {"ref": "refs/tags/tomeui-v0.1.1", "sha": "abc"})
-        self.assertEqual(api.call_args_list[2].kwargs["body"], {"ref": "tomeui-v0.1.1"})
+        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "v0.1.1"}, "abc", api)
+        self.assertEqual(api.call_args_list[1].kwargs["body"], {"ref": "refs/tags/v0.1.1", "sha": "abc"})
+        self.assertEqual(api.call_args_list[2].kwargs["body"], {"ref": "v0.1.1"})
 
     def test_dispatch_reuses_matching_tag_for_retry(self):
         api = Mock(side_effect=[{"object": {"type": "commit", "sha": "abc"}}, None])
-        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "tomeui-v0.1.1"}, "abc", api)
+        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "v0.1.1"}, "abc", api)
         self.assertEqual(api.call_count, 2)
         self.assertIn("dispatches", api.call_args.args[0])
 
     def test_dispatch_rejects_tag_collision_without_mutating(self):
         api = Mock(return_value={"object": {"type": "commit", "sha": "different"}})
         with self.assertRaisesRegex(ValueError, "Refusing to move"):
-            release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "tomeui-v0.1.1"}, "abc", api)
+            release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "v0.1.1"}, "abc", api)
         self.assertEqual(api.call_count, 1)
 
     def test_dispatch_handles_annotated_tags(self):
         api = Mock(side_effect=[{"object": {"type": "tag", "sha": "annotation"}}, {"object": {"type": "commit", "sha": "abc"}}, None])
-        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "tomeui-v0.1.1"}, "abc", api)
+        release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "v0.1.1"}, "abc", api)
         self.assertEqual(api.call_args_list[1].args[0], "git/tags/annotation")
 
     def test_waits_for_dependency_propagation(self):
@@ -138,6 +143,32 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("version: 0.1.0", (staged / "pubspec.yaml").read_text())
         self.assertEqual((staged / "pubspec_overrides.yaml").read_text(), "resolution:\nworkspace: []\n")
         self.assertFalse((staged.parent / ".git").exists())
+
+    def test_publication_order_waits_and_skips_existing_packages(self):
+        events = []
+        def stage(package, root):
+            directory = self.root / ("stage-" + package)
+            directory.mkdir()
+            return directory if package == "tomeui" else directory / release.PACKAGES[package]
+        def run(command, **kwargs):
+            events.append(command[-1])
+        def wait(package, version):
+            events.append(package)
+        release.publish_release(self.root, lambda p: {"0.1.0"} if p == "tomeui" else {"0.0.1"}, stage, run, wait)
+        self.assertEqual(events, ["get", "--dry-run", "--force", "tomeui_desktop", "get", "--dry-run", "--force", "tomeui_clickwheel"])
+        self.assertFalse(list(self.root.glob("stage-*")))
+
+    def test_failed_upload_stops_release_and_cleans_staging(self):
+        directory = self.root / "stage"
+        directory.mkdir()
+        stage = Mock(return_value=directory)
+        wait = Mock()
+        run = Mock(side_effect=[None, None, subprocess.CalledProcessError(1, "publish")])
+        with self.assertRaises(subprocess.CalledProcessError):
+            release.publish_release(self.root, lambda _: {"0.0.1"}, stage, run, wait)
+        stage.assert_called_once_with("tomeui", self.root)
+        wait.assert_not_called()
+        self.assertFalse(directory.exists())
 
     def test_workflow_outputs_are_written(self):
         output = self.root / "output"
@@ -174,7 +205,7 @@ class ReleaseTests(unittest.TestCase):
     def test_github_api_failure_does_not_create_tags(self):
         api = Mock(side_effect=HTTPError("https://github.com", 403, "Forbidden", {}, None))
         with self.assertRaises(HTTPError):
-            release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "tomeui-v0.1.1"}, "abc", api)
+            release.dispatch_release({"package": "tomeui", "version": "0.1.1", "tag": "v0.1.1"}, "abc", api)
         self.assertEqual(api.call_count, 1)
 
 

@@ -32,8 +32,12 @@ test:
   @(cd clickwheel && {{flutter}} test)
   @(cd playground && {{flutter}} test)
 
+# Require one shared stable version and release notes across the libraries
+versions:
+  @python3 tool/release.py check-version
+
 # Resolve, analyze, and test before publishing
-check: bootstrap analyze test
+check: versions bootstrap analyze test
 
 # Publish all libraries in dependency order, or select tomeui/desktop/clickwheel.
 # Preview: just publish all --dry-run. Upload: just publish all --force.

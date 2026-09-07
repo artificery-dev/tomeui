@@ -10,3 +10,6 @@ build/
 coverage/
 **/doc/api/
 __pycache__/
+
+# Personal CI/CD setup notes
+/doc/CI_CD_SETUP.md

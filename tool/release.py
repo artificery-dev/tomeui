@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -91,19 +92,27 @@ def published_versions(package: str) -> set[str]:
     return {item["version"] for item in data["versions"]}
 
 
-def release_plan(root: Path = ROOT, fetch=published_versions) -> list[dict[str, str]]:
+def shared_version(root: Path = ROOT) -> str:
+    version = package_version("tomeui", root)
+    for package in PACKAGES:
+        if package_version(package, root) != version:
+            raise ValueError("All TomeUI libraries must have the same version")
+        require_changelog(package, version, root)
+    return version
+
+
+def release_plan(root: Path = ROOT, fetch=published_versions) -> list[dict]:
+    version = shared_version(root)
     pending = []
     for package in PACKAGES:
-        version = package_version(package, root)
-        require_changelog(package, version, root)
         existing = fetch(package)
         if version in existing:
             continue
         stable = [stable_version(v) for v in existing if STABLE_VERSION.fullmatch(v)]
         if stable and stable_version(version) <= max(stable):
             raise ValueError(f"{package}: {version} is older than its latest stable release")
-        pending.append({"package": package, "version": version, "tag": f"{package}-v{version}"})
-    return pending
+        pending.append(package)
+    return [{"version": version, "tag": f"v{version}", "packages": pending}] if pending else []
 
 
 def github(path: str, *, method="GET", body=None):
@@ -134,7 +143,7 @@ def dispatch_release(release: dict[str, str], sha: str, api=github) -> None:
         if target["type"] != "commit" or target["sha"] != sha:
             raise ValueError(f"Refusing to move {tag}; it already points to a different commit")
     api("actions/workflows/publish.yml/dispatches", method="POST", body={"ref": tag})
-    print(f"Dispatched {release['package']} {release['version']} at {sha}", flush=True)
+    print(f"Dispatched TomeUI {release['version']} at {sha}", flush=True)
 
 
 def output(key: str, value: str) -> None:
@@ -146,17 +155,14 @@ def output(key: str, value: str) -> None:
             stream.write(f"{key}={value}\n")
 
 
-def resolve_tag(tag: str, root: Path = ROOT) -> tuple[str, str]:
-    for package in PACKAGES:
-        prefix = f"{package}-v"
-        if tag.startswith(prefix):
-            version = tag[len(prefix):]
-            stable_version(version)
-            if package_version(package, root) != version:
-                raise ValueError(f"Tag {tag} does not match {package}'s pubspec version")
-            require_changelog(package, version, root)
-            return package, version
-    raise ValueError(f"Not a TomeUI package release tag: {tag!r}")
+def resolve_tag(tag: str, root: Path = ROOT) -> str:
+    if not tag.startswith("v"):
+        raise ValueError(f"Not a TomeUI release tag: {tag!r}")
+    version = tag[1:]
+    stable_version(version)
+    if shared_version(root) != version:
+        raise ValueError(f"Tag {tag} does not match the shared pubspec version")
+    return version
 
 
 def wait_for_version(package: str, version: str, *, timeout=600, fetch=published_versions,
@@ -184,14 +190,38 @@ def stage_package(package: str, root: Path = ROOT) -> Path:
     return directory
 
 
+def publish_release(root: Path = ROOT, fetch=published_versions, stage=stage_package,
+                    run=subprocess.run, wait=wait_for_version) -> None:
+    plan = release_plan(root, fetch)
+    if not plan:
+        print("All package versions are already published")
+        return
+    release = plan[0]
+    for package in release["packages"]:
+        directory = stage(package, root)
+        try:
+            for command in [["flutter", "pub", "get"],
+                            ["flutter", "pub", "publish", "--dry-run"],
+                            ["flutter", "pub", "publish", "--force"]]:
+                run(command, cwd=directory, check=True)
+            wait(package, release["version"])
+        finally:
+            shutil.rmtree(directory if package == "tomeui" else directory.parent)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["plan", "dispatch", "validate-tag", "stage", "wait-core", "wait-version"])
+    parser.add_argument("command", choices=["check-version", "plan", "dispatch", "validate-tag", "publish", "stage", "wait-core", "wait-version"])
     parser.add_argument("package", nargs="?", choices=PACKAGES)
     args = parser.parse_args()
     if args.command in {"stage", "wait-core", "wait-version"} and not args.package:
         parser.error("this command requires a package name")
-    if args.command == "plan":
+    if args.command == "check-version":
+        print(shared_version())
+    elif args.command == "publish":
+        resolve_tag(os.environ.get("GITHUB_REF_NAME", ""))
+        publish_release()
+    elif args.command == "plan":
         print(json.dumps(release_plan(), indent=2))
     elif args.command == "dispatch":
         if os.environ.get("GITHUB_REPOSITORY") != REPOSITORY or os.environ.get("GITHUB_REF") != "refs/heads/main":
@@ -211,10 +241,9 @@ def main() -> None:
         if os.environ.get("GITHUB_REPOSITORY") != REPOSITORY or os.environ.get("GITHUB_REF_TYPE") != "tag":
             raise ValueError("Publishing requires a version tag in this repository")
         subprocess.run(["git", "merge-base", "--is-ancestor", "HEAD", "origin/main"], cwd=ROOT, check=True)
-        package, version = resolve_tag(os.environ["GITHUB_REF_NAME"])
-        output("package", package)
+        version = resolve_tag(os.environ["GITHUB_REF_NAME"])
         output("version", version)
-        output("pending", str(version not in published_versions(package)).lower())
+        output("pending", str(bool(release_plan())).lower())
     elif args.command == "stage":
         output("directory", str(stage_package(args.package)))
     elif args.command == "wait-core":

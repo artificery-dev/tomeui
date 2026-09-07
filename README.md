@@ -60,12 +60,13 @@ during development and from pub.dev when installed by consumers.
 
 ## Publishing
 
-GitHub Actions validates pull requests and automatically publishes version bumps
-merged into `main`. Complete the one-time
-[CI/CD setup guide](doc/CI_CD_SETUP.md) to enable pub.dev trusted publishing.
+GitHub Actions validates pull requests and publishes shared version bumps merged
+into `main` using a single `vX.Y.Z` tag. All three libraries use the same version
+and publish together, in dependency order.
 The commands below remain available for local validation and manual publishing.
 
-Update package versions, matching dependency constraints, and changelogs, then
+Update all three package versions to the same stable `X.Y.Z`, update matching
+dependency constraints and all three changelogs, then
 commit the release changes before publishing. Each publish task resolves,
 analyzes, and tests the workspace first, then publishes the committed files
 from a temporary copy. Git and tar must be available on PATH.
@@ -78,7 +79,7 @@ just publish all --force   # publish tomeui, then desktop, then clickwheel
 The playground is never published. Each child package is excluded from the
 root package archive and published separately.
 
-To publish only a changed package, or resume after a partial release:
+To resume an interrupted manual release, select a remaining package:
 
 ```sh
 just publish desktop --force
