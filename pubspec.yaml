@@ -32,7 +32,7 @@ flutter:
     - family: Recursive
       fonts:
         - asset: fonts/Recursive.ttf
-    # Symbols Nerd Font Mono (MIT, license alongside): glyphs only, bound
+    # Symbols Nerd Font Mono (component licenses alongside): glyphs only, bound
     # as [NerdFontIcons]. The Mono cut keeps every glyph in one cell, which
     # is what an Icon wants.
     - family: SymbolsNerdFontMono
