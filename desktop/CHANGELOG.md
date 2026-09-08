@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- Update the core TomeUI dependency to `^0.3.0`; desktop behavior is unchanged.
+
 ## 0.2.0
 
 - Adopt a shared version and automated releases for all TomeUI libraries.

@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.9
-  tomeui: ^0.2.0
+  tomeui: ^0.3.0
   re_highlight: ^0.0.3
 
 dev_dependencies:

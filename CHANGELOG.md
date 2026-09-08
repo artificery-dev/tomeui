@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - Scroll tall dialogs as one card, including their title and actions, while preserving scrim dismissal.
 

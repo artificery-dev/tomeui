@@ -1,4 +1,4 @@
-## Unreleased
+## 0.3.0
 
 - Restore focused menu-hold intents with an optional fallback.
 - Add opt-in wheel acceleration and alphabetic section browsing.
