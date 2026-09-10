@@ -59,9 +59,13 @@ publish package="all" *args: check
   release_dir="$(mktemp -d)"
   trap 'rm -rf "$release_dir"' EXIT
   git archive HEAD | tar -x -C "$release_dir"
-  # The published pubspec must not name the workspace (tool/release.py does
-  # the same for CI releases).
+  # The published pubspec must not name the workspace, and each package then
+  # resolves on its own against hosted dependencies (tool/release.py does the
+  # same for CI releases; pub never uploads pubspec_overrides.yaml).
   python3 -c 'import sys; sys.path.insert(0, "tool"); import release; from pathlib import Path; p = Path(sys.argv[1]); p.write_text(release.without_workspace(p.read_text()))' "$release_dir/pubspec.yaml"
+  for directory in . desktop clickwheel; do
+    printf 'resolution:\nworkspace: []\n' > "$release_dir/$directory/pubspec_overrides.yaml"
+  done
   for directory in "${packages[@]}"; do
     (cd "$release_dir/$directory" && '{{flutter}}' pub publish {{args}})
   done
