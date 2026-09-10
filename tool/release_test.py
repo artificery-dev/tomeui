@@ -151,6 +151,20 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(run.call_count, 2)
         sleep.assert_called_once_with(10)
         self.assertEqual(run.call_args.args[0], ["flutter", "pub", "get"])
+        self.assertNotIn("PUB_TOKEN", run.call_args.kwargs["env"])
+
+    def test_only_the_upload_carries_the_pub_credential(self):
+        directory = self.root / "stage"
+        directory.mkdir()
+        calls = []
+        def run(command, **kwargs):
+            calls.append((command[-1], kwargs.get("env")))
+        with patch.dict(os.environ, {"PUB_TOKEN": "secret"}):
+            release.publish_release(self.root, lambda p: {"0.0.1"} if p == "tomeui" else {"0.1.0"}, Mock(return_value=directory), run, Mock())
+        self.assertEqual([c[0] for c in calls], ["get", "--dry-run", "--force"])
+        self.assertNotIn("PUB_TOKEN", calls[0][1])
+        self.assertNotIn("PUB_TOKEN", calls[1][1])
+        self.assertIsNone(calls[2][1])
 
     def test_dependency_resolution_failure_is_bounded(self):
         run = Mock(side_effect=subprocess.CalledProcessError(1, "pub get"))

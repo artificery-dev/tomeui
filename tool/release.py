@@ -190,6 +190,21 @@ def stage_package(package: str, root: Path = ROOT) -> Path:
     return directory
 
 
+def unauthenticated_environment(environment=None) -> dict[str, str]:
+    """The publish job's pub.dev credential, withheld.
+
+    setup-dart registers the job's OIDC token for pub.dev, and pub then sends
+    it on every request to that host, including version listings. pub.dev
+    rejects the token outside the upload endpoint, which made the first
+    `flutter pub get` (the SDK resolving its own tool packages into an empty
+    cache) fail with "doesn't match any versions". Only the upload needs the
+    credential; without the variable, pub warns and continues anonymously.
+    """
+    environment = dict(os.environ if environment is None else environment)
+    environment.pop("PUB_TOKEN", None)
+    return environment
+
+
 def resolve_dependencies(directory: Path, *, run=subprocess.run, timeout=600,
                          sleep=time.sleep, now=time.monotonic) -> None:
     # The package API can see a new core release before pub's resolver does.
@@ -197,7 +212,8 @@ def resolve_dependencies(directory: Path, *, run=subprocess.run, timeout=600,
     deadline = now() + timeout
     while True:
         try:
-            run(["flutter", "pub", "get"], cwd=directory, check=True)
+            run(["flutter", "pub", "get"], cwd=directory, check=True,
+                env=unauthenticated_environment())
             return
         except subprocess.CalledProcessError:
             if now() >= deadline:
@@ -217,9 +233,9 @@ def publish_release(root: Path = ROOT, fetch=published_versions, stage=stage_pac
         directory = stage(package, root)
         try:
             resolve_dependencies(directory, run=run)
-            for command in [["flutter", "pub", "publish", "--dry-run"],
-                            ["flutter", "pub", "publish", "--force"]]:
-                run(command, cwd=directory, check=True)
+            run(["flutter", "pub", "publish", "--dry-run"], cwd=directory, check=True,
+                env=unauthenticated_environment())
+            run(["flutter", "pub", "publish", "--force"], cwd=directory, check=True)
             wait(package, release["version"])
         finally:
             shutil.rmtree(directory if package == "tomeui" else directory.parent)
