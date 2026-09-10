@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+- No library changes; the shared version moves with `tomeui`, whose published pubspec no longer names the workspace.
+
 ## 0.3.2
 
 - No library changes; the shared version moves with `tomeui_clickwheel`.

@@ -1,3 +1,7 @@
+## 0.3.3
+
+- No library changes; the shared version moves with `tomeui`, whose published pubspec no longer names the workspace.
+
 ## 0.3.2
 
 - `WheelAcceleration` takes the letter browsing timings: `letterEntry`, how long the wheel must keep turning one way before the letters open, and `letterIdle`, how long they stay open after the wheel goes still.

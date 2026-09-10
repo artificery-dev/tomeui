@@ -178,12 +178,27 @@ def wait_for_version(package: str, version: str, *, timeout=600, fetch=published
         sleep(10)
 
 
+def without_workspace(pubspec: str) -> str:
+    """Drop a top-level `workspace:` block from a pubspec.
+
+    The workspace is a fact about this repository, not about the package.
+    Pub uploads pubspec.yaml as it is, and a hosted package that still names
+    a workspace breaks its dependents: whenever pub builds their package
+    graph (`dart test` or `dart run` in a workspace member after the fast
+    up-to-date check fails) it expands the workspace of every package in the
+    graph and stops at the first missing sibling.
+    """
+    return re.sub(r"^workspace:[ \t]*(?:#[^\n]*)?\n(?:[ \t]+[^\n]*\n|[ \t]*\n)*", "", pubspec, count=1, flags=re.MULTILINE)
+
+
 def stage_package(package: str, root: Path = ROOT) -> Path:
     release_dir = Path(tempfile.mkdtemp(prefix="tomeui-release-", dir=os.environ.get("RUNNER_TEMP")))
     archive = subprocess.check_output(["git", "archive", "HEAD"], cwd=root)
     with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
         bundle.extractall(release_dir, filter="data")
     directory = release_dir / PACKAGES[package]
+    pubspec = directory / "pubspec.yaml"
+    pubspec.write_text(without_workspace(pubspec.read_text()))
     # Validate against hosted dependencies, not sibling workspace sources. Pub
     # always excludes this override from the uploaded package archive.
     (directory / "pubspec_overrides.yaml").write_text("resolution:\nworkspace: []\n")

@@ -134,6 +134,23 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.output("package", "tomeui\npending=true")
 
+    def test_published_pubspec_names_no_workspace(self):
+        pubspec = ("name: tomeui\nversion: 0.1.0\n\nworkspace:\n  - clickwheel\n  - desktop  # comment\n"
+                   "  - playground\n\nenvironment:\n  sdk: ^3.12.2\n")
+        self.assertEqual(release.without_workspace(pubspec),
+                         "name: tomeui\nversion: 0.1.0\n\nenvironment:\n  sdk: ^3.12.2\n")
+        self.assertEqual(release.without_workspace("name: tomeui_desktop\nversion: 0.1.0\n"),
+                         "name: tomeui_desktop\nversion: 0.1.0\n")
+        (self.root / "pubspec.yaml").write_text(pubspec)
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init"], cwd=self.root, check=True)
+        with patch.dict(os.environ, {"RUNNER_TEMP": self.temp.name}):
+            staged = release.stage_package("tomeui", self.root)
+        self.assertNotIn("workspace", (staged / "pubspec.yaml").read_text())
+        self.assertIn("environment:\n  sdk: ^3.12.2\n", (staged / "pubspec.yaml").read_text())
+        self.assertIn("workspace:", (self.root / "pubspec.yaml").read_text())
+
     def test_stage_uses_committed_files_and_isolates_resolution(self):
         for args in [["init", "-q"], ["add", "."], ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "Fixture"]]:
             subprocess.run(["git", *args], cwd=self.root, check=True)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+- The published pubspec no longer names the repository workspace. Pub uploads the file as it is, and a hosted package that declares a workspace broke `dart test` and `dart run` in dependents' workspace members whenever pub rebuilt their package graph.
+
 ## 0.3.2
 
 - No library changes; the shared version moves with `tomeui_clickwheel`.
