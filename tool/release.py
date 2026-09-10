@@ -190,18 +190,27 @@ def stage_package(package: str, root: Path = ROOT) -> Path:
     return directory
 
 
-def unauthenticated_environment(environment=None) -> dict[str, str]:
-    """The publish job's pub.dev credential, withheld.
+_ANONYMOUS_CONFIG: Path | None = None
 
-    setup-dart registers the job's OIDC token for pub.dev, and pub then sends
-    it on every request to that host, including version listings. pub.dev
-    rejects the token outside the upload endpoint, which made the first
-    `flutter pub get` (the SDK resolving its own tool packages into an empty
-    cache) fail with "doesn't match any versions". Only the upload needs the
-    credential; without the variable, pub warns and continues anonymously.
+
+def unauthenticated_environment(environment=None) -> dict[str, str]:
+    """An environment in which pub has no pub.dev credential at all.
+
+    setup-dart registers the job's OIDC token for pub.dev in pub's token
+    store, and pub then sends it on every request to that host, including
+    version listings, which pub.dev rejects outside the upload endpoint. A
+    registered credential whose PUB_TOKEN variable is missing is worse: pub
+    aborts with exit code 65. The first `flutter pub get` of the job is the
+    SDK resolving its own tool packages into an empty cache, so it must see
+    no credential. Resolution and validation therefore run with an empty
+    config directory, hiding the token store; only the upload uses it.
     """
+    global _ANONYMOUS_CONFIG
+    if _ANONYMOUS_CONFIG is None:
+        _ANONYMOUS_CONFIG = Path(tempfile.mkdtemp(prefix="tomeui-anonymous-", dir=os.environ.get("RUNNER_TEMP")))
     environment = dict(os.environ if environment is None else environment)
     environment.pop("PUB_TOKEN", None)
+    environment["XDG_CONFIG_HOME"] = str(_ANONYMOUS_CONFIG)
     return environment
 
 

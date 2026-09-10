@@ -166,6 +166,15 @@ class ReleaseTests(unittest.TestCase):
         self.assertNotIn("PUB_TOKEN", calls[1][1])
         self.assertIsNone(calls[2][1])
 
+    def test_anonymous_environment_hides_the_pub_token_store(self):
+        with patch.dict(os.environ, {"PUB_TOKEN": "secret", "XDG_CONFIG_HOME": "/home/runner/.config"}):
+            env = release.unauthenticated_environment()
+        self.assertNotIn("PUB_TOKEN", env)
+        config = Path(env["XDG_CONFIG_HOME"])
+        self.assertNotEqual(str(config), "/home/runner/.config")
+        self.assertTrue(config.is_dir())
+        self.assertEqual(list(config.iterdir()), [])
+
     def test_dependency_resolution_failure_is_bounded(self):
         run = Mock(side_effect=subprocess.CalledProcessError(1, "pub get"))
         sleep = Mock()
