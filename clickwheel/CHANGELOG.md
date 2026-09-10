@@ -1,3 +1,8 @@
+## 0.3.2
+
+- `WheelAcceleration` takes the letter browsing timings: `letterEntry`, how long the wheel must keep turning one way before the letters open, and `letterIdle`, how long they stay open after the wheel goes still.
+- The letters show how long they have left as a bar along their foot, filled again by every turn of the wheel.
+
 ## 0.3.1
 
 - Open letter browsing after 600 ms of sustained scrolling in one direction instead of 1.5 s.

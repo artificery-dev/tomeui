@@ -10,10 +10,22 @@ class WheelAcceleration extends InheritedWidget {
   const WheelAcceleration({
     required this.enabled,
     this.surfaceBuilder,
+    this.letterEntry = WheelList.letterEntry,
+    this.letterIdle = WheelList.accelerationIdle,
     required super.child,
     super.key,
   });
   final bool enabled;
+
+  /// How long the wheel must keep turning one way, in an ordered list,
+  /// before the letters open.
+  final Duration letterEntry;
+
+  /// How long the letters stay open after the wheel goes still.
+  final Duration letterIdle;
+
+  static WheelAcceleration? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<WheelAcceleration>();
 
   /// Dresses the letter overlay using the host app’s surface treatment.
   final Widget Function(BuildContext context, Widget child)? surfaceBuilder;
@@ -25,7 +37,9 @@ class WheelAcceleration extends InheritedWidget {
   @override
   bool updateShouldNotify(WheelAcceleration oldWidget) =>
       enabled != oldWidget.enabled ||
-      surfaceBuilder != oldWidget.surfaceBuilder;
+      surfaceBuilder != oldWidget.surfaceBuilder ||
+      letterEntry != oldWidget.letterEntry ||
+      letterIdle != oldWidget.letterIdle;
 }
 
 /// How a [WheelList] row is drawn: the item at [index], told whether it is
@@ -117,6 +131,9 @@ class WheelList extends StatefulWidget {
   final String? Function(int index)? sectionOf;
 
   static const bandKey = ValueKey('WheelList.band');
+
+  /// The bar along the foot of the letters that shows the time left.
+  static const lettersClockKey = ValueKey('WheelList.letters.clock');
   static const accelerationMinimum = 30;
   static const accelerationIdle = Duration(seconds: 1);
   static const accelerationEntry = Duration(milliseconds: 500);
@@ -520,10 +537,21 @@ class _WheelListState extends State<WheelList>
   int? _gestureSection;
   bool get _letters => _accelerated && _sections.length > 1;
 
+  /// The letters' timings, from [WheelAcceleration] or the defaults.
+  Duration _letterEntry = WheelList.letterEntry;
+  Duration _letterIdle = WheelList.accelerationIdle;
+
+  /// Counts the wheel's words while the letters are up: each restarts the
+  /// clock the overlay draws, and a new key restarts its animation.
+  int _letterClock = 0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _accelerationEnabled = WheelAcceleration.of(context);
+    final acceleration = WheelAcceleration.maybeOf(context);
+    _letterEntry = acceleration?.letterEntry ?? WheelList.letterEntry;
+    _letterIdle = acceleration?.letterIdle ?? WheelList.accelerationIdle;
     _managedAcceleration =
         context.getInheritedWidgetOfExactType<WheelAcceleration>() != null;
     if (!_accelerationEnabled) _resetAcceleration();
@@ -600,7 +628,7 @@ class _WheelListState extends State<WheelList>
         _sustained = false;
         _entryTimer?.cancel();
         _entryTimer = Timer(
-          ordered ? WheelList.letterEntry : WheelList.accelerationEntry,
+          ordered ? _letterEntry : WheelList.accelerationEntry,
           () {
             _sustained = true;
           },
@@ -614,9 +642,13 @@ class _WheelListState extends State<WheelList>
       _paceTimer?.cancel();
       _paceTimer = Timer(Duration(milliseconds: fast ? 160 : 90), () {});
       _accelerationTimer?.cancel();
-      _accelerationTimer = Timer(WheelList.accelerationIdle, () {
-        if (mounted) setState(_dismissAcceleration);
-      });
+      _accelerationTimer = Timer(
+        ordered ? _letterIdle : WheelList.accelerationIdle,
+        () {
+          if (mounted) setState(_dismissAcceleration);
+        },
+      );
+      _letterClock++;
     }
     final enteringLetters = !_accelerated && fast && _sections.length > 1;
     if (_accelerated != fast) setState(() => _accelerated = fast);
@@ -869,47 +901,88 @@ class _WheelListState extends State<WheelList>
     final largeSize = (theme.typography.display.fontSize ?? 20) * 2.4;
     final smallSize = (theme.typography.caption.fontSize ?? 12) * 1.4;
     final rowHeight = largeSize * 1.2;
-    final content = Padding(
-      padding: EdgeInsets.all(theme.space.x4),
-      child: SizedBox(
-        width: largeSize * 2.5,
-        height: rowHeight * 3,
-        child: ClipRect(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: section.toDouble(), end: section.toDouble()),
-            duration: const Duration(milliseconds: 100),
-            curve: Curves.easeOutCubic,
-            builder: (context, position, _) => Stack(
-              children: [
-                for (var i = 0; i < _sections.length; i++)
-                  if ((i - position).abs() < 2)
-                    Positioned(
-                      key: ValueKey(('letter', i)),
-                      top: (1 + i - position) * rowHeight,
-                      left: 0,
-                      right: 0,
-                      height: rowHeight,
-                      child: Center(
-                        child: Text(
-                          _sections[i].$1,
-                          style: theme.typography.display.copyWith(
-                            color: Color.lerp(
-                              DefaultTextStyle.of(context).style.color,
-                              primary,
-                              (1 - (i - position).abs()).clamp(0.0, 1.0),
-                            ),
-                            fontSize:
-                                smallSize +
-                                (largeSize - smallSize) *
-                                    (1 - (i - position).abs()).clamp(0.0, 1.0),
+    final letters = SizedBox(
+      width: largeSize * 2.5,
+      height: rowHeight * 3,
+      child: ClipRect(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: section.toDouble(), end: section.toDouble()),
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOutCubic,
+          builder: (context, position, _) => Stack(
+            children: [
+              for (var i = 0; i < _sections.length; i++)
+                if ((i - position).abs() < 2)
+                  Positioned(
+                    key: ValueKey(('letter', i)),
+                    top: (1 + i - position) * rowHeight,
+                    left: 0,
+                    right: 0,
+                    height: rowHeight,
+                    child: Center(
+                      child: Text(
+                        _sections[i].$1,
+                        style: theme.typography.display.copyWith(
+                          color: Color.lerp(
+                            DefaultTextStyle.of(context).style.color,
+                            primary,
+                            (1 - (i - position).abs()).clamp(0.0, 1.0),
                           ),
+                          fontSize:
+                              smallSize +
+                              (largeSize - smallSize) *
+                                  (1 - (i - position).abs()).clamp(0.0, 1.0),
                         ),
                       ),
                     ),
-              ],
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+    // The time left before the letters go, along the foot: a bar that
+    // drains over the idle time and fills again at every word from the
+    // wheel. The clock in the key restarts the tween.
+    // As wide as the letters: the column sits in a FittedBox, which gives
+    // it no width of its own to take a fraction of.
+    final clock = SizedBox(
+      width: largeSize * 2.5,
+      height: theme.strokes.hairline * 3,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TweenAnimationBuilder<double>(
+          key: ValueKey(('WheelList.letters.clock', _letterClock)),
+          tween: Tween(begin: 1.0, end: 0.0),
+          duration: _letterIdle,
+          builder: (context, remaining, _) => FractionallySizedBox(
+            key: WheelList.lettersClockKey,
+            widthFactor: remaining,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: primary,
+                borderRadius: BorderRadius.circular(theme.strokes.hairline),
+              ),
+              child: const SizedBox.expand(),
             ),
           ),
         ),
+      ),
+    );
+    final content = Padding(
+      padding: EdgeInsets.fromLTRB(
+        theme.space.x4,
+        theme.space.x4,
+        theme.space.x4,
+        theme.space.x2,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          letters,
+          SizedBox(height: theme.space.x2),
+          clock,
+        ],
       ),
     );
     final surfaceBuilder = context

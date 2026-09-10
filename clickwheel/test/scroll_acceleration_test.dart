@@ -11,6 +11,8 @@ void main() {
     WidgetTester tester, {
     bool alphabetical = false,
     int count = 100,
+    Duration letterEntry = WheelList.letterEntry,
+    Duration letterIdle = WheelList.accelerationIdle,
   }) async {
     wheel = ClickWheelController();
     enabled = ValueNotifier(true);
@@ -25,6 +27,8 @@ void main() {
             valueListenable: enabled,
             builder: (context, on, _) => WheelAcceleration(
               enabled: on,
+              letterEntry: letterEntry,
+              letterIdle: letterIdle,
               child: Center(
                 child: SizedBox(
                   width: 175,
@@ -133,6 +137,46 @@ void main() {
     expect(activated, -1);
     wheel.press(WheelButton.select);
     expect(activated, 20);
+  });
+
+  testWidgets('the letters show how long they have left, and a turn of the '
+      'wheel fills it again', (tester) async {
+    await pump(tester, alphabetical: true, count: 200);
+    await accelerate(tester);
+    await tester.pump(WheelList.modeTransition);
+    final clock = find.byKey(WheelList.lettersClockKey);
+    expect(clock, findsOneWidget);
+    final early = tester.widget<FractionallySizedBox>(clock).widthFactor!;
+    await tester.pump(const Duration(milliseconds: 300));
+    final later = tester.widget<FractionallySizedBox>(clock).widthFactor!;
+    expect(later, lessThan(early));
+    await jog(tester);
+    await tester.pump();
+    expect(tester.widget<FractionallySizedBox>(clock).widthFactor, 1.0);
+    await tester.pump(WheelList.accelerationIdle);
+    await tester.pumpAndSettle();
+    expect(clock, findsNothing);
+  });
+
+  testWidgets('the letters open and close on the timings WheelAcceleration '
+      'gives', (tester) async {
+    await pump(
+      tester,
+      alphabetical: true,
+      letterEntry: const Duration(milliseconds: 200),
+      letterIdle: const Duration(milliseconds: 300),
+    );
+    final overlay = find.byKey(const ValueKey('WheelList.letters'));
+    await jog(tester);
+    await jog(tester, delay: 150);
+    expect(overlay, findsNothing, reason: '150 ms is short of the entry');
+    await jog(tester, delay: 100);
+    expect(overlay, findsOneWidget, reason: '250 ms in one direction');
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(overlay, findsOneWidget, reason: 'still within the idle time');
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pumpAndSettle();
+    expect(overlay, findsNothing, reason: '300 ms idle closes the letters');
   });
 
   testWidgets('overlay has one neighbor per side and a larger primary letter', (

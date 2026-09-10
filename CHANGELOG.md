@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- No library changes; the shared version moves with `tomeui_clickwheel`.
+
 ## 0.3.1
 
 - No library changes; the shared version moves with `tomeui_clickwheel`.
