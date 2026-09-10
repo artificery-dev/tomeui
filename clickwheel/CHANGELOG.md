@@ -1,3 +1,9 @@
+## 0.3.1
+
+- Open letter browsing after 600 ms of sustained scrolling in one direction instead of 1.5 s.
+- Letter browsing opens on the letter where the gesture began, so the detent that opens the picker no longer skips a letter after scrolling through rows.
+- Committing a letter puts its first row at the top of the list.
+
 ## 0.3.0
 
 - Restore focused menu-hold intents with an optional fallback.

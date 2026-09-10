@@ -120,7 +120,7 @@ class WheelList extends StatefulWidget {
   static const accelerationMinimum = 30;
   static const accelerationIdle = Duration(seconds: 1);
   static const accelerationEntry = Duration(milliseconds: 500);
-  static const letterEntry = Duration(milliseconds: 1500);
+  static const letterEntry = Duration(milliseconds: 600);
   static const modeTransition = Duration(milliseconds: 180);
 
   final int itemCount;
@@ -517,6 +517,7 @@ class _WheelListState extends State<WheelList>
   bool _managedAcceleration = false;
   List<(String, int)> _sections = [];
   int? _letterSection;
+  int? _gestureSection;
   bool get _letters => _accelerated && _sections.length > 1;
 
   @override
@@ -537,6 +538,7 @@ class _WheelListState extends State<WheelList>
     _direction = 0;
     _accelerated = false;
     _letterSection = null;
+    _gestureSection = null;
   }
 
   void _dismissAcceleration() {
@@ -545,8 +547,12 @@ class _WheelListState extends State<WheelList>
     _resetAcceleration();
     if (next != _index) {
       _index = next;
-      _reveal();
       widget.onSelectionChanged?.call(next);
+    }
+    if (section != null && _controllerReady && _controller.hasClients) {
+      _controller.jumpTo(
+        _offsetOf(next).clamp(0.0, _controller.position.maxScrollExtent),
+      );
     }
   }
 
@@ -588,7 +594,8 @@ class _WheelListState extends State<WheelList>
           ? _accelerationTimer?.isActive != true ||
                 _direction != intent.amount.sign
           : _paceTimer?.isActive != true || _direction != intent.amount.sign;
-      if (restart) {
+      if (restart && !_letters) {
+        _gestureSection = _sectionIndex;
         _burst = 0;
         _sustained = false;
         _entryTimer?.cancel();
@@ -611,7 +618,15 @@ class _WheelListState extends State<WheelList>
         if (mounted) setState(_dismissAcceleration);
       });
     }
+    final enteringLetters = !_accelerated && fast && _sections.length > 1;
     if (_accelerated != fast) setState(() => _accelerated = fast);
+    if (enteringLetters) {
+      // Keep the letter where this gesture began. The detent that opens the
+      // picker must not also skip a letter after scrolling through rows.
+      setState(() => _letterSection = _gestureSection ?? _sectionIndex);
+      if (_stretched) _release();
+      return;
+    }
     if (_letters) {
       final section = (_sectionIndex + intent.amount).clamp(
         0,

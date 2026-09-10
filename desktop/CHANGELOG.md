@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- No library changes; the shared version moves with `tomeui_clickwheel`.
+
 ## 0.3.0
 
 - Update the core TomeUI dependency to `^0.3.0`; desktop behavior is unchanged.
