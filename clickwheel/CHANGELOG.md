@@ -1,3 +1,7 @@
+## 0.3.5
+
+- `WheelList` takes a `header`: something above the rows that scrolls away with them, laid out at its own height, which the list measures, and never selected. A page whose heading and lead used to shrink to leave the rows room can scroll as one instead.
+
 ## 0.3.4
 
 - No library changes; the shared version moves with `tomeui`, whose indeterminate progress bar now shuttles instead of jumping.

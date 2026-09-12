@@ -449,4 +449,66 @@ void platformScrollbarTests() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
+
+  headerTests();
+}
+
+void headerTests() {
+  group('header', () {
+    Future<ClickWheelController> pumpWithHeader(WidgetTester tester) async {
+      final wheel = ClickWheelController();
+      await tester.pumpWidget(
+        TomeApp(
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              ClickWheelInput(controller: wheel, child: child!),
+          home: Center(
+            child: SizedBox(
+              height: 200,
+              child: WheelList(
+                itemExtent: 40,
+                autofocus: true,
+                header: const SizedBox(height: 120, child: Text('Lead')),
+                children: [for (var i = 0; i < 12; i++) Text('Row $i')],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return wheel;
+    }
+
+    testWidgets('opens with the header in view and the first row under it', (
+      tester,
+    ) async {
+      await pumpWithHeader(tester);
+      final top = tester.getTopLeft(find.byType(WheelList)).dy;
+      expect(find.text('Lead'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Lead')).dy, top);
+      expect(tester.getTopLeft(find.text('Row 0')).dy, top + 120);
+    });
+
+    testWidgets('scrolls away with the rows, and the selected row is '
+        'revealed past it', (tester) async {
+      final wheel = await pumpWithHeader(tester);
+      final list = tester.getRect(find.byType(WheelList));
+      wheel.jog(11);
+      await tester.pumpAndSettle();
+      // Scrolled off the top: past the list's reach, or above its edge.
+      final lead = find.text('Lead');
+      if (lead.evaluate().isNotEmpty) {
+        expect(tester.getRect(lead).bottom, lessThanOrEqualTo(list.top));
+      }
+      final last = tester.getRect(find.text('Row 11'));
+      expect(last.bottom, lessThanOrEqualTo(list.bottom));
+      expect(last.top, greaterThanOrEqualTo(list.top));
+      wheel.jog(-11);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('Row 0')).dy,
+        greaterThanOrEqualTo(list.top),
+      );
+    });
+  });
 }

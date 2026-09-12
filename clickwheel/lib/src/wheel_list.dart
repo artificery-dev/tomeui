@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/physics.dart' show SpringDescription, SpringSimulation;
+import 'package:flutter/rendering.dart' show RenderProxyBox;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:tomeui/tomeui.dart';
 
 import 'intents.dart';
@@ -104,6 +106,7 @@ class WheelList extends StatefulWidget {
     this.autofocus = false,
     this.wrap = false,
     this.scrollPhysics,
+    this.header,
     super.key,
   }) : itemCount = children.length,
        itemBuilder = ((context, index, selected) =>
@@ -123,8 +126,16 @@ class WheelList extends StatefulWidget {
     this.autofocus = false,
     this.wrap = false,
     this.scrollPhysics,
+    this.header,
     super.key,
   });
+
+  /// Something above the rows that scrolls away with them: a page's heading
+  /// and its lead, so a page that overflows the panel scrolls as one rather
+  /// than pinching its lead to make room for the rows. Laid out at its own
+  /// height, which the list measures; the wheel never selects it, and the
+  /// list opens with it in view.
+  final Widget? header;
 
   /// A section label for alphabetically ordered rows. Null rows are skipped
   /// by section navigation (for example, Back and Options above file names).
@@ -328,7 +339,10 @@ class _WheelListState extends State<WheelList>
   /// opening on a saved selection never paints the top and then jumps away.
   void _initializeScroll(double viewport) {
     if (_controllerReady) return;
-    var offset = _offsetOf(widget.initialTopRow);
+    // The top row at the top - or, for the first row, the header above it.
+    var offset = widget.initialTopRow == 0
+        ? 0.0
+        : _offsetOf(widget.initialTopRow);
     if (widget.itemCount > 0) {
       final top = _offsetOf(_index);
       final bottom = top + _extentOf(_index);
@@ -355,11 +369,21 @@ class _WheelListState extends State<WheelList>
   double _extentOf(int index) =>
       widget.extentOf?.call(index) ?? widget.itemExtent;
 
-  /// The top of row [index], and - at `itemCount` - the bottom of the last.
+  /// The header's height once it has been laid out; nothing until then, and
+  /// nothing when there is no header.
+  double _headerExtent = 0;
+
+  void _headerMeasured(double extent) {
+    if (extent == _headerExtent || !mounted) return;
+    setState(() => _headerExtent = extent);
+  }
+
+  /// The top of row [index], and - at `itemCount` - the bottom of the last:
+  /// past the header, then the rows before it.
   double _offsetOf(int index) {
     final offsets = _offsets;
-    if (offsets == null) return index * widget.itemExtent;
-    return offsets[index.clamp(0, offsets.length - 1)];
+    if (offsets == null) return _headerExtent + index * widget.itemExtent;
+    return _headerExtent + offsets[index.clamp(0, offsets.length - 1)];
   }
 
   /// Every row's height, from the top down. Cheap enough to do outright:
@@ -836,20 +860,43 @@ class _WheelListState extends State<WheelList>
                                       parent: AlwaysScrollableScrollPhysics(),
                                     ),
                                 // One or the other: the framework takes a fixed
-                                // extent or a builder for it, never both.
-                                itemExtent: widget.extentOf == null
+                                // extent or a builder for it, never both. With a
+                                // header the list lays every child out at its
+                                // own height - the header's is only known once
+                                // it has been - so the rows are sized here.
+                                itemExtent:
+                                    widget.extentOf == null &&
+                                        widget.header == null
                                     ? widget.itemExtent
                                     : null,
-                                itemExtentBuilder: widget.extentOf == null
+                                itemExtentBuilder:
+                                    widget.extentOf == null ||
+                                        widget.header != null
                                     ? null
                                     : (index, _) => _extentOf(index),
-                                itemCount: widget.itemCount,
+                                itemCount:
+                                    widget.itemCount +
+                                    (widget.header == null ? 0 : 1),
                                 itemBuilder: (context, index) {
+                                  if (widget.header case final header?) {
+                                    if (index == 0) {
+                                      return _MeasuredHeader(
+                                        onExtent: _headerMeasured,
+                                        child: header,
+                                      );
+                                    }
+                                    index -= 1;
+                                  }
                                   final selected = focused && index == _index;
-                                  return widget.itemBuilder(
+                                  final row = widget.itemBuilder(
                                     context,
                                     index,
                                     selected,
+                                  );
+                                  if (widget.header == null) return row;
+                                  return SizedBox(
+                                    height: _extentOf(index),
+                                    child: row,
                                   );
                                 },
                               ),
@@ -997,5 +1044,42 @@ class _WheelListState extends State<WheelList>
             Surface(swatch: SemanticSwatch.neutral, child: content),
       ),
     );
+  }
+}
+
+/// Lays its child out at the child's own height and reports that height,
+/// after the frame, to the list that needs it for its arithmetic.
+class _MeasuredHeader extends SingleChildRenderObjectWidget {
+  const _MeasuredHeader({required this.onExtent, required super.child});
+
+  final ValueChanged<double> onExtent;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderMeasuredHeader(onExtent);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderMeasuredHeader renderObject,
+  ) {
+    renderObject.onExtent = onExtent;
+  }
+}
+
+class _RenderMeasuredHeader extends RenderProxyBox {
+  _RenderMeasuredHeader(this.onExtent);
+
+  ValueChanged<double> onExtent;
+  double? _reported;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final extent = size.height;
+    if (extent == _reported) return;
+    _reported = extent;
+    // Not during layout: the list rebuilds on it.
+    SchedulerBinding.instance.addPostFrameCallback((_) => onExtent(extent));
   }
 }
