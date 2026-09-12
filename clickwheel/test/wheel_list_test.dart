@@ -506,8 +506,9 @@ void headerTests() {
       wheel.jog(-11);
       await tester.pumpAndSettle();
       expect(
-        tester.getTopLeft(find.text('Row 0')).dy,
-        greaterThanOrEqualTo(list.top),
+        tester.getTopLeft(find.text('Lead')).dy,
+        list.top,
+        reason: 'back at the first row, the header is back in view',
       );
     });
   });

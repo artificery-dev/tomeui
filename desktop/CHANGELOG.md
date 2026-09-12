@@ -1,3 +1,7 @@
+## 0.3.5
+
+- No library changes; the shared version moves with `tomeui_clickwheel`, whose wheel list can now carry a header that scrolls away with its rows.
+
 # Changelog
 
 ## 0.3.4

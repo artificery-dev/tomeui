@@ -753,8 +753,13 @@ class _WheelListState extends State<WheelList>
     if (!animate && position.isScrollingNotifier.value) {
       _controller.jumpTo(position.pixels);
     }
-    final top = _offsetOf(_index);
-    final bottom = top + _extentOf(_index);
+    final bottom = _offsetOf(_index) + _extentOf(_index);
+    // Back at the first row, the header comes back with it, where the two
+    // fit the viewport together; a header taller than that yields to the
+    // row.
+    final top = _index == 0 && bottom <= position.viewportDimension
+        ? 0.0
+        : _offsetOf(_index);
     double? target;
     if (top < position.pixels) {
       target = top;
