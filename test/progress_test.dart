@@ -157,6 +157,43 @@ void main() {
     expect(fill.widthFactor, 1);
   });
 
+  testWidgets('the sweep shuttles between the ends and never jumps', (
+    tester,
+  ) async {
+    await pump(tester, const SizedBox(width: 200, child: Progress.bar()));
+    final period = const Theme().widgets.progress
+        .resolve(SemanticSwatch.primary)
+        .period;
+    double x() => tester
+        .widget<FractionallySizedBox>(
+          find.descendant(
+            of: find.byType(Progress),
+            matching: find.byType(FractionallySizedBox),
+          ),
+        )
+        .alignment
+        .resolve(TextDirection.ltr)
+        .x;
+    // Sixty samples across a full period: out to the far end by the
+    // middle, home again by the end, and no step between neighbours wider
+    // than the eye would read as a jump.
+    final steps = <double>[x()];
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(period ~/ 60);
+      steps.add(x());
+    }
+    expect(steps.first, closeTo(-1, 0.01), reason: 'starts at the near end');
+    expect(steps[30], closeTo(1, 0.05), reason: 'reaches the far end midway');
+    expect(steps.last, closeTo(-1, 0.05), reason: 'is home again');
+    for (var i = 1; i < steps.length; i++) {
+      expect(
+        (steps[i] - steps[i - 1]).abs(),
+        lessThan(0.2),
+        reason: 'no jump between frame ${i - 1} and $i',
+      );
+    }
+  });
+
   testWidgets('work of unknown length moves; measured work does not', (
     tester,
   ) async {

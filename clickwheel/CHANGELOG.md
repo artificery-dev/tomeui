@@ -1,3 +1,7 @@
+## 0.3.4
+
+- No library changes; the shared version moves with `tomeui`, whose indeterminate progress bar now shuttles instead of jumping.
+
 ## 0.3.3
 
 - No library changes; the shared version moves with `tomeui`, whose published pubspec no longer names the workspace.

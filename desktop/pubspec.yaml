@@ -2,7 +2,7 @@ name: tomeui_desktop
 description: >-
   The desktop window behind Tome UI: the window_manager-backed WindowShell
   that gives TitleBar a real window to drag, maximise, and close.
-version: 0.3.3
+version: 0.3.4
 repository: https://github.com/artificery-dev/tomeui/tree/main/desktop
 issue_tracker: https://github.com/artificery-dev/tomeui/issues
 topics:

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.4
+
+- An indeterminate `Progress.bar` shuttles its segment between the ends of the track, easing into each turn, instead of parking at one end and jumping back to the other.
+
 ## 0.3.3
 
 - The published pubspec no longer names the repository workspace. Pub uploads the file as it is, and a hosted package that declares a workspace broke `dart test` and `dart run` in dependents' workspace members whenever pub rebuilt their package graph.

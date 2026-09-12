@@ -175,8 +175,9 @@ class _ProgressState extends State<Progress>
   );
 }
 
-/// The travelling segment of an indeterminate bar: out from the leading
-/// edge, across, and away past the trailing one.
+/// The travelling segment of an indeterminate bar: from the leading edge
+/// to the trailing one and back again, a shuttle rather than a conveyor,
+/// so there is never a jump for the eye to catch.
 class _Sweep extends StatelessWidget {
   const _Sweep({
     required this.progress,
@@ -193,17 +194,16 @@ class _Sweep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Travels a full width and a segment beyond, so it leaves the far edge
-    // completely before it comes back to the near one.
-    final start = progress * (1 + _length) - _length;
+    // One period is one round trip: out over the first half, back over the
+    // second, easing into each end so the turn reads as a turn and not a
+    // bounce.
+    final there = 1 - (progress * 2 - 1).abs();
+    final along = Curves.easeInOut.transform(there);
     return FractionallySizedBox(
       widthFactor: _length,
-      alignment: Alignment(
-        // Alignment -1 puts the segment's left edge on the track's left;
-        // +1 puts its right edge on the right.
-        (start / (1 - _length)).clamp(0.0, 1.0) * 2 - 1,
-        0,
-      ),
+      // Alignment -1 puts the segment's leading edge on the track's; +1
+      // puts its trailing edge on the track's.
+      alignment: Alignment(along * 2 - 1, 0),
       child: DecoratedBox(
         decoration: BoxDecoration(color: color, borderRadius: radius),
       ),

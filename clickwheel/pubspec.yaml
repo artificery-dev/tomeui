@@ -2,7 +2,7 @@ name: tomeui_clickwheel
 description: >-
   Click-wheel input and focus navigation for TomeUI, with media controls,
   configurable press and hold gestures, and wheel-driven lists and grids.
-version: 0.3.3
+version: 0.3.4
 repository: https://github.com/artificery-dev/tomeui/tree/main/clickwheel
 issue_tracker: https://github.com/artificery-dev/tomeui/issues
 topics:
