@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tomeui/tomeui.dart';
@@ -273,6 +274,155 @@ void main() {
     expect(scaffold.isOpen(ScaffoldSide.leading), isFalse);
     // Settled from the first frame rather than animated shut.
     expect(panelWidth(tester, 'nav'), 0);
+  });
+
+  /// The grab strip on a side's inner edge: the one pointer target that
+  /// asks for a column-resize cursor.
+  Finder handle(ScaffoldSide side) {
+    final handles = find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeColumn,
+    );
+    return side == ScaffoldSide.leading ? handles.first : handles.last;
+  }
+
+  Future<void> drag(WidgetTester tester, Finder target, double dx) async {
+    await tester.drag(target, Offset(dx, 0), kind: PointerDeviceKind.mouse);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('dragging a resizable sidebar\'s inner edge changes its width '
+      'and reports it', (tester) async {
+    final resized = <(ScaffoldSide, double)>[];
+    await pump(
+      tester,
+      Scaffold(
+        resizable: true,
+        leading: const Text('nav'),
+        trailing: const Text('inspector'),
+        body: const Text('body'),
+        onSidebarResized: (side, width) => resized.add((side, width)),
+      ),
+    );
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold));
+    expect(scaffold.width(ScaffoldSide.leading), style.sidebarWidth);
+
+    // Leading grows to the right; trailing grows to the left.
+    await drag(tester, handle(ScaffoldSide.leading), 40);
+    expect(scaffold.width(ScaffoldSide.leading), style.sidebarWidth + 40);
+    expect(panelWidth(tester, 'nav'), style.sidebarWidth + 40);
+
+    await drag(tester, handle(ScaffoldSide.trailing), -30);
+    expect(scaffold.width(ScaffoldSide.trailing), style.sidebarWidth + 30);
+    expect(panelWidth(tester, 'inspector'), style.sidebarWidth + 30);
+
+    expect(resized.last, (ScaffoldSide.trailing, style.sidebarWidth + 30));
+    expect(resized.first.$1, ScaffoldSide.leading);
+  });
+
+  testWidgets('the grab strip lights while hovered and while dragging', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Scaffold(resizable: true, leading: Text('nav'), body: Text('body')),
+    );
+    final strip = handle(ScaffoldSide.leading);
+    double lit() => tester
+        .widget<AnimatedOpacity>(
+          find.descendant(of: strip, matching: find.byType(AnimatedOpacity)),
+        )
+        .opacity;
+    expect(lit(), 0);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(strip));
+    await tester.pumpAndSettle();
+    expect(lit(), 1);
+
+    await mouse.moveTo(Offset.zero);
+    await tester.pumpAndSettle();
+    expect(lit(), 0);
+
+    // A drag that started on the strip keeps it lit even once the pointer
+    // has run ahead of the (still catching up) edge.
+    await mouse.down(tester.getCenter(strip));
+    await mouse.moveBy(const Offset(40, 0));
+    await tester.pump();
+    expect(lit(), 1);
+    await mouse.up();
+    await tester.pumpAndSettle();
+    // Still hovered: the strip moved with the edge, under the pointer.
+    expect(lit(), 1);
+    await mouse.moveTo(Offset.zero);
+    await tester.pumpAndSettle();
+    expect(lit(), 0);
+  });
+
+  testWidgets('a drag stops at the style\'s bounds', (tester) async {
+    await pump(
+      tester,
+      const Scaffold(resizable: true, leading: Text('nav'), body: Text('body')),
+      width: 2400,
+    );
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold));
+
+    await drag(tester, handle(ScaffoldSide.leading), -1000);
+    expect(scaffold.width(ScaffoldSide.leading), style.sidebarMinWidth);
+
+    await drag(tester, handle(ScaffoldSide.leading), 2000);
+    expect(scaffold.width(ScaffoldSide.leading), style.sidebarMaxWidth);
+  });
+
+  testWidgets('a drag never takes the body below its minimum width', (
+    tester,
+  ) async {
+    // Room for both sidebars at their default plus a little, not for a
+    // sidebar at its maximum.
+    final width = style.minBodyWidth + style.sidebarWidth * 2 + 20;
+    await pump(
+      tester,
+      const Scaffold(
+        resizable: true,
+        leading: Text('nav'),
+        trailing: Text('inspector'),
+        body: Text('body'),
+      ),
+      width: width,
+    );
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold));
+
+    await drag(tester, handle(ScaffoldSide.leading), 500);
+    expect(scaffold.width(ScaffoldSide.leading), style.sidebarWidth + 20);
+    expect(
+      tester.getSize(find.text('body').first).width,
+      greaterThanOrEqualTo(style.minBodyWidth - 2),
+    );
+    // Still inline: the drag could not push its own side into a drawer.
+    expect(scaffold.isDrawer(ScaffoldSide.leading), isFalse);
+    expect(scaffold.isDrawer(ScaffoldSide.trailing), isFalse);
+  });
+
+  testWidgets('initial widths are honoured and a non-resizable scaffold has '
+      'no handle', (tester) async {
+    await pump(
+      tester,
+      const Scaffold(
+        leading: Text('nav'),
+        body: Text('body'),
+        initialLeadingWidth: 200,
+      ),
+    );
+    final scaffold = tester.state<ScaffoldState>(find.byType(Scaffold));
+    expect(scaffold.width(ScaffoldSide.leading), 200);
+    expect(panelWidth(tester, 'nav'), 200);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeColumn,
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('ScaffoldStateProvider.of explains itself when there is no '

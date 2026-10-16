@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:tomeui/tomeui.dart';
 
@@ -46,6 +47,14 @@ abstract interface class SelfDressedBar implements Widget {}
 /// currently showing, so a sidebar doesn't change character just because
 /// its neighbor was closed.
 ///
+/// With [resizable], each inline sidebar carries a grab strip along its
+/// inner edge and the reader drags it wider or narrower, between
+/// [ScaffoldStyle.sidebarMinWidth] and [ScaffoldStyle.sidebarMaxWidth] and
+/// never into the body's [ScaffoldStyle.minBodyWidth]. Widths are the
+/// scaffold's own, like the open/shut state; [onSidebarResized] is how a
+/// shell hears about a change to remember it, and
+/// [initialLeadingWidth]/[initialTrailingWidth] how it hands one back.
+///
 /// The open/shut state is the scaffold's own: it hands a [ScaffoldState]
 /// down through [ScaffoldStateProvider], and anything below can find it and
 /// work the sidebars. [ScaffoldSidebarToggle] is that, as a button.
@@ -58,6 +67,10 @@ class Scaffold extends StatefulWidget {
     this.trailing,
     this.initialLeadingOpen,
     this.initialTrailingOpen,
+    this.initialLeadingWidth,
+    this.initialTrailingWidth,
+    this.resizable = false,
+    this.onSidebarResized,
     this.style,
     super.key,
   });
@@ -86,6 +99,18 @@ class Scaffold extends StatefulWidget {
   /// to.
   final bool? initialLeadingOpen;
   final bool? initialTrailingOpen;
+
+  /// How wide a sidebar starts while inline. Null takes
+  /// [ScaffoldStyle.sidebarWidth]. Clamped like a drag would be.
+  final double? initialLeadingWidth;
+  final double? initialTrailingWidth;
+
+  /// Whether the reader can drag an inline sidebar's inner edge.
+  final bool resizable;
+
+  /// Called with the settled width after every drag step, for a shell that
+  /// remembers its layout.
+  final void Function(ScaffoldSide side, double width)? onSidebarResized;
 
   /// The style to paint, bypassing the theme.
   final ScaffoldStyle? style;
@@ -123,6 +148,16 @@ class ScaffoldState extends State<Scaffold> {
   /// opens already settled instead of animating itself in.
   final Map<ScaffoldSide, double> _initial = {};
 
+  /// How wide each side stands inline. Filled on first build from the
+  /// widget's initial widths or the style's default; after that, the
+  /// reader's drags.
+  final Map<ScaffoldSide, double> _widths = {};
+
+  /// The window's width and the style from the last build, which bound a
+  /// drag.
+  double _windowWidth = 0;
+  late ScaffoldStyle _style;
+
   final Map<ScaffoldSide, FocusScopeNode> _scopes = {
     for (final side in ScaffoldSide.values)
       side: FocusScopeNode(debugLabel: 'Scaffold ${side.name} drawer'),
@@ -159,6 +194,34 @@ class ScaffoldState extends State<Scaffold> {
 
   void toggle(ScaffoldSide side) => _set(side, !isOpen(side));
 
+  /// How wide this side stands while inline.
+  double width(ScaffoldSide side) => _widths[side]!;
+
+  /// Set an inline width, clamped to the style's bounds and to what the
+  /// window leaves after the body's minimum and the other sidebar.
+  void resize(ScaffoldSide side, double width) {
+    if (!has(side)) return;
+    final style = _style;
+    final clamped = _clamp(side, width, style);
+    if (clamped == _widths[side]) return;
+    setState(() => _widths[side] = clamped);
+    widget.onSidebarResized?.call(side, clamped);
+  }
+
+  double _clamp(ScaffoldSide side, double width, ScaffoldStyle style) {
+    final other = side == ScaffoldSide.leading
+        ? ScaffoldSide.trailing
+        : ScaffoldSide.leading;
+    final beside = has(other) && !isDrawer(other) && isOpen(other);
+    final room =
+        _windowWidth - style.minBodyWidth - (beside ? _widths[other]! : 0);
+    final max = math.min(style.sidebarMaxWidth, room);
+    return width.clamp(
+      style.sidebarMinWidth,
+      math.max(style.sidebarMinWidth, max),
+    );
+  }
+
   void _set(ScaffoldSide side, bool value) {
     if (!has(side) || isOpen(side) == value) return;
     setState(() {
@@ -193,12 +256,14 @@ class ScaffoldState extends State<Scaffold> {
   /// asked to become a drawer. The room leading needs is counted whether
   /// or not it's open, since the mode is a fact about the window.
   void _measure(double width, ScaffoldStyle style) {
-    final wide = width - style.sidebarWidth >= style.minBodyWidth;
-    final both = width - style.sidebarWidth * 2 >= style.minBodyWidth;
+    final leading = _widths[ScaffoldSide.leading]!;
+    final trailing = _widths[ScaffoldSide.trailing]!;
+    final wide = width - leading >= style.minBodyWidth;
+    final both = width - leading - trailing >= style.minBodyWidth;
     _isDrawer[ScaffoldSide.leading] = !wide;
     _isDrawer[ScaffoldSide.trailing] = has(ScaffoldSide.leading)
         ? !both
-        : !wide;
+        : width - trailing < style.minBodyWidth;
   }
 
   void _closeDrawers() {
@@ -211,9 +276,15 @@ class ScaffoldState extends State<Scaffold> {
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     final style = widget.style ?? theme.widgets.scaffold.resolve();
+    _style = style;
+    _widths[ScaffoldSide.leading] ??=
+        widget.initialLeadingWidth ?? style.sidebarWidth;
+    _widths[ScaffoldSide.trailing] ??=
+        widget.initialTrailingWidth ?? style.sidebarWidth;
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        _windowWidth = constraints.maxWidth;
         _measure(constraints.maxWidth, style);
         return ScaffoldStateProvider(
           state: this,
@@ -335,13 +406,46 @@ class ScaffoldState extends State<Scaffold> {
             // reveal, and without saying so it would also shrink-wrap and
             // center the panel vertically — a sidebar floating mid-window.
             child: SizedBox(
-              width: style.sidebarWidth,
+              width: width(side),
               height: double.infinity,
-              child: _panel(style, side),
+              child: widget.resizable
+                  ? _resizable(theme, style, side, _panel(style, side))
+                  : _panel(style, side),
             ),
           ),
         ),
       );
+
+  /// The panel with its grab strip: a band along the inner edge that the
+  /// pointer reads as a column divider and a drag moves. It lights up a
+  /// hairline while hovered or dragged, so the reader knows it's there.
+  Widget _resizable(
+    Theme theme,
+    ScaffoldStyle style,
+    ScaffoldSide side,
+    Widget panel,
+  ) {
+    final leading = side == ScaffoldSide.leading;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        panel,
+        Positioned(
+          top: 0,
+          bottom: 0,
+          left: leading ? null : 0,
+          right: leading ? 0 : null,
+          width: style.resizeHandleWidth,
+          child: _ResizeHandle(
+            theme: theme,
+            style: style,
+            side: side,
+            onDrag: (dx) => resize(side, width(side) + (leading ? dx : -dx)),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// The same sidebar, over the body: pinned to its edge and slid in from
   /// off screen. Capped against the window so there's always a strip of
@@ -453,6 +557,65 @@ class ScaffoldState extends State<Scaffold> {
         ),
       ),
       child: panel,
+    );
+  }
+}
+
+/// The grab strip itself. Hover and drag are its own state: the scaffold
+/// hears only the width changes.
+class _ResizeHandle extends StatefulWidget {
+  const _ResizeHandle({
+    required this.theme,
+    required this.style,
+    required this.side,
+    required this.onDrag,
+  });
+
+  final Theme theme;
+  final ScaffoldStyle style;
+  final ScaffoldSide side;
+  final ValueChanged<double> onDrag;
+
+  @override
+  State<_ResizeHandle> createState() => _ResizeHandleState();
+}
+
+class _ResizeHandleState extends State<_ResizeHandle> {
+  bool _hovered = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final lit = _hovered || _dragging;
+    final leading = widget.side == ScaffoldSide.leading;
+    final color = widget.style.resizeHandleColor ?? widget.style.divider;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        dragStartBehavior: DragStartBehavior.down,
+        onHorizontalDragStart: (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate: (details) => widget.onDrag(details.delta.dx),
+        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+        onHorizontalDragCancel: () => setState(() => _dragging = false),
+        // The lit line sits on the divider's own edge, two hairlines wide:
+        // present without being a bar.
+        child: AnimatedAlign(
+          alignment: leading ? Alignment.centerRight : Alignment.centerLeft,
+          duration: widget.theme.motion.fast,
+          child: AnimatedOpacity(
+            opacity: lit ? 1 : 0,
+            duration: widget.theme.motion.fast,
+            child: SizedBox(
+              width: widget.theme.strokes.hairline * 2,
+              height: double.infinity,
+              child: ColoredBox(color: color),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

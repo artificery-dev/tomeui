@@ -875,6 +875,8 @@ class ScaffoldResolver {
       drawerWidth: 320,
       minBodyWidth: _theme.breakpoints.compact,
       drawerShadow: _theme.shadows.high,
+      // The grab strip lights up in the brand's voice, like a focused edge.
+      resizeHandleColor: palette.primary.s500,
     );
   }
 }

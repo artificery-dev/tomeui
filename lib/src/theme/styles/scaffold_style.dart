@@ -22,6 +22,10 @@ class ScaffoldStyle {
     this.sidebarPadding = EdgeInsets.zero,
     this.dividerThickness = 1,
     this.sidebarWidth = 280,
+    this.sidebarMinWidth = 160,
+    this.sidebarMaxWidth = 560,
+    this.resizeHandleWidth = 6,
+    this.resizeHandleColor,
     this.drawerWidth = 320,
     this.minBodyWidth = 620,
     this.drawerShadow = const [],
@@ -50,8 +54,23 @@ class ScaffoldStyle {
   /// edge to edge.
   final EdgeInsetsGeometry sidebarPadding;
 
-  /// How wide a sidebar stands when it's inline beside the body.
+  /// How wide a sidebar stands when it's inline beside the body, until the
+  /// reader drags it otherwise on a `Scaffold(resizable: true)`.
   final double sidebarWidth;
+
+  /// The narrowest and widest a reader can drag an inline sidebar. The
+  /// window has the last word: a sidebar never grows into the
+  /// [minBodyWidth] the body is owed.
+  final double sidebarMinWidth;
+  final double sidebarMaxWidth;
+
+  /// How wide the invisible strip along a resizable sidebar's inner edge
+  /// is — the thing the reader grabs.
+  final double resizeHandleWidth;
+
+  /// The line that lights the grab strip while the pointer is over it or
+  /// dragging it. Null falls back to [divider].
+  final Color? resizeHandleColor;
 
   /// How wide it stands as a drawer, where it's over the body rather than
   /// beside it and can afford to be a little broader.
@@ -74,6 +93,10 @@ class ScaffoldStyle {
     EdgeInsetsGeometry? sidebarPadding,
     double? dividerThickness,
     double? sidebarWidth,
+    double? sidebarMinWidth,
+    double? sidebarMaxWidth,
+    double? resizeHandleWidth,
+    Color? resizeHandleColor,
     double? drawerWidth,
     double? minBodyWidth,
     List<BoxShadow>? drawerShadow,
@@ -86,6 +109,10 @@ class ScaffoldStyle {
     sidebarPadding: sidebarPadding ?? this.sidebarPadding,
     dividerThickness: dividerThickness ?? this.dividerThickness,
     sidebarWidth: sidebarWidth ?? this.sidebarWidth,
+    sidebarMinWidth: sidebarMinWidth ?? this.sidebarMinWidth,
+    sidebarMaxWidth: sidebarMaxWidth ?? this.sidebarMaxWidth,
+    resizeHandleWidth: resizeHandleWidth ?? this.resizeHandleWidth,
+    resizeHandleColor: resizeHandleColor ?? this.resizeHandleColor,
     drawerWidth: drawerWidth ?? this.drawerWidth,
     minBodyWidth: minBodyWidth ?? this.minBodyWidth,
     drawerShadow: drawerShadow ?? this.drawerShadow,
@@ -102,6 +129,10 @@ class ScaffoldStyle {
       other.sidebarPadding == sidebarPadding &&
       other.dividerThickness == dividerThickness &&
       other.sidebarWidth == sidebarWidth &&
+      other.sidebarMinWidth == sidebarMinWidth &&
+      other.sidebarMaxWidth == sidebarMaxWidth &&
+      other.resizeHandleWidth == resizeHandleWidth &&
+      other.resizeHandleColor == resizeHandleColor &&
       other.drawerWidth == drawerWidth &&
       other.minBodyWidth == minBodyWidth &&
       listEquals(other.drawerShadow, drawerShadow);
@@ -116,6 +147,10 @@ class ScaffoldStyle {
     sidebarPadding,
     dividerThickness,
     sidebarWidth,
+    sidebarMinWidth,
+    sidebarMaxWidth,
+    resizeHandleWidth,
+    resizeHandleColor,
     drawerWidth,
     minBodyWidth,
     Object.hashAll(drawerShadow),
