@@ -42,6 +42,26 @@ void main() {
     }
   });
 
+  testWidgets('a loose slot is filled, not shrunk to the travelled part', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TomeApp(
+        home: Center(
+          child: SizedBox(
+            width: 300,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Slider(value: 0.25, onChanged: (_) {})],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(Slider)).width, 300);
+  });
+
   testWidgets('a value past the end draws at the end', (tester) async {
     await pump(tester, Slider(value: 9, onChanged: (_) {}));
     expect(

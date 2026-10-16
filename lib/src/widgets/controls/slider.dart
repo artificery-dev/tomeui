@@ -250,13 +250,13 @@ class _SliderState extends State<Slider> {
                       ? dragUpdate
                       : null,
                   onVerticalDragEnd: _enabled && _vertical ? dragEnd : null,
+                  // Always the full extent: in a loose slot the Stack
+                  // inside would otherwise shrink to the travelled part of
+                  // the track, and the thumb would be sized against a
+                  // length the box doesn't have.
                   child: SizedBox(
-                    width: _vertical
-                        ? style.height
-                        : (constraints.maxWidth.isFinite ? null : extent),
-                    height: _vertical
-                        ? (constraints.maxHeight.isFinite ? null : extent)
-                        : style.height,
+                    width: _vertical ? style.height : extent,
+                    height: _vertical ? extent : style.height,
                     child: _track(theme, style, extent),
                   ),
                 );
