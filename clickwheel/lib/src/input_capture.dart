@@ -245,7 +245,7 @@ class _InputCaptureState extends State<InputCapture> {
 
   /// The intent classes a word arrives as.
   static List<Type> _intentTypes(WheelInput input) => switch (input) {
-    WheelInput.wheel => [JogIntent],
+    WheelInput.wheel => [JogIntent, WheelTurnIntent],
     WheelInput.select => [ActivateIntent],
     WheelInput.selectHold => [ActivateHoldIntent],
     WheelInput.menu => [WheelBackIntent],
@@ -278,6 +278,8 @@ class _InputCaptureState extends State<InputCapture> {
   /// so a capture that took the skip keys has an entry for the class that
   /// play-pause lands on too, and has to hand that one on.
   void handle(Intent intent) {
+    // A captured wheel must not build velocity in the list underneath it.
+    if (intent is WheelTurnIntent) return;
     if (!wants(intent)) {
       _passUp(intent);
       return;

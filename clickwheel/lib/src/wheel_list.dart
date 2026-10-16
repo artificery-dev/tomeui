@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/physics.dart' show SpringDescription, SpringSimulation;
 import 'package:flutter/rendering.dart' show RenderProxyBox;
@@ -6,25 +7,21 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:tomeui/tomeui.dart';
 
 import 'intents.dart';
+import 'wheel_scroll_config.dart';
 
 /// Enables speed-sensitive scrolling for long lists beneath the app input.
 class WheelAcceleration extends InheritedWidget {
   const WheelAcceleration({
     required this.enabled,
     this.surfaceBuilder,
-    this.letterEntry = WheelList.letterEntry,
-    this.letterIdle = WheelList.accelerationIdle,
+    this.scrollConfig = WheelScrollConfig.y2,
     required super.child,
     super.key,
   });
   final bool enabled;
 
-  /// How long the wheel must keep turning one way, in an ordered list,
-  /// before the letters open.
-  final Duration letterEntry;
-
-  /// How long the letters stay open after the wheel goes still.
-  final Duration letterIdle;
+  /// Physical wheel calibration and velocity policy.
+  final WheelScrollConfig scrollConfig;
 
   static WheelAcceleration? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<WheelAcceleration>();
@@ -39,9 +36,8 @@ class WheelAcceleration extends InheritedWidget {
   @override
   bool updateShouldNotify(WheelAcceleration oldWidget) =>
       enabled != oldWidget.enabled ||
-      surfaceBuilder != oldWidget.surfaceBuilder ||
-      letterEntry != oldWidget.letterEntry ||
-      letterIdle != oldWidget.letterIdle;
+      scrollConfig != oldWidget.scrollConfig ||
+      surfaceBuilder != oldWidget.surfaceBuilder;
 }
 
 /// How a [WheelList] row is drawn: the item at [index], told whether it is
@@ -148,7 +144,6 @@ class WheelList extends StatefulWidget {
   static const accelerationMinimum = 30;
   static const accelerationIdle = Duration(seconds: 1);
   static const accelerationEntry = Duration(milliseconds: 500);
-  static const letterEntry = Duration(milliseconds: 600);
   static const modeTransition = Duration(milliseconds: 180);
 
   final int itemCount;
@@ -547,6 +542,120 @@ class _WheelListState extends State<WheelList>
     );
   }
 
+  WheelScrollConfig _scrollConfig = WheelScrollConfig.y2;
+  final Set<Timer> _velocitySamples = {};
+  int _windowTicks = 0;
+  final _timedTicks = Queue<(Duration, int)>();
+  bool _timestamped = false;
+  int _rawDirection = 0;
+  Timer? _overlayTimer;
+  bool _closingLetters = false;
+  bool _entryJog = false;
+  bool get _showLetters => _letters && !_closingLetters;
+
+  /// Samples expire after the full window, including ticks consumed by
+  /// sensitivity. Speed is never inferred from one inter-tick interval.
+  void _turn(WheelTurnIntent intent) {
+    final config = _scrollConfig;
+    _entryJog = false;
+    if (!_accelerationEnabled || _sections.length < 2 || intent.ticks == 0) {
+      return;
+    }
+    if (_closingLetters) {
+      _entryJog = true;
+      return;
+    }
+    final direction = intent.ticks.sign;
+    if (_letters) {
+      _restartLetterIdle();
+      // Once entered, both directions navigate letters. Only idle or select
+      // closes the overlay; turning back must not return input to the rows.
+      return;
+    }
+    final viewport = _controllerReady && _controller.hasClients
+        ? _controller.position.viewportDimension
+        : widget.itemExtent;
+    final screenRows = (viewport / widget.itemExtent).ceil().clamp(
+      1,
+      widget.itemCount,
+    );
+    if (widget.itemCount < screenRows * config.minimumScreens) return;
+    if (_rawDirection != 0 && direction != _rawDirection) _clearVelocity();
+    _rawDirection = direction;
+    final ticks = intent.ticks.abs();
+    final stamp = intent.timeStamp;
+    if (_timestamped != (stamp != null)) {
+      _clearVelocity();
+      _rawDirection = direction;
+    }
+    _timestamped = stamp != null;
+    if (stamp != null) {
+      // The engine preserves the evdev time. A busy frame may deliver many
+      // old events at once; delivery timing must not turn those into a flick.
+      if (_timedTicks.isNotEmpty && stamp < _timedTicks.last.$1) {
+        _clearVelocity();
+        _rawDirection = direction;
+      }
+      final cutoff = stamp - config.velocityWindow;
+      while (_timedTicks.isNotEmpty && _timedTicks.first.$1 <= cutoff) {
+        _windowTicks -= _timedTicks.removeFirst().$2;
+      }
+      _timedTicks.addLast((stamp, ticks));
+      _windowTicks += ticks;
+    } else {
+      // Controller/emulator jogs have no engine timestamp. Retain their
+      // rolling arrival window; unlike hardware these are generated here.
+      _windowTicks += ticks;
+      late Timer sample;
+      sample = Timer(config.velocityWindow, () {
+        _velocitySamples.remove(sample);
+        _windowTicks -= ticks;
+      });
+      _velocitySamples.add(sample);
+    }
+    final turnsPerSecond =
+        _windowTicks /
+        config.ticksPerRevolution /
+        (config.velocityWindow.inMicroseconds / Duration.microsecondsPerSecond);
+    if (turnsPerSecond >= config.enterRevolutionsPerSecond) {
+      final section = _sectionIndex;
+      setState(() {
+        _accelerated = true;
+        _letterSection = section;
+        _entryJog = true;
+      });
+      _restartLetterIdle();
+      if (_stretched) _release();
+    }
+  }
+
+  void _restartLetterIdle() {
+    _overlayTimer?.cancel();
+    _overlayTimer = Timer(_scrollConfig.letterIdle, _closeLetters);
+    setState(() => _letterClock++);
+  }
+
+  void _clearVelocity() {
+    for (final timer in _velocitySamples) {
+      timer.cancel();
+    }
+    _velocitySamples.clear();
+    _timedTicks.clear();
+    _windowTicks = 0;
+    _rawDirection = 0;
+  }
+
+  void _closeLetters() {
+    if (!mounted || !_letters || _closingLetters) return;
+    _overlayTimer?.cancel();
+    setState(() => _closingLetters = true);
+  }
+
+  // Only the actual opacity animation completion can return the wheel.
+  void _lettersHidden() {
+    if (mounted && _closingLetters) setState(_dismissAcceleration);
+  }
+
   Timer? _paceTimer;
   Timer? _entryTimer;
   bool _sustained = false;
@@ -558,12 +667,7 @@ class _WheelListState extends State<WheelList>
   bool _managedAcceleration = false;
   List<(String, int)> _sections = [];
   int? _letterSection;
-  int? _gestureSection;
   bool get _letters => _accelerated && _sections.length > 1;
-
-  /// The letters' timings, from [WheelAcceleration] or the defaults.
-  Duration _letterEntry = WheelList.letterEntry;
-  Duration _letterIdle = WheelList.accelerationIdle;
 
   /// Counts the wheel's words while the letters are up: each restarts the
   /// clock the overlay draws, and a new key restarts its animation.
@@ -574,14 +678,19 @@ class _WheelListState extends State<WheelList>
     super.didChangeDependencies();
     _accelerationEnabled = WheelAcceleration.of(context);
     final acceleration = WheelAcceleration.maybeOf(context);
-    _letterEntry = acceleration?.letterEntry ?? WheelList.letterEntry;
-    _letterIdle = acceleration?.letterIdle ?? WheelList.accelerationIdle;
+    final config = acceleration?.scrollConfig ?? WheelScrollConfig.y2;
+    if (_scrollConfig != config) _resetAcceleration();
+    _scrollConfig = config;
     _managedAcceleration =
         context.getInheritedWidgetOfExactType<WheelAcceleration>() != null;
     if (!_accelerationEnabled) _resetAcceleration();
   }
 
   void _resetAcceleration() {
+    _clearVelocity();
+    _overlayTimer?.cancel();
+    _closingLetters = false;
+    _entryJog = false;
     _paceTimer?.cancel();
     _entryTimer?.cancel();
     _sustained = false;
@@ -590,7 +699,6 @@ class _WheelListState extends State<WheelList>
     _direction = 0;
     _accelerated = false;
     _letterSection = null;
-    _gestureSection = null;
   }
 
   void _dismissAcceleration() {
@@ -623,7 +731,7 @@ class _WheelListState extends State<WheelList>
   }
 
   int get _sectionIndex {
-    if (_letterSection != null) return _letterSection!;
+    if (_letters && _letterSection != null) return _letterSection!;
     var section = 0;
     for (var i = 0; i < _sections.length; i++) {
       if (_sections[i].$2 > _index) break;
@@ -638,51 +746,37 @@ class _WheelListState extends State<WheelList>
         _accelerationEnabled &&
         widget.itemCount >= WheelList.accelerationMinimum;
     var fast = false;
-    if (enabled) {
-      final ordered = _sections.length > 1;
-      // Letter browsing measures the whole gesture, including slow detents.
-      // An idle pause or direction change starts its duration over.
-      final restart = ordered
-          ? _accelerationTimer?.isActive != true ||
-                _direction != intent.amount.sign
-          : _paceTimer?.isActive != true || _direction != intent.amount.sign;
-      if (restart && !_letters) {
-        _gestureSection = _sectionIndex;
+    if (enabled && _sections.length < 2) {
+      // Preserve the existing page acceleration for unordered lists.
+      final restart =
+          _paceTimer?.isActive != true || _direction != intent.amount.sign;
+      if (restart) {
         _burst = 0;
         _sustained = false;
         _entryTimer?.cancel();
         _entryTimer = Timer(
-          ordered ? _letterEntry : WheelList.accelerationEntry,
-          () {
-            _sustained = true;
-          },
+          WheelList.accelerationEntry,
+          () => _sustained = true,
         );
       }
       _direction = intent.amount.sign;
       _burst += intent.amount.abs();
-      // Letter browsing stays latched until idle, even on slow or reversed turns.
-      fast =
-          _letters || (_sustained && (ordered || intent.page || _burst >= 4));
+      fast = _sustained && (intent.page || _burst >= 4);
       _paceTimer?.cancel();
       _paceTimer = Timer(Duration(milliseconds: fast ? 160 : 90), () {});
       _accelerationTimer?.cancel();
-      _accelerationTimer = Timer(
-        ordered ? _letterIdle : WheelList.accelerationIdle,
-        () {
-          if (mounted) setState(_dismissAcceleration);
-        },
-      );
-      _letterClock++;
+      _accelerationTimer = Timer(WheelList.accelerationIdle, () {
+        if (mounted) setState(_dismissAcceleration);
+      });
     }
-    final enteringLetters = !_accelerated && fast && _sections.length > 1;
+    if (_sections.length > 1) {
+      if (_entryJog || _closingLetters) {
+        _entryJog = false;
+        return;
+      }
+      fast = _letters;
+    }
     if (_accelerated != fast) setState(() => _accelerated = fast);
-    if (enteringLetters) {
-      // Keep the letter where this gesture began. The detent that opens the
-      // picker must not also skip a letter after scrolling through rows.
-      setState(() => _letterSection = _gestureSection ?? _sectionIndex);
-      if (_stretched) _release();
-      return;
-    }
     if (_letters) {
       final section = (_sectionIndex + intent.amount).clamp(
         0,
@@ -786,6 +880,12 @@ class _WheelListState extends State<WheelList>
   Widget build(BuildContext context) {
     return Actions(
       actions: {
+        WheelTurnIntent: CallbackAction<WheelTurnIntent>(
+          onInvoke: (intent) {
+            _turn(intent);
+            return null;
+          },
+        ),
         JogIntent: CallbackAction<JogIntent>(
           onInvoke: (intent) {
             _jog(intent);
@@ -795,7 +895,7 @@ class _WheelListState extends State<WheelList>
         ActivateIntent: CallbackAction<ActivateIntent>(
           onInvoke: (_) {
             if (_letters) {
-              setState(_dismissAcceleration);
+              _closeLetters();
             } else if (widget.itemCount > 0) {
               widget.onActivate?.call(_index);
             }
@@ -917,23 +1017,18 @@ class _WheelListState extends State<WheelList>
                   ),
                 ),
                 IgnorePointer(
-                  child: AnimatedSwitcher(
+                  child: AnimatedOpacity(
+                    opacity: _showLetters ? 1 : 0,
                     duration: WheelList.modeTransition,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(
-                        scale: Tween(begin: 0.85, end: 1.0).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                        child: child,
-                      ),
+                    onEnd: _lettersHidden,
+                    child: AnimatedScale(
+                      scale: _showLetters ? 1 : .85,
+                      duration: WheelList.modeTransition,
+                      curve: Curves.easeOutCubic,
+                      child: _letters
+                          ? _letterOverlay(context)
+                          : const SizedBox.shrink(),
                     ),
-                    child: _letters
-                        ? _letterOverlay(context)
-                        : const SizedBox.shrink(),
                   ),
                 ),
               ],
@@ -946,7 +1041,7 @@ class _WheelListState extends State<WheelList>
 
   Widget _letterOverlay(BuildContext context) {
     final theme = ThemeProvider.of(context);
-    final section = _sectionIndex;
+    final section = (_letterSection ?? _sectionIndex);
     final primary = theme.widgets.surface
         .resolve(SemanticSwatch.primary, SurfaceVariant.soft)
         .foreground;
@@ -1006,7 +1101,7 @@ class _WheelListState extends State<WheelList>
         child: TweenAnimationBuilder<double>(
           key: ValueKey(('WheelList.letters.clock', _letterClock)),
           tween: Tween(begin: 1.0, end: 0.0),
-          duration: _letterIdle,
+          duration: _scrollConfig.letterIdle,
           builder: (context, remaining, _) => FractionallySizedBox(
             key: WheelList.lettersClockKey,
             widthFactor: remaining,

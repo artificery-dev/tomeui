@@ -23,16 +23,12 @@ void main() {
             ),
             BarMenu(
               label: const Text('Edit'),
-              entries: [
-                MenuItem(label: const Text('Undo'), onPressed: () {}),
-              ],
+              entries: [MenuItem(label: const Text('Undo'), onPressed: () {})],
             ),
             BarMenu(
               label: const Text('View'),
               enabled: !disableView,
-              entries: [
-                MenuItem(label: const Text('Zoom'), onPressed: () {}),
-              ],
+              entries: [MenuItem(label: const Text('Zoom'), onPressed: () {})],
             ),
           ],
         ),

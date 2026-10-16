@@ -1,4 +1,7 @@
 import 'package:tomeui/tomeui.dart';
+import 'package:flutter/services.dart';
+
+import 'menu_submenu.dart';
 
 import '../foundation/list_walk.dart';
 
@@ -11,7 +14,7 @@ import '../foundation/list_walk.dart';
 /// other inside the editor's own overlay.
 ///
 /// Toolkit-internal: not exported by the barrel.
-class MenuPanel extends StatelessWidget {
+class MenuPanel extends StatefulWidget {
   const MenuPanel({
     required this.entries,
     required this.style,
@@ -29,48 +32,106 @@ class MenuPanel extends StatelessWidget {
   /// Whether the panel claims the keyboard. See [ListWalk.autofocus].
   final bool autofocus;
 
+  /// Retains submenu anchors across keyboard highlight changes.
   @override
-  Widget build(BuildContext context) => ListWalk(
-    length: entries.length,
-    enabledAt: (index) => switch (entries[index]) {
-      MenuItem(:final enabled) => enabled,
-      _ => false,
+  State<MenuPanel> createState() => _MenuPanelState();
+}
+
+/// Coordinates keyboard entry into flyouts without activating their parent row.
+class _MenuPanelState extends State<MenuPanel> {
+  final Map<int, GlobalKey<MenuSubmenuState>> submenus = {};
+  int highlighted = -1;
+
+  /// Chooses leaves directly while opening nested entries in place.
+  void chooseAt(int index) {
+    final item = widget.entries[index] as MenuItem;
+    if (item.children.isNotEmpty) {
+      submenus[index]?.currentState?.open();
+    } else {
+      widget.onChosen(item);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Focus(
+    onKeyEvent: (_, event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.arrowRight &&
+          submenus.containsKey(highlighted)) {
+        chooseAt(highlighted);
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
     },
-    onActivate: (index) => onChosen(entries[index] as MenuItem),
-    autofocus: autofocus,
-    builder: (context, highlight, highlightTo) => ConstrainedBox(
-      constraints: BoxConstraints(
-        minWidth: style.minWidth,
-        maxHeight: style.maxHeight,
-      ),
-      // A menu is as wide as its widest row and no wider: without this the
-      // stretched column fills whatever the overlay offers, which is the
-      // whole screen.
-      child: IntrinsicWidth(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < entries.length; i++)
-                switch (entries[i]) {
-                  final MenuItem item => _Item(
-                    item: item,
-                    style: style,
-                    highlighted: i == highlight,
-                    onHover: () => highlightTo(i),
-                    onTap: () => onChosen(item),
-                  ),
-                  MenuSeparator() => _Separator(style: style),
-                  final MenuSection section => _Section(
-                    section: section,
-                    style: style,
-                  ),
-                },
-            ],
+    child: ListWalk(
+      length: widget.entries.length,
+      enabledAt: (index) => switch (widget.entries[index]) {
+        MenuItem(:final enabled) => enabled,
+        _ => false,
+      },
+      onActivate: chooseAt,
+      autofocus: widget.autofocus,
+      builder: (context, highlight, highlightTo) {
+        highlighted = highlight;
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: widget.style.minWidth,
+            maxHeight: widget.style.maxHeight,
           ),
-        ),
-      ),
+          // A menu is as wide as its widest row and no wider: without this the
+          // stretched column fills whatever the overlay offers, which is the
+          // whole screen.
+          child: IntrinsicWidth(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < widget.entries.length; i++)
+                    switch (widget.entries[i]) {
+                      final MenuItem item when item.children.isNotEmpty =>
+                        MenuSubmenu(
+                          key: submenus.putIfAbsent(
+                            i,
+                            () => GlobalKey<MenuSubmenuState>(),
+                          ),
+                          item: item,
+                          style: widget.style,
+                          active: i == highlight,
+                          onChosen: widget.onChosen,
+                          child: _Item(
+                            item: item,
+                            style: widget.style,
+                            highlighted: i == highlight,
+                            onHover: () {
+                              highlightTo(i);
+                              submenus[i]?.currentState?.open();
+                            },
+                            onTap: () {
+                              highlightTo(i);
+                              chooseAt(i);
+                            },
+                          ),
+                        ),
+                      final MenuItem item => _Item(
+                        item: item,
+                        style: widget.style,
+                        highlighted: i == highlight,
+                        onHover: () => highlightTo(i),
+                        onTap: () => widget.onChosen(item),
+                      ),
+                      MenuSeparator() => _Separator(style: widget.style),
+                      final MenuSection section => _Section(
+                        section: section,
+                        style: widget.style,
+                      ),
+                    },
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     ),
   );
 }
@@ -105,11 +166,11 @@ class _Item extends StatelessWidget {
           SizedBox(width: style.itemGap),
         ],
         Expanded(child: item.label),
-        if (item.trailing != null) ...[
+        if (item.trailing != null || item.children.isNotEmpty) ...[
           SizedBox(width: style.itemGap),
           DefaultTextStyle.merge(
             style: style.trailingStyle,
-            child: item.trailing!,
+            child: item.trailing ?? const Icon(LucideIcons.chevronRight),
           ),
         ],
       ],

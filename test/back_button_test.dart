@@ -4,9 +4,7 @@ import 'package:tomeui/tomeui.dart';
 void main() {
   testWidgets('on the first page there is nothing to go back to, and so '
       'nothing drawn', (tester) async {
-    await tester.pumpWidget(
-      const TomeApp(home: Center(child: BackButton())),
-    );
+    await tester.pumpWidget(const TomeApp(home: Center(child: BackButton())));
 
     expect(find.byType(Button), findsNothing);
     expect(tester.getSize(find.byType(BackButton)), Size.zero);

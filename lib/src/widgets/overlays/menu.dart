@@ -16,10 +16,11 @@ sealed class MenuEntry {
 class MenuItem extends MenuEntry {
   const MenuItem({
     required this.label,
-    required this.onPressed,
+    this.onPressed,
     this.leading,
     this.trailing,
     this.swatch,
+    this.children = const [],
   });
 
   final Widget label;
@@ -39,7 +40,10 @@ class MenuItem extends MenuEntry {
   /// whole reason this exists. Null keeps the panel's own foreground.
   final SemanticSwatch? swatch;
 
-  bool get enabled => onPressed != null;
+  /// Nested actions keep the parent menu open until a leaf is chosen.
+  final List<MenuEntry> children;
+
+  bool get enabled => onPressed != null || children.isNotEmpty;
 }
 
 /// The hairline between groups of entries.
@@ -171,6 +175,7 @@ class ContextMenu extends StatefulWidget {
     required this.entries,
     required this.child,
     this.style,
+    this.enabled = true,
     super.key,
   });
 
@@ -180,6 +185,11 @@ class ContextMenu extends StatefulWidget {
   final Widget child;
 
   final MenuStyle? style;
+
+  /// Whether the pointer can ask. False ignores right-clicks and long
+  /// presses and closes a menu already open, without changing the tree
+  /// around [child] — a row that's disabled for a moment keeps its state.
+  final bool enabled;
 
   @override
   State<ContextMenu> createState() => _ContextMenuState();
@@ -192,6 +202,12 @@ class _ContextMenuState extends State<ContextMenu> {
   void _openAt(Offset global) => setState(() => _at = global);
 
   @override
+  void didUpdateWidget(ContextMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.enabled) _at = null;
+  }
+
+  @override
   Widget build(BuildContext context) => Menu(
     open: _at != null,
     entries: widget.entries,
@@ -202,8 +218,12 @@ class _ContextMenuState extends State<ContextMenu> {
     anchorRect: _at == null ? null : _at! & const Size(1, 1),
     anchor: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onSecondaryTapDown: (details) => _openAt(details.globalPosition),
-      onLongPressStart: (details) => _openAt(details.globalPosition),
+      onSecondaryTapDown: widget.enabled
+          ? (details) => _openAt(details.globalPosition)
+          : null,
+      onLongPressStart: widget.enabled
+          ? (details) => _openAt(details.globalPosition)
+          : null,
       child: widget.child,
     ),
   );

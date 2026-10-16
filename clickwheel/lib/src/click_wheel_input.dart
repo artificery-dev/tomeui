@@ -529,7 +529,9 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
     if (intent == null) return false;
 
     // Repeats count for the wheel: a held direction keeps jogging.
-    _dispatch(intent);
+    _dispatch(
+      JogIntent(intent.amount, page: intent.page, timeStamp: event.timeStamp),
+    );
     return true;
   }
 
@@ -566,6 +568,16 @@ class _ClickWheelInputState extends State<ClickWheelInput> {
   void _dispatch(Intent intent) {
     if (widget.muted && intent is! VolumeIntent) return;
     if (intent is JogIntent) {
+      if (!widget.asleep && intent.amount != 0) {
+        final target = _focused() ?? _actionsContext ?? context;
+        final turn = WheelTurnIntent(
+          widget.feel.reversed ? -intent.amount : intent.amount,
+          timeStamp: intent.timeStamp,
+        );
+        // This optional action reaches only a list which wants raw movement.
+        // Sliders, grids and focus traversal continue receiving felt jogs.
+        Actions.maybeInvoke<Intent>(target, turn);
+      }
       final felt = _felt(intent);
       if (felt == null) return;
       intent = felt;

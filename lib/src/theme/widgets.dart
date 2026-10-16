@@ -1379,19 +1379,23 @@ class SliderResolver {
         // track reads as a recess rather than fading into a dark surface.
         .copyWith(radius: pill, fill: _theme.palette.background);
     final opacities = _theme.opacities;
-    // A colorful slider's thumb takes the swatch's bright contrast; a
-    // neutral one has no such color to draw from, so its knob is the
-    // page's own text tone — near-white in the dark — to stay a crisp,
-    // legible control rather than a dull gray lump.
+    // A colorful slider's thumb takes the swatch at full strength, the same
+    // bright fill as the travelled track, and a ring of the page's background
+    // parts it from that track. The swatch's contrast foreground it used to
+    // take is a dark ink on bright swatches, which sank into dark pages. A
+    // neutral slider has no color to draw from, so its knob is the page's own
+    // text tone — near-white in the dark — to stay a crisp, legible control
+    // rather than a dull gray lump.
     final thumbFill = swatch == SemanticSwatch.neutral
         ? _theme.palette.text
-        : active.foreground;
+        : active.fill ?? active.foreground;
     return SliderStyle(
       active: active,
       inactive: inactive,
       thumb: SurfaceStyle(
-        foreground: active.fill ?? active.foreground,
+        foreground: active.foreground,
         fill: thumbFill,
+        border: _theme.palette.background,
         radius: pill,
       ),
       ring:

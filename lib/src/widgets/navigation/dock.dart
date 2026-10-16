@@ -160,11 +160,7 @@ class _DockState<T> extends State<Dock<T>> {
   /// The rest of the destinations, behind one button. It wears the chosen
   /// state itself when the answer is in there — otherwise the dock would
   /// show nothing chosen at all.
-  Widget _more(
-    Theme theme,
-    DockStyle style,
-    List<NavDestination<T>> hidden,
-  ) {
+  Widget _more(Theme theme, DockStyle style, List<NavDestination<T>> hidden) {
     final holdsAnswer = hidden.any(
       (destination) => destination.value == widget.value,
     );
@@ -255,8 +251,7 @@ class _DockSlot extends StatelessWidget {
                             ? style.indicator.fill
                             : Color.alphaBlend(
                                 state.wash!,
-                                style.indicator.fill ??
-                                    const Color(0x00000000),
+                                style.indicator.fill ?? const Color(0x00000000),
                               ))
                       : state.wash,
                   borderRadius: style.indicator.radius,
@@ -264,9 +259,7 @@ class _DockSlot extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: style.iconSize,
-                  color: chosen
-                      ? style.indicator.foreground
-                      : textStyle.color,
+                  color: chosen ? style.indicator.foreground : textStyle.color,
                 ),
               ),
               SizedBox(height: style.gap),

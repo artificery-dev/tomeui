@@ -58,7 +58,10 @@ void main() {
     );
 
     final line = tester.getSize(
-      find.descendant(of: find.byType(Divider), matching: find.byType(SizedBox)),
+      find.descendant(
+        of: find.byType(Divider),
+        matching: find.byType(SizedBox),
+      ),
     );
     expect(line.width, tester.getSize(find.byType(Divider)).width - 24);
   });

@@ -54,6 +54,5 @@ class Radii {
       other.full == full;
 
   @override
-  int get hashCode =>
-      Object.hash(none, small, medium, large, extraLarge, full);
+  int get hashCode => Object.hash(none, small, medium, large, extraLarge, full);
 }

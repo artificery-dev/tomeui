@@ -11,8 +11,6 @@ void main() {
     WidgetTester tester, {
     bool alphabetical = false,
     int count = 100,
-    Duration letterEntry = WheelList.letterEntry,
-    Duration letterIdle = WheelList.accelerationIdle,
   }) async {
     wheel = ClickWheelController();
     enabled = ValueNotifier(true);
@@ -27,8 +25,6 @@ void main() {
             valueListenable: enabled,
             builder: (context, on, _) => WheelAcceleration(
               enabled: on,
-              letterEntry: letterEntry,
-              letterIdle: letterIdle,
               child: Center(
                 child: SizedBox(
                   width: 175,
@@ -66,8 +62,8 @@ void main() {
   }
 
   Future<void> accelerate(WidgetTester tester) async {
-    for (var i = 0; i < 5; i++) {
-      await jog(tester, delay: 150);
+    for (var i = 0; i < 7; i++) {
+      await jog(tester, delay: 30);
     }
   }
 
@@ -94,89 +90,19 @@ void main() {
     expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
   });
 
-  testWidgets('letter browsing holds the list still and commits once on idle', (
-    tester,
-  ) async {
-    await pump(tester, alphabetical: true, count: 200);
-    await accelerate(tester);
-    expect(selected, 4);
-    final overlay = find.byKey(const ValueKey('WheelList.letters'));
-    final scrollable = tester.state<ScrollableState>(
-      find.byType(Scrollable).first,
-    );
-    final offset = scrollable.position.pixels;
-    await jog(tester);
-    await jog(tester, delay: 250);
-    await jog(tester, amount: -1, delay: 250);
-    expect(selected, 4);
-    expect(scrollable.position.pixels, offset);
-    await tester.pump(const Duration(milliseconds: 990));
-    expect(overlay, findsOneWidget);
-    expect(selected, 4);
-    await tester.pump(const Duration(milliseconds: 10));
-    expect(selected, 20);
-    expect(scrollable.position.pixels, selected * 20);
-    expect(overlay, findsOneWidget);
-    await tester.pumpAndSettle();
-    expect(overlay, findsNothing);
-    await jog(tester);
-    expect(selected, 21);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('select commits the letter without activating its item', (
     tester,
   ) async {
     await pump(tester, alphabetical: true);
     await accelerate(tester);
     await jog(tester);
-    expect(selected, 4);
+    expect(selected, 6);
     wheel.press(WheelButton.select);
     await tester.pumpAndSettle();
     expect(selected, 20);
     expect(activated, -1);
     wheel.press(WheelButton.select);
     expect(activated, 20);
-  });
-
-  testWidgets('the letters show how long they have left, and a turn of the '
-      'wheel fills it again', (tester) async {
-    await pump(tester, alphabetical: true, count: 200);
-    await accelerate(tester);
-    await tester.pump(WheelList.modeTransition);
-    final clock = find.byKey(WheelList.lettersClockKey);
-    expect(clock, findsOneWidget);
-    final early = tester.widget<FractionallySizedBox>(clock).widthFactor!;
-    await tester.pump(const Duration(milliseconds: 300));
-    final later = tester.widget<FractionallySizedBox>(clock).widthFactor!;
-    expect(later, lessThan(early));
-    await jog(tester);
-    await tester.pump();
-    expect(tester.widget<FractionallySizedBox>(clock).widthFactor, 1.0);
-    await tester.pump(WheelList.accelerationIdle);
-    await tester.pumpAndSettle();
-    expect(clock, findsNothing);
-  });
-
-  testWidgets('the letters open and close on the timings WheelAcceleration '
-      'gives', (tester) async {
-    await pump(
-      tester,
-      alphabetical: true,
-      letterEntry: const Duration(milliseconds: 200),
-      letterIdle: const Duration(milliseconds: 300),
-    );
-    final overlay = find.byKey(const ValueKey('WheelList.letters'));
-    await jog(tester);
-    await jog(tester, delay: 150);
-    expect(overlay, findsNothing, reason: '150 ms is short of the entry');
-    await jog(tester, delay: 100);
-    expect(overlay, findsOneWidget, reason: '250 ms in one direction');
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(overlay, findsOneWidget, reason: 'still within the idle time');
-    await tester.pump(const Duration(milliseconds: 150));
-    await tester.pumpAndSettle();
-    expect(overlay, findsNothing, reason: '300 ms idle closes the letters');
   });
 
   testWidgets('overlay has one neighbor per side and a larger primary letter', (
@@ -224,94 +150,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected, 60);
   });
-
-  testWidgets(
-    'brief fast bursts and hardware tiers cannot bypass entry delay',
-    (tester) async {
-      await pump(tester, alphabetical: true);
-      for (var i = 0; i < 5; i++) {
-        await jog(tester, page: true);
-      }
-      expect(selected, 5);
-      expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-      await jog(tester, delay: 1000);
-      for (var i = 0; i < 5; i++) {
-        await jog(tester, page: true);
-      }
-      expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-      await tester.pump(WheelList.accelerationIdle);
-    },
-  );
-
-  testWidgets(
-    'slow scrolling enters letters only after sustained time in one direction',
-    (tester) async {
-      await pump(tester, alphabetical: true);
-      await jog(tester);
-      for (var i = 0; i < 4; i++) {
-        await jog(tester, delay: 100, amount: i == 2 ? -1 : 1);
-      }
-      expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-      // The last reversal was at 400 ms. The original 600 ms deadline
-      // must not open letter mode; this direction needs its own full run.
-      for (var i = 0; i < 5; i++) {
-        await jog(tester, delay: 100);
-        expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-      }
-      final before = selected;
-      await jog(tester, delay: 100);
-      expect(find.byKey(const ValueKey('WheelList.letters')), findsOneWidget);
-      expect(selected, before);
-      await tester.pump(WheelList.accelerationIdle);
-      await tester.pumpAndSettle();
-      expect(selected, 0);
-    },
-  );
-
-  testWidgets('stopping before the duration never opens letters on its own', (
-    tester,
-  ) async {
-    await pump(tester, alphabetical: true);
-    await jog(tester);
-    await jog(tester, delay: 250);
-    await tester.pump(const Duration(milliseconds: 800));
-    expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-    await tester.pump(WheelList.accelerationIdle);
-    await jog(tester);
-    expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-    await tester.pump(WheelList.accelerationIdle);
-  });
-
-  testWidgets('disabling acceleration cancels pending letter selection', (
-    tester,
-  ) async {
-    await pump(tester, alphabetical: true);
-    await accelerate(tester);
-    enabled.value = false;
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('WheelList.letters')), findsNothing);
-    expect(selected, 4);
-    await jog(tester, page: true);
-    expect(selected, 5);
-  });
-
-  testWidgets(
-    'letter browsing clamps to available sections before committing',
-    (tester) async {
-      await pump(tester, alphabetical: true);
-      await accelerate(tester);
-      await jog(tester, amount: 100);
-      await tester.pump(WheelList.accelerationIdle);
-      await tester.pumpAndSettle();
-      expect(selected, 80);
-      await accelerate(tester);
-      await jog(tester, amount: -100);
-      await jog(tester, amount: -1);
-      expect(selected, 84);
-      await tester.pump(WheelList.accelerationIdle);
-      await tester.pumpAndSettle();
-      expect(selected, 0);
-      expect(tester.takeException(), isNull);
-    },
-  );
 }

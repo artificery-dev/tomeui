@@ -59,6 +59,7 @@ class TextField extends StatefulWidget {
     this.autofillHints,
     this.maxLines = 1,
     this.minLines,
+    this.crossAxisAlignment,
     this.contextMenuBuilder,
     this.variant = SurfaceVariant.outline,
     this.swatch = SemanticSwatch.primary,
@@ -116,6 +117,10 @@ class TextField extends StatefulWidget {
   /// box instead of scrolling the text through it.
   final int? maxLines;
   final int? minLines;
+
+  /// Vertical alignment of the text and leading/trailing controls. Defaults to
+  /// centered for single-line fields and top-aligned for multiline fields.
+  final CrossAxisAlignment? crossAxisAlignment;
 
   /// What a selection can be acted on with, and how that's presented.
   /// Defaults to [TextSelectionMenu]; null strips the field of a selection
@@ -310,8 +315,7 @@ class _TextFieldState extends State<TextField>
           : null,
       showSelectionHandles: _showHandles,
       onSelectionChanged: _selectionChanged,
-      contextMenuBuilder:
-          widget.contextMenuBuilder ?? _contextMenu,
+      contextMenuBuilder: widget.contextMenuBuilder ?? _contextMenu,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       // The gesture detector below owns the pointer; the renderer taking it
@@ -367,9 +371,9 @@ class _TextFieldState extends State<TextField>
       ),
       padding: singleLine ? style.padding : style.multilinePadding,
       child: Row(
-        crossAxisAlignment: singleLine
-            ? CrossAxisAlignment.center
-            : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            widget.crossAxisAlignment ??
+            (singleLine ? CrossAxisAlignment.center : CrossAxisAlignment.start),
         children: [
           if (widget.leading != null) ...[
             IconTheme.merge(

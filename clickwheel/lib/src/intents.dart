@@ -11,10 +11,21 @@ import 'package:tomeui/tomeui.dart';
 /// with a selection model of its own ([WheelList]) overrides this intent in
 /// its subtree and consumes the turn itself.
 class JogIntent extends Intent {
-  const JogIntent(this.amount, {this.page = false});
+  const JogIntent(this.amount, {this.page = false, this.timeStamp});
 
   final int amount;
   final bool page;
+
+  /// Original input timestamp, before Flutter delivery or sensitivity.
+  final Duration? timeStamp;
+}
+
+/// Raw controller movement, delivered before sensitivity consumes partial rows.
+/// Lists use this only for velocity; [JogIntent] still controls item movement.
+class WheelTurnIntent extends Intent {
+  const WheelTurnIntent(this.ticks, {this.timeStamp});
+  final int ticks;
+  final Duration? timeStamp;
 }
 
 /// The menu button: up one level.

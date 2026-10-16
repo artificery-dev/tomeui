@@ -121,11 +121,7 @@ class _Crumb extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (crumb.icon != null) ...[
-              Icon(
-                crumb.icon,
-                size: style.iconSize,
-                color: textStyle.color,
-              ),
+              Icon(crumb.icon, size: style.iconSize, color: textStyle.color),
               SizedBox(width: style.iconGap),
             ],
             Flexible(child: crumb.label),

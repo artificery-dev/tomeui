@@ -41,6 +41,7 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
     this.actions = const [],
     this.centerTitle = false,
     this.windowControls,
+    this.windowShell,
     this.dragToMove,
     this.style,
     super.key,
@@ -67,6 +68,9 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
   /// the platform's answer: Windows and Linux yes, macOS no, and no
   /// anywhere that isn't a desktop.
   final bool? windowControls;
+
+  /// Targets a secondary window without replacing the application shell.
+  final WindowShell? windowShell;
 
   /// Dragging the bar moves the window, and a double-click maximises it.
   /// Null means yes on desktop.
@@ -163,7 +167,7 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
         Expanded(
           child: Padding(padding: style.padding, child: row),
         ),
-        if (controls) WindowControls(style: style),
+        if (controls) WindowControls(style: style, shell: windowShell),
       ],
     );
 
@@ -213,18 +217,18 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
     );
   }
 
-  static Future<void> _startDragging() async {
+  Future<void> _startDragging() async {
     try {
-      await WindowShell.instance.startDragging();
+      await (windowShell ?? WindowShell.instance).startDragging();
     } on Object {
       // No window to drag — a shell that overpromised, or a test. A bar
       // that can't move the window is still a bar.
     }
   }
 
-  static Future<void> _toggleMaximized() async {
+  Future<void> _toggleMaximized() async {
     try {
-      final shell = WindowShell.instance;
+      final shell = windowShell ?? WindowShell.instance;
       if (await shell.isMaximized()) {
         await shell.unmaximize();
       } else {
@@ -242,7 +246,10 @@ class TitleBar extends StatelessWidget implements SelfDressedBar {
 /// the widget directly only to put them somewhere else in a bar of your
 /// own. Off desktop it draws nothing.
 class WindowControls extends StatefulWidget {
-  const WindowControls({this.style, super.key});
+  const WindowControls({this.style, this.shell, super.key});
+
+  /// Keeps controls attached to their own window in a multi-view application.
+  final WindowShell? shell;
 
   /// The style to paint, bypassing the theme.
   final TitleBarStyle? style;
@@ -254,16 +261,31 @@ class WindowControls extends StatefulWidget {
 class _WindowControlsState extends State<WindowControls> {
   bool _maximized = false;
 
+  /// Retains the default shell for single-window applications.
+  WindowShell get shell => widget.shell ?? WindowShell.instance;
+
+  /// Moves listeners when the host supplies a different window.
+  @override
+  void didUpdateWidget(WindowControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.shell == widget.shell) return;
+    (oldWidget.shell ?? WindowShell.instance).removeMaximizedListener(
+      _onMaximized,
+    );
+    shell.addMaximizedListener(_onMaximized);
+    _readMaximized();
+  }
+
   @override
   void initState() {
     super.initState();
-    WindowShell.instance.addMaximizedListener(_onMaximized);
+    shell.addMaximizedListener(_onMaximized);
     _readMaximized();
   }
 
   @override
   void dispose() {
-    WindowShell.instance.removeMaximizedListener(_onMaximized);
+    shell.removeMaximizedListener(_onMaximized);
     super.dispose();
   }
 
@@ -275,7 +297,7 @@ class _WindowControlsState extends State<WindowControls> {
 
   Future<void> _readMaximized() async {
     try {
-      final maximized = await WindowShell.instance.isMaximized();
+      final maximized = await shell.isMaximized();
       if (mounted && maximized != _maximized) {
         setState(() => _maximized = maximized);
       }
@@ -311,7 +333,7 @@ class _WindowControlsState extends State<WindowControls> {
             glyph: WindowGlyph.minimize,
             icon: theme.icons.windowMinimize,
             label: theme.labels.minimizeWindow,
-            onPressed: () => _act(WindowShell.instance.minimize),
+            onPressed: () => _act(shell.minimize),
           ),
           _WindowButton(
             style: style,
@@ -322,11 +344,8 @@ class _WindowControlsState extends State<WindowControls> {
             label: _maximized
                 ? theme.labels.restoreWindow
                 : theme.labels.maximizeWindow,
-            onPressed: () => _act(
-              _maximized
-                  ? WindowShell.instance.unmaximize
-                  : WindowShell.instance.maximize,
-            ),
+            onPressed: () =>
+                _act(_maximized ? shell.unmaximize : shell.maximize),
           ),
           _WindowButton(
             style: style,
@@ -334,7 +353,7 @@ class _WindowControlsState extends State<WindowControls> {
             icon: theme.icons.windowClose,
             label: theme.labels.closeWindow,
             danger: true,
-            onPressed: () => _act(WindowShell.instance.close),
+            onPressed: () => _act(shell.close),
           ),
         ],
       ),
@@ -367,45 +386,48 @@ class _WindowButton extends StatelessWidget {
   final bool danger;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: label,
-    child: Interactive(
-      onActivate: onPressed,
-      ring: style.controlRing,
-      ringRadius: BorderRadius.zero,
-      hover: danger ? style.closeHover : style.controlHover,
-      pressed: danger ? style.closePressed : style.controlPressed,
-      builder: (context, state) {
-        // Over the red, the glyph has to be what reads on *it* rather than
-        // what read on the bar — and only while the red is actually there.
-        // A wash at rest is the hover color at zero alpha, not null, so
-        // asking whether there is one at all painted the close cross in
-        // the bar's own fill: a button you could press and never see.
-        final washed = danger && (state.hovered || state.pressed);
-        final color = washed
-            ? style.surface.fill ?? style.surface.foreground
-            : style.surface.foreground;
+  Widget build(BuildContext context) => Tooltip(
+    message: Text(label),
+    child: Semantics(
+      button: true,
+      label: label,
+      child: Interactive(
+        onActivate: onPressed,
+        ring: style.controlRing,
+        ringRadius: BorderRadius.zero,
+        hover: danger ? style.closeHover : style.controlHover,
+        pressed: danger ? style.closePressed : style.controlPressed,
+        builder: (context, state) {
+          // Over the red, the glyph has to be what reads on *it* rather than
+          // what read on the bar — and only while the red is actually there.
+          // A wash at rest is the hover color at zero alpha, not null, so
+          // asking whether there is one at all painted the close cross in
+          // the bar's own fill: a button you could press and never see.
+          final washed = danger && (state.hovered || state.pressed);
+          final color = washed
+              ? style.surface.fill ?? style.surface.foreground
+              : style.surface.foreground;
 
-        return AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            color: state.wash,
-            child: Center(
-              child: icon != null
-                  ? Icon(icon, size: style.controlIconSize, color: color)
-                  : CustomPaint(
-                      size: Size.square(style.controlIconSize),
-                      painter: _WindowGlyphPainter(
-                        glyph: glyph,
-                        color: color,
-                        stroke: style.glyphStroke,
+          return AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              color: state.wash,
+              child: Center(
+                child: icon != null
+                    ? Icon(icon, size: style.controlIconSize, color: color)
+                    : CustomPaint(
+                        size: Size.square(style.controlIconSize),
+                        painter: _WindowGlyphPainter(
+                          glyph: glyph,
+                          color: color,
+                          stroke: style.glyphStroke,
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     ),
   );
 }

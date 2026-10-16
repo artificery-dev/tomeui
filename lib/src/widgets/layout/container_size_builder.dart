@@ -2,10 +2,7 @@ import 'package:tomeui/tomeui.dart';
 
 /// How much room a slot actually has, and what that width would be called.
 class ContainerSize {
-  const ContainerSize({
-    required this.constraints,
-    required this.breakpoint,
-  });
+  const ContainerSize({required this.constraints, required this.breakpoint});
 
   /// What the parent offered, verbatim — including an infinity, when the
   /// slot sits in something that scrolls that way.

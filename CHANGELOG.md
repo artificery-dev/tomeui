@@ -1,3 +1,17 @@
+## Unreleased
+
+- A `Slider` in a loose slot (a start-aligned column, say) fills the slot. Before, it shrank to the travelled part of its track, so the thumb drew past the end and the rest of the track was missing.
+- `NavGroup` takes a `value`: the group is then a place of its own as well as a heading. Pressing the row goes there and shows it selected, the chevron is its own button that folds, and a second press inside the double-tap window folds too. Without a value the row folds as before. The fold key falls back to `value` before the first destination inside. Two new `Labels`, `expand` and `collapse`, name the chevron for screen readers.
+- `Scaffold` takes `resizable: true`: each inline sidebar carries a grab strip along its inner edge and drags wider or narrower, between the new `ScaffoldStyle.sidebarMinWidth` and `sidebarMaxWidth` and never into the body's `minBodyWidth`. Widths are the scaffold's own, read through `ScaffoldState.width` and set through `resize`; `onSidebarResized` reports each change and `initialLeadingWidth`/`initialTrailingWidth` hand one back. The drawer decision now counts each side's own width rather than one shared `sidebarWidth`. The strip lights a two-hairline line in `ScaffoldStyle.resizeHandleColor` (the primary swatch by default) while hovered or dragged.
+- `NavGroup.entries` can hold further `NavGroup`s, to any depth: each level sits one indent further in and folds on its own, a group holding where you are opens along with every group around it, and the arrow keys walk the nested rows in order.
+- `NavGroup` and `NavDestination` take a `leading` widget — an avatar, say — drawn in the icon's square in place of `icon`. `Dock` keeps to `icon`.
+- `NavGroup` takes an `id` to remember its fold by, for groups whose contents come and go; without one the fold keys on the first destination inside, nested groups searched too.
+- `NavGroup` takes `indent: false` to keep its contents flush with its own row rather than a step in, for sidebars whose groups are sections rather than a tree. Groups inside still step their own contents in; folding, walking, and spacing are unchanged.
+- `NavDestination` takes a `menu` of `MenuEntry`s: in a `NavList`, a right-click or long press anywhere on the row opens it at the pointer, without choosing the row. A disabled row or list doesn't answer. `Dock` leaves it out.
+- `ContextMenu` takes `enabled`: false ignores the pointer and closes a menu already open, without rebuilding what it wraps.
+- A `NavGroup` with `initiallyOpen: false` opens when tapped. Before, the fold fell back to the group's starting state once it was unfolded, so it stayed shut.
+- A colorful `Slider`'s thumb is its swatch at full strength, ringed in the page background, instead of the swatch's dark contrast ink, which sank into dark pages.
+
 ## 0.3.5
 
 - No library changes; the shared version moves with `tomeui_clickwheel`, whose wheel list can now carry a header that scrolls away with its rows.

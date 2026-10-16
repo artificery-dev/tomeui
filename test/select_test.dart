@@ -137,9 +137,7 @@ void main() {
     );
 
     final field = tester.getRect(find.byType(Button));
-    final chevron = tester.getRect(
-      find.byIcon(const Icons().chevronDown),
-    );
+    final chevron = tester.getRect(find.byIcon(const Icons().chevronDown));
     final label = tester.getRect(find.text('Dog').hitTestable());
     // The spare width opens in the middle, not around the content: both
     // ends sit within the trigger's own padding of their edges.

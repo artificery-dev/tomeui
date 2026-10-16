@@ -26,6 +26,9 @@ class BreakpointBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
-    return builder(context, theme.breakpoints.at(MediaQuery.sizeOf(context).width));
+    return builder(
+      context,
+      theme.breakpoints.at(MediaQuery.sizeOf(context).width),
+    );
   }
 }

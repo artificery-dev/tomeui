@@ -36,9 +36,7 @@ void main() {
   ) async {
     await pump(
       tester,
-      ListView(
-        children: const [Text('a'), Spacing(SpaceStep.x8), Text('b')],
-      ),
+      ListView(children: const [Text('a'), Spacing(SpaceStep.x8), Text('b')]),
     );
 
     final size = tester.getSize(find.byType(Spacing));
@@ -49,7 +47,8 @@ void main() {
       reason: 'a list gives its children a tight width',
     );
     expect(
-      tester.getTopLeft(find.text('b')).dy - tester.getBottomLeft(find.text('a')).dy,
+      tester.getTopLeft(find.text('b')).dy -
+          tester.getBottomLeft(find.text('a')).dy,
       32,
     );
   });

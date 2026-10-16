@@ -19,6 +19,47 @@ void main() {
     matching: find.text(label),
   );
 
+  testWidgets(
+    'nested menus support hover, keyboard return, and leaf dismissal',
+    (tester) async {
+      var selected = 0;
+      await tester.pumpWidget(
+        TomeApp(
+          home: host([
+            MenuItem(
+              label: const Text('Components'),
+              children: [
+                MenuItem(
+                  label: const Text('Sprite'),
+                  onPressed: () => selected++,
+                ),
+              ],
+            ),
+            MenuItem(label: const Text('Delete'), onPressed: () {}),
+          ]),
+        ),
+      );
+      await open(tester);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(1, 1));
+      await mouse.moveTo(tester.getCenter(row('Components')));
+      await tester.pumpAndSettle();
+      expect(row('Sprite'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(row('Sprite'), findsNothing);
+      expect(row('Delete'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(row('Sprite'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(selected, 1);
+      expect(row('Components'), findsNothing);
+      await mouse.removePointer();
+    },
+  );
+
   testWidgets('opens on its anchor and closes on choosing', (tester) async {
     var duplicated = 0;
     await tester.pumpWidget(

@@ -23,11 +23,7 @@ void main() {
       keywords: const ['panel', 'drawer'],
       onInvoke: () => ran.add('Toggle sidebar'),
     ),
-    Command(
-      name: 'Close',
-      enabled: false,
-      onInvoke: () => ran.add('Close'),
-    ),
+    Command(name: 'Close', enabled: false, onInvoke: () => ran.add('Close')),
   ];
 
   Future<void> pump(WidgetTester tester, List<String> ran) => tester.pumpWidget(
@@ -41,9 +37,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('everything is offered until something is typed', (
-    tester,
-  ) async {
+  testWidgets('everything is offered until something is typed', (tester) async {
     await pump(tester, []);
 
     expect(find.text('Save'), findsOneWidget);

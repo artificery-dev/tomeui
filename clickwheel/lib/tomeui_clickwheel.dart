@@ -25,3 +25,4 @@ export 'src/intents.dart';
 export 'src/wheel_grid.dart';
 export 'src/wheel_list.dart';
 export 'src/wheel_rail.dart';
+export 'src/wheel_scroll_config.dart';

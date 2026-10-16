@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:tomeui/tomeui.dart';
 
 import '../foundation/interactive.dart';
@@ -6,7 +7,8 @@ import '../foundation/list_walk.dart';
 /// The sidebar's list of places.
 ///
 /// What a [Scaffold]'s leading slot is usually holding: destinations,
-/// headings over runs of them, groups that fold away, and rules between.
+/// headings over runs of them, groups that fold away — groups inside groups,
+/// as deep as needed — and rules between.
 /// The vocabulary is [NavEntry], the same one a [Dock] takes, so a shell
 /// that offers a rail on a phone and a sidebar on a desktop is showing one
 /// list two ways.
@@ -70,47 +72,86 @@ class NavList<T> extends StatefulWidget {
 
 /// One line of the flattened list: what to draw, and how far in.
 class _Row {
-  const _Row(this.entry, {this.depth = 0, this.group});
+  const _Row(this.entry, {this.indent = 0, this.group});
 
   final Object entry;
-  final int depth;
+
+  /// Steps in from the list's edge. Not how deeply the row is nested: a
+  /// group that keeps its contents flush adds no step.
+  final int indent;
 
   /// The group this row folds, when the row is a group's own.
   final NavGroup<Object?>? group;
 }
 
 class _NavListState<T> extends State<NavList<T>> {
-  /// Groups the reader has folded shut, keyed by their first destination's
-  /// value — the one stable name a group carries. Object identity would
-  /// forget every fold the moment a parent rebuild handed the list fresh
-  /// entry instances, which parents do constantly.
-  final Set<Object?> _shut = {};
+  /// Groups the reader has folded open or shut, keyed by the group's
+  /// [NavGroup.id] or else its first destination's value — the stable
+  /// names a group carries. Object identity would forget every fold the
+  /// moment a parent rebuild handed the list fresh entry instances, which
+  /// parents do constantly. What the reader did wins over
+  /// [NavGroup.initiallyOpen]: a group that starts shut has to open when
+  /// tapped.
+  final Map<Object?, bool> _folds = {};
 
   Object? _keyOf(NavGroup<Object?> group) =>
-      group.destinations.isEmpty ? group : group.destinations.first.value;
+      group.id ??
+      group.value ??
+      _firstDestination(group.entries)?.value ??
+      group;
+
+  /// The last press on a group that is a place, so a second one inside the
+  /// double-tap window folds it instead of choosing it again.
+  (Object?, DateTime)? _lastPress;
+
+  /// The first destination in [entries], nested groups searched in order.
+  NavDestination<Object?>? _firstDestination(List<NavEntry> entries) {
+    for (final entry in entries) {
+      switch (entry) {
+        case final NavDestination<Object?> destination:
+          return destination;
+        case final NavGroup<Object?> group:
+          final inside = _firstDestination(group.entries);
+          if (inside != null) return inside;
+        default:
+          break;
+      }
+    }
+    return null;
+  }
+
+  /// Whether where you are sits anywhere inside [entries], however deep.
+  bool _holdsValue(List<NavEntry> entries) => entries.any(
+    (entry) => switch (entry) {
+      NavDestination<Object?>(:final value) => value == widget.value,
+      NavGroup<Object?>(:final value, :final entries) =>
+        (value != null && value == widget.value) || _holdsValue(entries),
+      _ => false,
+    },
+  );
 
   bool get _enabled => widget.onChanged != null;
 
   bool _open(NavGroup<Object?> group) {
-    if (_shut.contains(_keyOf(group))) return false;
-    // A group holding where you are is open whatever it was told: a
-    // selected row nobody can see is worse than an open group nobody asked
-    // for.
-    if (group.destinations.any((one) => one.value == widget.value)) return true;
-    return group.initiallyOpen;
+    final folded = _folds[_keyOf(group)];
+    if (folded == false) return false;
+    // A group holding where you are — at any depth, so its ancestors too —
+    // is open whatever it was told: a selected row nobody can see is worse
+    // than an open group nobody asked for.
+    if (_holdsValue(group.entries)) return true;
+    return folded ?? group.initiallyOpen;
   }
 
   /// The entries as rows, with folded groups' contents left out.
-  List<_Row> get _rows => [
-    for (final entry in widget.entries)
-      ...switch (entry) {
-        NavGroup<Object?>(:final destinations) => [
-          _Row(entry, group: entry),
-          if (_open(entry))
-            for (final destination in destinations) _Row(destination, depth: 1),
-        ],
-        _ => [_Row(entry)],
-      },
+  List<_Row> get _rows => _flatten(widget.entries);
+
+  List<_Row> _flatten(List<NavEntry> entries) => [
+    for (final entry in entries)
+      if (entry is NavGroup<Object?>) ...[
+        _Row(entry, group: entry),
+        if (_open(entry)) ..._flatten(entry.entries),
+      ] else
+        _Row(entry),
   ];
 
   bool _walkable(_Row row) => switch (row.entry) {
@@ -124,15 +165,29 @@ class _NavListState<T> extends State<NavList<T>> {
     switch (row.entry) {
       case NavDestination<T>(:final value, :final enabled):
         if (enabled && value != widget.value) widget.onChanged!(value);
+      case NavGroup<T>(:final value?) && final group:
+        final key = _keyOf(group);
+        final now = DateTime.now();
+        final last = _lastPress;
+        _lastPress = (key, now);
+        if (last != null &&
+            last.$1 == key &&
+            now.difference(last.$2) <= kDoubleTapTimeout) {
+          _lastPress = null;
+          _fold(group);
+        } else if (value != widget.value) {
+          widget.onChanged!(value);
+        }
       case final NavGroup<Object?> group:
-        setState(
-          () => _open(group)
-              ? _shut.add(_keyOf(group))
-              : _shut.remove(_keyOf(group)),
-        );
+        _fold(group);
       default:
         break;
     }
+  }
+
+  void _fold(NavGroup<Object?> group) {
+    if (!_enabled) return;
+    setState(() => _folds[_keyOf(group)] = !_open(group));
   }
 
   @override
@@ -168,7 +223,8 @@ class _NavListState<T> extends State<NavList<T>> {
     );
   }
 
-  /// The rows, with each group's destinations inside a fold of their own.
+  /// The rows, with each group's contents inside a fold of their own —
+  /// nested groups inside their parent's fold, each with its own.
   ///
   /// The walk still sees the flat list — a shut group's rows are no part of
   /// it — so the indices here are counted the same way [_rows] counts them.
@@ -181,60 +237,73 @@ class _NavListState<T> extends State<NavList<T>> {
     int? highlight,
     ValueChanged<int> highlightTo,
   ) {
-    final children = <Widget>[];
-    var index = 0;
+    // [start] is the walk index of the first row, or null when these rows
+    // are no part of the walk — inside a fold that's shut or shutting.
+    // [depth] is how deeply nested the rows are; [indent] is how many steps
+    // in they're drawn, which a flush group leaves where it was.
+    List<Widget> lay(
+      List<NavEntry> entries,
+      int depth,
+      int indent,
+      int? start,
+    ) {
+      final children = <Widget>[];
+      var index = start;
 
-    // The gap goes before each row, never before a group's fold: the fold
-    // carries its own inside, so a shut one takes up nothing at all rather
-    // than leaving a gap where its rows were.
-    void space() {
-      if (children.isNotEmpty) children.add(SizedBox(height: style.rowGap));
-    }
-
-    for (final entry in widget.entries) {
-      final at = index++;
-      space();
-      children.add(
-        _line(
-          theme: theme,
-          style: style,
-          row: _Row(entry, group: entry is NavGroup<Object?> ? entry : null),
-          highlighted: at == highlight,
-          onHover: () => highlightTo(at),
-        ),
-      );
-
-      if (entry is! NavGroup<Object?>) continue;
-      final open = _open(entry);
-      final first = index;
-      if (open) index += entry.destinations.length;
-
-      children.add(
-        _Fold(
-          open: open,
-          duration: theme.motion.standard,
-          curve: theme.motion.move,
-          builder: (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (offset, destination)
-                  in entry.destinations.indexed) ...[
-                SizedBox(height: style.rowGap),
-                _line(
-                  theme: theme,
-                  style: style,
-                  row: _Row(destination, depth: 1),
-                  highlighted: open && first + offset == highlight,
-                  onHover: open ? () => highlightTo(first + offset) : () {},
-                ),
-              ],
-            ],
+      for (final entry in entries) {
+        final at = index;
+        if (index != null) index++;
+        // The gap goes before each row, never before a group's fold: the
+        // fold carries its own inside, so a shut one takes up nothing at
+        // all rather than leaving a gap where its rows were. Inside a fold
+        // every row takes one, the first included — that's the gap after
+        // the group's own row.
+        if (depth > 0 || children.isNotEmpty) {
+          children.add(SizedBox(height: style.rowGap));
+        }
+        children.add(
+          _line(
+            theme: theme,
+            style: style,
+            row: _Row(
+              entry,
+              indent: indent,
+              group: entry is NavGroup<Object?> ? entry : null,
+            ),
+            highlighted: at != null && at == highlight,
+            onHover: at != null ? () => highlightTo(at) : () {},
           ),
-        ),
-      );
+        );
+
+        if (entry is! NavGroup<Object?>) continue;
+        final open = _open(entry);
+        final first = index != null && open ? index : null;
+        if (first != null) {
+          index = first + _flatten(entry.entries).length;
+        }
+
+        children.add(
+          _Fold(
+            open: open,
+            duration: theme.motion.standard,
+            curve: theme.motion.move,
+            builder: (context) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: lay(
+                entry.entries,
+                depth + 1,
+                entry.indent ? indent + 1 : indent,
+                first,
+              ),
+            ),
+          ),
+        );
+      }
+      return children;
     }
-    return children;
+
+    return lay(widget.entries, 0, 0, 0);
   }
 
   Widget _line({
@@ -245,23 +314,35 @@ class _NavListState<T> extends State<NavList<T>> {
     required VoidCallback onHover,
   }) => switch (row.entry) {
     NavHeading(:final label) => Padding(
-      padding: style.headingPadding,
-      child: DefaultTextStyle.merge(style: style.headingStyle, child: label),
+      padding: EdgeInsetsDirectional.only(start: row.indent * style.indent),
+      child: Padding(
+        padding: style.headingPadding,
+        child: DefaultTextStyle.merge(style: style.headingStyle, child: label),
+      ),
     ),
     NavSeparator() => Padding(
-      padding: EdgeInsets.symmetric(vertical: theme.space.x2),
+      padding: EdgeInsetsDirectional.only(
+        top: theme.space.x2,
+        bottom: theme.space.x2,
+        start: row.indent * style.indent,
+      ),
       child: Divider(style: DividerStyle(color: style.separator)),
     ),
     final NavGroup<Object?> group => _NavRow(
       style: style,
-      depth: row.depth,
+      indent: row.indent,
       icon: group.icon,
+      leading: group.leading,
       label: group.label,
-      trailing: Icon(
-        _open(group) ? theme.icons.chevronDown : theme.icons.chevronRight,
+      trailing: _Chevron(
+        open: _open(group),
         size: style.iconSize,
+        // A group that is a place keeps its row for going there; the
+        // chevron alone folds it.
+        onPressed: group.value != null && _enabled ? () => _fold(group) : null,
       ),
-      selected: false,
+      menu: const [],
+      selected: group.value != null && group.value == widget.value,
       highlighted: highlighted,
       enabled: _enabled,
       onHover: onHover,
@@ -269,12 +350,14 @@ class _NavListState<T> extends State<NavList<T>> {
     ),
     final NavDestination<Object?> destination => _NavRow(
       style: style,
-      depth: row.depth,
+      indent: row.indent,
       icon: destination.value == widget.value
           ? (destination.selectedIcon ?? destination.icon)
           : destination.icon,
+      leading: destination.leading,
       label: destination.label,
       trailing: destination.trailing,
+      menu: destination.menu,
       selected: destination.value == widget.value,
       highlighted: highlighted,
       enabled: _enabled && destination.enabled,
@@ -285,14 +368,17 @@ class _NavListState<T> extends State<NavList<T>> {
   };
 }
 
-/// One pressable row: a glyph, its words, and whatever trails them.
+/// One pressable row: a glyph, its words, and whatever trails them —
+/// with a menu behind a right-click or a long press when it has one.
 class _NavRow extends StatelessWidget {
   const _NavRow({
     required this.style,
-    required this.depth,
+    required this.indent,
     required this.icon,
+    required this.leading,
     required this.label,
     required this.trailing,
+    required this.menu,
     required this.selected,
     required this.highlighted,
     required this.enabled,
@@ -301,10 +387,22 @@ class _NavRow extends StatelessWidget {
   });
 
   final NavListStyle style;
-  final int depth;
+
+  /// Steps in from the list's edge.
+  final int indent;
+
   final IconData? icon;
+
+  /// Drawn in the icon's square instead of [icon] when set.
+  final Widget? leading;
+
   final Widget label;
   final Widget? trailing;
+
+  /// What a right-click or a long press on the row offers. Empty, and it
+  /// offers nothing; disabled, and it doesn't answer.
+  final List<MenuEntry> menu;
+
   final bool selected;
 
   /// Where the keyboard is, which is not where you are.
@@ -318,8 +416,9 @@ class _NavRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeProvider.maybeOf(context) ?? const Theme();
     final textStyle = selected ? style.selectedStyle : style.textStyle;
+    final hasMenu = menu.isNotEmpty;
 
-    return Semantics(
+    final row = Semantics(
       selected: selected,
       enabled: enabled,
       button: true,
@@ -337,7 +436,7 @@ class _NavRow extends StatelessWidget {
             curve: theme.motion.move,
             height: style.rowHeight,
             padding: style.padding,
-            margin: EdgeInsetsDirectional.only(start: depth * style.indent),
+            margin: EdgeInsetsDirectional.only(start: indent * style.indent),
             decoration: BoxDecoration(
               // The selection is the row's own color; the highlight and
               // the wash are what's happening to it this instant.
@@ -348,7 +447,19 @@ class _NavRow extends StatelessWidget {
             ),
             child: Row(
               children: [
-                if (icon != null) ...[
+                if (leading != null) ...[
+                  SizedBox.square(
+                    dimension: style.iconSize,
+                    child: IconTheme.merge(
+                      data: IconThemeData(
+                        color: textStyle.color,
+                        size: style.iconSize,
+                      ),
+                      child: leading!,
+                    ),
+                  ),
+                  SizedBox(width: style.gap),
+                ] else if (icon != null) ...[
                   Icon(icon, size: style.iconSize, color: textStyle.color),
                   SizedBox(width: style.gap),
                 ],
@@ -383,6 +494,48 @@ class _NavRow extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+
+    // Around the whole row, so a right-click or a long press anywhere on
+    // it — the indent included — asks for the menu. A press that becomes a
+    // long press is no longer a tap, so it never chooses the row as well.
+    // Present while disabled too, only deaf: a list that's disabled for the
+    // length of a request keeps every row's state rather than rebuilding it.
+    return hasMenu
+        ? ContextMenu(entries: menu, enabled: enabled, child: row)
+        : row;
+  }
+}
+
+/// The fold glyph at a group's trailing edge. With [onPressed] it is a
+/// button of its own — the one part of a selectable group's row that folds
+/// rather than chooses — and wins the tap over the row beneath it.
+class _Chevron extends StatelessWidget {
+  const _Chevron({required this.open, required this.size, this.onPressed});
+
+  final bool open;
+  final double size;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ThemeProvider.maybeOf(context) ?? const Theme();
+    final glyph = Icon(
+      open ? theme.icons.chevronDown : theme.icons.chevronRight,
+      size: size,
+    );
+    if (onPressed == null) return glyph;
+    return Semantics(
+      button: true,
+      label: open ? theme.labels.collapse : theme.labels.expand,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed,
+          child: glyph,
         ),
       ),
     );
