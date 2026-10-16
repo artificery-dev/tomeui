@@ -1,0 +1,31 @@
+name: tomeui_pointer_lock
+description: >-
+  The pinned pointer behind Tome UI: a Wayland-native PointerLock so a
+  NumberField's scrub holds the cursor still and puts it back on release.
+version: 0.3.5
+repository: https://github.com/artificery-dev/tomeui/tree/main/pointer_lock
+issue_tracker: https://github.com/artificery-dev/tomeui/issues
+topics:
+  - desktop
+  - pointer
+platforms:
+  linux:
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+  flutter: '>=3.44.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  tomeui: ^0.3.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      linux:
+        pluginClass: TomeuiPointerLockPlugin

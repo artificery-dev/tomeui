@@ -25,6 +25,8 @@ Optional companion packages:
   window controls through `window_manager`.
 - [tomeui_clickwheel](https://pub.dev/packages/tomeui_clickwheel): click-wheel
   input, focus navigation, and wheel-driven lists and grids.
+- [tomeui_pointer_lock](https://pub.dev/packages/tomeui_pointer_lock): a
+  Wayland-native pinned pointer for `NumberField` scrubbing.
 
 ## Usage
 

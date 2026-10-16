@@ -45,11 +45,12 @@ publish package="all" *args: check
   #!/usr/bin/env bash
   set -euo pipefail
   case '{{package}}' in
-    all) packages=(. desktop clickwheel) ;;
+    all) packages=(. desktop clickwheel pointer_lock) ;;
     tomeui) packages=(.) ;;
     desktop|tomeui_desktop) packages=(desktop) ;;
     clickwheel|tomeui_clickwheel) packages=(clickwheel) ;;
-    *) echo 'Expected all, tomeui, desktop, or clickwheel.' >&2; exit 2 ;;
+    pointer_lock|tomeui_pointer_lock) packages=(pointer_lock) ;;
+    *) echo 'Expected all, tomeui, desktop, clickwheel, or pointer_lock.' >&2; exit 2 ;;
   esac
   if [[ -n "$(git status --porcelain)" ]]; then
     echo 'Commit or stash changes before publishing.' >&2
@@ -63,7 +64,7 @@ publish package="all" *args: check
   # resolves on its own against hosted dependencies (tool/release.py does the
   # same for CI releases; pub never uploads pubspec_overrides.yaml).
   python3 -c 'import sys; sys.path.insert(0, "tool"); import release; from pathlib import Path; p = Path(sys.argv[1]); p.write_text(release.without_workspace(p.read_text()))' "$release_dir/pubspec.yaml"
-  for directory in . desktop clickwheel; do
+  for directory in . desktop clickwheel pointer_lock; do
     printf 'resolution:\nworkspace: []\n' > "$release_dir/$directory/pubspec_overrides.yaml"
   done
   for directory in "${packages[@]}"; do

@@ -29,6 +29,7 @@ PACKAGES = {
     "tomeui": ".",
     "tomeui_desktop": "desktop",
     "tomeui_clickwheel": "clickwheel",
+    "tomeui_pointer_lock": "pointer_lock",
 }
 STABLE_VERSION = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 

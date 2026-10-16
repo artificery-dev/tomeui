@@ -13,6 +13,7 @@ topics:
 workspace:
   - clickwheel
   - desktop
+  - pointer_lock
   - playground
 
 environment:

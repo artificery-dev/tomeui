@@ -31,6 +31,8 @@ class Labels {
     this.copied = 'Copied',
     this.showSidebar = 'Show sidebar',
     this.hideSidebar = 'Hide sidebar',
+    this.expand = 'Expand',
+    this.collapse = 'Collapse',
     this.more = 'More',
     this.minimizeWindow = 'Minimize',
     this.maximizeWindow = 'Maximize',
@@ -67,6 +69,11 @@ class Labels {
   /// screen reader has for it.
   final String showSidebar;
   final String hideSidebar;
+
+  /// What a `NavList` group's own fold button is called, where the group
+  /// is a place and its row goes there instead.
+  final String expand;
+  final String collapse;
 
   /// What a `Dock` calls the destinations it hadn't room for.
   final String more;
@@ -105,6 +112,8 @@ class Labels {
     String? copied,
     String? showSidebar,
     String? hideSidebar,
+    String? expand,
+    String? collapse,
     String? more,
     String? minimizeWindow,
     String? maximizeWindow,
@@ -128,6 +137,8 @@ class Labels {
     copied: copied ?? this.copied,
     showSidebar: showSidebar ?? this.showSidebar,
     hideSidebar: hideSidebar ?? this.hideSidebar,
+    expand: expand ?? this.expand,
+    collapse: collapse ?? this.collapse,
     more: more ?? this.more,
     minimizeWindow: minimizeWindow ?? this.minimizeWindow,
     maximizeWindow: maximizeWindow ?? this.maximizeWindow,
@@ -155,6 +166,8 @@ class Labels {
       other.copied == copied &&
       other.showSidebar == showSidebar &&
       other.hideSidebar == hideSidebar &&
+      other.expand == expand &&
+      other.collapse == collapse &&
       other.more == more &&
       other.minimizeWindow == minimizeWindow &&
       other.maximizeWindow == maximizeWindow &&
@@ -182,6 +195,8 @@ class Labels {
     copied,
     showSidebar,
     hideSidebar,
+    expand,
+    collapse,
     more,
     minimizeWindow,
     maximizeWindow,

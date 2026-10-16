@@ -3,6 +3,8 @@ library;
 
 export 'controls/button.dart';
 export 'controls/checkbox.dart';
+export 'controls/number_field.dart';
+export 'controls/pointer_lock.dart';
 export 'controls/radio.dart';
 export 'controls/segmented_control.dart';
 export 'controls/select.dart';
