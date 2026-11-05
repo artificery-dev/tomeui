@@ -9,6 +9,7 @@ topics:
   - widgets
   - ui
   - design-system
+resolution: workspace
 
 workspace:
   - clickwheel
